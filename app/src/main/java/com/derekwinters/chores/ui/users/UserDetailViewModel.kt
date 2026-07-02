@@ -66,7 +66,7 @@ class UserDetailViewModel @Inject constructor(
                 return@launch
             }
             val redemptions = peopleRepository.getRedemptions(personId).getOrDefault(emptyList())
-            val activity = logRepository.getLog(person = username).getOrNull()?.entries?.filter {
+            val activity = logRepository.getLog(person = username).getOrNull()?.filter {
                 it.action in ACTIVITY_ACTIONS
             } ?: emptyList()
 

@@ -25,12 +25,13 @@ class ActivityLogContentTest {
 
     private val amendment = LogEntry(
         id = 1,
-        timestamp = "2026-07-01",
-        targetType = "chore",
+        choreId = 1,
+        choreName = "Dishes",
+        person = "alice",
         action = "updated",
-        actor = "alice",
-        targetName = "Dishes",
+        timestamp = "2026-07-01",
         reassignedTo = null,
+        assignee = null,
         fieldName = "points",
         oldValue = "5",
         newValue = "8"

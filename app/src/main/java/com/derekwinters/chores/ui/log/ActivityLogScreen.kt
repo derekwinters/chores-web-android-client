@@ -107,8 +107,8 @@ fun ActivityLogContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 TextButton(onClick = onPreviousPage, enabled = uiState.data.page > 1) { Text("Previous") }
-                Text("Page ${uiState.data.page} (${uiState.data.total} total)")
-                TextButton(onClick = onNextPage) { Text("Next") }
+                Text("Page ${uiState.data.page} of ${uiState.data.totalPages} (${uiState.data.total} total)")
+                TextButton(onClick = onNextPage, enabled = uiState.data.page < uiState.data.totalPages) { Text("Next") }
             }
         }
     }
@@ -125,10 +125,11 @@ private fun LogRow(entry: LogEntry) {
             .clickable { expanded = !expanded }
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text("${entry.action}: ${entry.targetName}", style = MaterialTheme.typography.titleSmall)
-            Text("${entry.actor} · ${entry.timestamp}", style = MaterialTheme.typography.bodySmall)
+            Text("${entry.action}: ${entry.choreName}", style = MaterialTheme.typography.titleSmall)
+            Text("${entry.person} · ${entry.timestamp}", style = MaterialTheme.typography.bodySmall)
 
             if (expanded) {
+                entry.assignee?.let { Text("Assigned to: $it", style = MaterialTheme.typography.bodySmall) }
                 entry.reassignedTo?.let { Text("Reassigned to: $it", style = MaterialTheme.typography.bodySmall) }
                 if (entry.isAmendment) {
                     Text(

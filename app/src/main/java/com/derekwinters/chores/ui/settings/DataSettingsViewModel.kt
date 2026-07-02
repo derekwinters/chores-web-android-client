@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.derekwinters.chores.data.network.ApiException
 import com.derekwinters.chores.data.network.HttpErrorMessages
-import com.derekwinters.chores.data.repository.ConfigRepository
 import com.derekwinters.chores.data.repository.DataRepository
 import com.derekwinters.chores.data.repository.ImportSummary
+import com.derekwinters.chores.data.repository.LogRepository
 import com.derekwinters.chores.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -26,36 +26,48 @@ private val previewJson = Json { ignoreUnknownKeys = true }
 /**
  * Issue #22 behaviors: "Export: download a full backup ... as a timestamped JSON file",
  * "Import: pick a .json file, show a confirmation summary ... then submit; report imported
- * counts on success".
+ * counts on success", and the log-retention setting.
  *
  * The log-retention setting was originally modeled as a field on the shared config (issue #20's
- * `log_retention_days`); the real backend's `ConfigOut`/`ConfigUpdate` schemas have no such
- * field, so [logRetentionDays] is local-only UI state for now rather than round-tripped through
- * [configRepository] — there is nothing on the backend to read it from or persist it to. The
- * `configRepository` dependency is otherwise unused here but kept so this doesn't need a
- * (currently unnecessary) Hilt module change; it's harmless to drop later if still unused.
+ * `log_retention_days`), and a since-corrected assumption treated it as local-only UI state with
+ * no backend to persist to. The real backend has a dedicated `GET`/`POST /v1/log/retention`
+ * endpoint (`RetentionSettings { retention_days }`) — a real, separate resource, not part of
+ * `ConfigOut`/`ConfigUpdate` — so [logRetentionDays] now round-trips through [logRepository].
  */
 @HiltViewModel
 class DataSettingsViewModel @Inject constructor(
     private val dataRepository: DataRepository,
-    private val configRepository: ConfigRepository
+    private val logRepository: LogRepository
 ) : ViewModel() {
 
-    private val _logRetentionDays = MutableStateFlow<Int?>(DEFAULT_LOG_RETENTION_DAYS)
+    private val _logRetentionDays = MutableStateFlow<Int?>(null)
     val logRetentionDays: StateFlow<Int?> = _logRetentionDays.asStateFlow()
 
     private val _exportState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val exportState: StateFlow<UiState<String>> = _exportState.asStateFlow()
-
-    fun updateLogRetentionDays(days: Int) {
-        _logRetentionDays.value = days
-    }
 
     private val _importPreview = MutableStateFlow<ImportPreview?>(null)
     val importPreview: StateFlow<ImportPreview?> = _importPreview.asStateFlow()
 
     private val _importState = MutableStateFlow<UiState<ImportSummary>>(UiState.Idle)
     val importState: StateFlow<UiState<ImportSummary>> = _importState.asStateFlow()
+
+    init {
+        loadRetention()
+    }
+
+    private fun loadRetention() {
+        viewModelScope.launch {
+            logRepository.getRetentionDays().onSuccess { days -> _logRetentionDays.value = days }
+        }
+    }
+
+    fun updateLogRetentionDays(days: Int) {
+        _logRetentionDays.value = days
+        viewModelScope.launch {
+            logRepository.setRetentionDays(days).onSuccess { saved -> _logRetentionDays.value = saved }
+        }
+    }
 
     fun exportConfig() {
         _exportState.value = UiState.Loading
@@ -107,8 +119,4 @@ class DataSettingsViewModel @Inject constructor(
 
     private fun errorMessage(error: Throwable): String =
         (error as? ApiException)?.message ?: HttpErrorMessages.NETWORK_ERROR
-
-    companion object {
-        private const val DEFAULT_LOG_RETENTION_DAYS = 90
-    }
 }

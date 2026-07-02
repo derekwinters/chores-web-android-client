@@ -13,7 +13,7 @@ import com.derekwinters.chores.data.network.dto.DbStatusDto
 import com.derekwinters.chores.data.network.dto.ImportResultDto
 import com.derekwinters.chores.data.network.dto.LoginRequestDto
 import com.derekwinters.chores.data.network.dto.LoginResponseDto
-import com.derekwinters.chores.data.network.dto.LogPageDto
+import com.derekwinters.chores.data.network.dto.LogEntryDto
 import com.derekwinters.chores.data.network.dto.PersonDto
 import com.derekwinters.chores.data.network.dto.UserStatsDto
 import com.derekwinters.chores.data.network.dto.PointsLogEntryDto
@@ -23,6 +23,7 @@ import com.derekwinters.chores.data.network.dto.ReassignRequestDto
 import com.derekwinters.chores.data.network.dto.RedeemRequestDto
 import com.derekwinters.chores.data.network.dto.RedemptionDto
 import com.derekwinters.chores.data.network.dto.ResetPasswordRequestDto
+import com.derekwinters.chores.data.network.dto.RetentionSettingsDto
 import com.derekwinters.chores.data.network.dto.SetupRequestDto
 import com.derekwinters.chores.data.network.dto.SetupStatusDto
 import com.derekwinters.chores.data.network.dto.ThemeDto
@@ -166,18 +167,32 @@ interface ChoresApi {
     @GET("v1/people/{person_id}/redemptions")
     suspend fun getRedemptions(@Path("person_id") personId: Int): List<RedemptionDto>
 
-    // --- Activity Log (issues #15, #17, #19) ---
+    // --- Activity Log (issues #15, #17, #19, #22) ---
 
-    /** Issue #19, reused (with a subset of filters) by issues #15/#17's deep-linked views. */
+    /**
+     * Issue #19, reused (with a subset of filters) by issues #15/#17's deep-linked views. Returns
+     * a bare array (no server-side pagination envelope) — see the real OpenAPI spec's
+     * `get_log_v1_log_get` response, `type: array` of `ChoreLogOut`; any "N results"/paging UI is
+     * entirely client-side over this full filtered list. Note [choreId] is typed as a `string`
+     * query param in the real API despite being conceptually an integer id.
+     */
     @GET("v1/log")
     suspend fun getLog(
         @Query("person") person: String? = null,
-        @Query("chore") chore: String? = null,
+        @Query("chore_id") choreId: String? = null,
         @Query("action") action: String? = null,
-        @Query("start") start: String? = null,
-        @Query("end") end: String? = null,
-        @Query("page") page: Int = 1
-    ): LogPageDto
+        @Query("actions") actions: List<String>? = null,
+        @Query("start_date") startDate: String? = null,
+        @Query("end_date") endDate: String? = null
+    ): List<LogEntryDto>
+
+    /** Issue #22: current log-retention setting, a real standalone backend resource. */
+    @GET("v1/log/retention")
+    suspend fun getRetention(): RetentionSettingsDto
+
+    /** Issue #22: sets the log-retention setting; the backend returns the (presumably same) new value. */
+    @POST("v1/log/retention")
+    suspend fun setRetention(@Body request: RetentionSettingsDto): RetentionSettingsDto
 
     // --- Auth Event Log (issue #21) ---
 

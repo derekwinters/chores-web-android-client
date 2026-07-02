@@ -3,8 +3,9 @@ package com.derekwinters.chores.ui.settings
 import com.derekwinters.chores.MainDispatcherRule
 import com.derekwinters.chores.data.network.FakeChoresApi
 import com.derekwinters.chores.data.network.dto.ImportResultDto
-import com.derekwinters.chores.data.repository.ConfigRepository
+import com.derekwinters.chores.data.network.dto.RetentionSettingsDto
 import com.derekwinters.chores.data.repository.DataRepository
+import com.derekwinters.chores.data.repository.LogRepository
 import com.derekwinters.chores.ui.UiState
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -21,7 +22,7 @@ class DataSettingsViewModelTest {
 
     @Test
     fun previewImport_countsTopLevelArrays() {
-        val viewModel = DataSettingsViewModel(DataRepository(FakeChoresApi()), ConfigRepository(FakeChoresApi()))
+        val viewModel = DataSettingsViewModel(DataRepository(FakeChoresApi()), LogRepository(FakeChoresApi()))
         val json = """{"people":[{},{}],"chores":[{}],"settings":[]}"""
 
         viewModel.previewImport(json)
@@ -34,7 +35,7 @@ class DataSettingsViewModelTest {
 
     @Test
     fun previewImport_malformedJson_countsAsZeroWithoutCrashing() {
-        val viewModel = DataSettingsViewModel(DataRepository(FakeChoresApi()), ConfigRepository(FakeChoresApi()))
+        val viewModel = DataSettingsViewModel(DataRepository(FakeChoresApi()), LogRepository(FakeChoresApi()))
 
         viewModel.previewImport("not json")
 
@@ -45,7 +46,7 @@ class DataSettingsViewModelTest {
     @Test
     fun confirmImport_success_reportsCountsAndClearsPreview() = runTest(mainDispatcherRule.testDispatcher) {
         val api = FakeChoresApi(importConfigResult = ImportResultDto(people_count = 2, chores_count = 5, settings_count = 3))
-        val viewModel = DataSettingsViewModel(DataRepository(api), ConfigRepository(api))
+        val viewModel = DataSettingsViewModel(DataRepository(api), LogRepository(api))
         viewModel.previewImport("""{"people":[],"chores":[],"settings":[]}""")
 
         viewModel.confirmImport()
@@ -58,11 +59,33 @@ class DataSettingsViewModelTest {
 
     @Test
     fun cancelImport_clearsPreviewWithoutSubmitting() {
-        val viewModel = DataSettingsViewModel(DataRepository(FakeChoresApi()), ConfigRepository(FakeChoresApi()))
+        val viewModel = DataSettingsViewModel(DataRepository(FakeChoresApi()), LogRepository(FakeChoresApi()))
         viewModel.previewImport("""{"people":[]}""")
 
         viewModel.cancelImport()
 
         assertNull(viewModel.importPreview.value)
+    }
+
+    @Test
+    fun init_loadsRetentionDaysFromRealEndpoint() = runTest(mainDispatcherRule.testDispatcher) {
+        val api = FakeChoresApi(retentionResult = RetentionSettingsDto(retention_days = 45))
+        val viewModel = DataSettingsViewModel(DataRepository(api), LogRepository(api))
+        advanceUntilIdle()
+
+        assertEquals(45, viewModel.logRetentionDays.value)
+    }
+
+    @Test
+    fun updateLogRetentionDays_postsToRealEndpoint() = runTest(mainDispatcherRule.testDispatcher) {
+        val api = FakeChoresApi(retentionResult = RetentionSettingsDto(retention_days = 90))
+        val viewModel = DataSettingsViewModel(DataRepository(api), LogRepository(api))
+        advanceUntilIdle()
+
+        viewModel.updateLogRetentionDays(30)
+        advanceUntilIdle()
+
+        assertEquals(30, viewModel.logRetentionDays.value)
+        assertEquals(RetentionSettingsDto(retention_days = 30), api.lastSetRetentionRequest)
     }
 }

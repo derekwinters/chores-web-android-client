@@ -4,7 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import com.derekwinters.chores.MainDispatcherRule
 import com.derekwinters.chores.data.network.FakeChoresApi
 import com.derekwinters.chores.data.network.dto.LogEntryDto
-import com.derekwinters.chores.data.network.dto.LogPageDto
 import com.derekwinters.chores.data.network.dto.PersonDto
 import com.derekwinters.chores.data.network.dto.UserStatsDto
 import com.derekwinters.chores.data.network.dto.RedemptionDto
@@ -40,12 +39,9 @@ class UserDetailViewModelTest {
         val api = FakeChoresApi(
             personStatsResult = UserStatsDto(display_points = 20, points_7d = 10, points_30d = 40, total_points = 45, completed_count = 8),
             redemptionsResult = listOf(RedemptionDto(id = 1, person_id = 1, amount = 5, redeemed_by = "admin", timestamp = "2026-07-01")),
-            logResult = LogPageDto(
-                items = listOf(
-                    LogEntryDto(id = 1, timestamp = "t", target_type = "chore", action = "completed", actor = "alice", target_name = "Dishes"),
-                    LogEntryDto(id = 2, timestamp = "t", target_type = "chore", action = "created", actor = "alice", target_name = "Trash")
-                ),
-                total = 2
+            logResult = listOf(
+                LogEntryDto(id = 1, chore_id = 1, chore_name = "Dishes", person = "alice", action = "completed", timestamp = "t"),
+                LogEntryDto(id = 2, chore_id = 2, chore_name = "Trash", person = "alice", action = "created", timestamp = "t")
             )
         )
         val viewModel = buildViewModel(api)

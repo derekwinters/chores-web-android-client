@@ -135,7 +135,7 @@ fun UserDetailContent(
                         item { Text("No activity yet") }
                     } else {
                         items(data.activity, key = { it.id }) { entry ->
-                            Text("${entry.action}: ${entry.targetName} (${entry.timestamp})")
+                            Text("${entry.action}: ${entry.choreName} (${entry.timestamp})")
                         }
                     }
                 }

@@ -13,7 +13,7 @@ import com.derekwinters.chores.data.network.dto.DbStatusDto
 import com.derekwinters.chores.data.network.dto.ImportResultDto
 import com.derekwinters.chores.data.network.dto.LoginRequestDto
 import com.derekwinters.chores.data.network.dto.LoginResponseDto
-import com.derekwinters.chores.data.network.dto.LogPageDto
+import com.derekwinters.chores.data.network.dto.LogEntryDto
 import com.derekwinters.chores.data.network.dto.PersonDto
 import com.derekwinters.chores.data.network.dto.UserStatsDto
 import com.derekwinters.chores.data.network.dto.PointsLogEntryDto
@@ -23,6 +23,7 @@ import com.derekwinters.chores.data.network.dto.ReassignRequestDto
 import com.derekwinters.chores.data.network.dto.RedeemRequestDto
 import com.derekwinters.chores.data.network.dto.RedemptionDto
 import com.derekwinters.chores.data.network.dto.ResetPasswordRequestDto
+import com.derekwinters.chores.data.network.dto.RetentionSettingsDto
 import com.derekwinters.chores.data.network.dto.SetupRequestDto
 import com.derekwinters.chores.data.network.dto.SetupStatusDto
 import com.derekwinters.chores.data.network.dto.ThemeDto
@@ -70,7 +71,8 @@ class FakeChoresApi(
     private val personStatsResult: UserStatsDto = UserStatsDto(),
     private val redemptionsResult: List<RedemptionDto> = emptyList(),
     private val redeemResult: PersonDto? = null,
-    private val logResult: LogPageDto = LogPageDto(),
+    private val logResult: List<LogEntryDto> = emptyList(),
+    private val retentionResult: RetentionSettingsDto = RetentionSettingsDto(retention_days = 90),
     private val createPersonResult: PersonDto? = null,
     private val updatePersonResult: PersonDto? = null,
     private val updatePersonError: Throwable? = null,
@@ -195,14 +197,30 @@ class FakeChoresApi(
 
     override suspend fun getRedemptions(personId: Int): List<RedemptionDto> = redemptionsResult
 
+    var lastGetLogParams: List<Any?>? = null
+        private set
+
     override suspend fun getLog(
         person: String?,
-        chore: String?,
+        choreId: String?,
         action: String?,
-        start: String?,
-        end: String?,
-        page: Int
-    ): LogPageDto = logResult
+        actions: List<String>?,
+        startDate: String?,
+        endDate: String?
+    ): List<LogEntryDto> {
+        lastGetLogParams = listOf(person, choreId, action, actions, startDate, endDate)
+        return logResult
+    }
+
+    var lastSetRetentionRequest: RetentionSettingsDto? = null
+        private set
+
+    override suspend fun getRetention(): RetentionSettingsDto = retentionResult
+
+    override suspend fun setRetention(request: RetentionSettingsDto): RetentionSettingsDto {
+        lastSetRetentionRequest = request
+        return request
+    }
 
     override suspend fun getAuthLog(
         username: String?,
