@@ -1,0 +1,30 @@
+Prepare git branch for issue implementation.
+
+Inputs: issue_number, commit_type
+Optional: existing_branch
+
+Steps:
+
+## When existing_branch is NOT provided (default):
+1. Fetch and update main: git fetch origin && git checkout main && git pull origin main
+2. Create feature branch: git checkout -b <type>-issue-<number>
+   Example: git checkout -b feat-issue-129
+3. Verify branch is active: git branch --show-current
+4. Report success:
+   - Branch name: <type>-issue-<number>
+   - Status: Ready for implementation
+   - Next: Begin implementation per issue requirements
+
+## When existing_branch IS provided (milestone mode):
+1. Fetch and update branch: git fetch origin && git checkout <existing_branch> && git pull origin <existing_branch>
+2. Verify branch is active: git branch --show-current
+3. Report success:
+   - Branch name: <existing_branch> (existing)
+   - Status: Ready for implementation (milestone mode — branch shared)
+   - Next: Begin implementation per issue requirements
+
+Error cases:
+- Branch already exists locally (default mode): Suggest using existing branch
+- existing_branch not found: Report branch does not exist
+- Git fetch/pull fails: Report network or permission issue
+- Branch creation fails: Report git error

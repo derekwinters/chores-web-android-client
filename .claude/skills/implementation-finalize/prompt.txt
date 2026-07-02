@@ -1,0 +1,64 @@
+Commit changes and create pull request.
+
+Inputs: issue_number, commit_type
+Optional: existing_pr
+
+Steps:
+
+## When existing_pr is NOT provided (default):
+1. Stage all changes: git add -A
+2. Create conventional commit:
+   - Subject: <type>: <description> (#<number>)
+   - Example: feat: Add flexible skip options for chores (#129)
+   - Body: Explain why, decisions made, important context
+   - Footer: Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+3. Commit: git commit -m "..."
+4. Push branch: git push -u origin <branch>
+5. Create PR:
+   - Title: conventional commit subject
+   - Body format:
+     ## Summary
+     [Brief description of changes]
+
+     ## Implementation
+     - Android: [what changed]
+     - Tests: [what was tested]
+
+     Closes #<number>
+
+     🤖 Generated with Claude Code
+   - Important: Each Closes statement on separate line (not comma-separated)
+6. Return PR URL: https://github.com/derekwinters/chores-web-android-client/pull/<pr-number>
+
+Success output:
+✅ PR Created
+- Commit: feat: Add flexible skip options for chores (#129)
+- Branch: feat-issue-129
+- PR URL: https://github.com/derekwinters/chores-web-android-client/pull/168
+
+## When existing_pr IS provided (milestone mode):
+1. Stage all changes: git add -A
+2. Create conventional commit (same format as above)
+3. Commit: git commit -m "..."
+4. Push to existing branch: git push
+5. Append per-issue summary block to existing PR body:
+   a. Fetch current PR body: gh pr view <existing_pr> --json body -q .body
+   b. Append block:
+      ### Issue #<issue_number>: <issue_title>
+      - Commit: <commit_subject>
+
+      Closes #<issue_number>
+   c. Update PR: gh pr edit <existing_pr> --body "<updated_body>"
+6. Return PR URL
+
+Success output (milestone mode):
+✅ Issue committed and PR updated
+- Commit: feat: Add flexible skip options for chores (#129)
+- Branch: feat/milestone-1.9.0 (shared)
+- PR URL: https://github.com/derekwinters/chores-web-android-client/pull/168 (updated)
+
+Failure cases:
+- Staging fails: Report git error
+- Commit fails: Report message/format error
+- Push fails: Report network/permission error
+- PR creation/update fails: Report API error
