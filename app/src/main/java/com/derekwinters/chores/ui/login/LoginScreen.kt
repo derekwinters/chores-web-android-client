@@ -80,6 +80,7 @@ fun LoginContent(
             value = serverUrl,
             onValueChange = { serverUrl = it },
             label = { Text(stringResource(R.string.server_url_label)) },
+            placeholder = { Text(stringResource(R.string.server_url_placeholder)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             enabled = !isLoading

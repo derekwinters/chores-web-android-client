@@ -12,6 +12,7 @@
     <!-- Login screen (issue #5) -->
     <string name="login_screen_title">Log in to Chores</string>
     <string name="server_url_label">Server URL</string>
+    <string name="server_url_placeholder">http://192.168.1.10:8000</string>
     <string name="username_label">Username</string>
     <string name="password_label">Password</string>
     <string name="login_button">Log In</string>
