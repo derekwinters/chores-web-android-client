@@ -15,6 +15,7 @@ import com.derekwinters.chores.data.network.safeApiCall
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
 
@@ -75,6 +76,10 @@ class AuthRepository @Inject constructor(
                 Result.failure(ApiException(e.code(), parsed?.detail ?: HttpErrorMessages.forStatusCode(e.code())))
             }
         } catch (e: IOException) {
+            Result.failure(ApiException(-1, HttpErrorMessages.NETWORK_ERROR))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             Result.failure(ApiException(-1, HttpErrorMessages.NETWORK_ERROR))
         }
     }
