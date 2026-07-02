@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -91,7 +92,12 @@ private fun DashboardUserCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { navActions.onNavigateToUserDetail(card.personId, card.username) }
+            .clickable { navActions.onNavigateToUserDetail(card.personId, card.username) },
+        // Custom themes' surface/background colors can be very close in tone (little built-in
+        // Material elevation contrast to fall back on), so use the theme's more differentiated
+        // third neutral tier (surface2 -> surfaceVariant) rather than the default surface,
+        // matching chores-web's own use of a more elevated tone for cards sitting on the page.
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
