@@ -67,7 +67,10 @@ class FakeChoresApi(
     private val personStatsResult: PersonStatsDto = PersonStatsDto(),
     private val redemptionsResult: List<RedemptionDto> = emptyList(),
     private val redeemResult: PersonStatsDto? = null,
-    private val logResult: LogPageDto = LogPageDto()
+    private val logResult: LogPageDto = LogPageDto(),
+    private val createPersonResult: PersonDto? = null,
+    private val updatePersonResult: PersonDto? = null,
+    private val updatePersonError: Throwable? = null
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -85,6 +88,12 @@ class FakeChoresApi(
     var lastUpdateChoreId: Int? = null
         private set
     var lastUpdateChoreRequest: ChoreRequestDto? = null
+        private set
+    var lastCreatePersonRequest: CreatePersonRequestDto? = null
+        private set
+    var lastUpdatePersonId: Int? = null
+        private set
+    var lastDeletePersonId: Int? = null
         private set
 
     override suspend fun login(request: LoginRequestDto): LoginResponseDto {
@@ -154,13 +163,20 @@ class FakeChoresApi(
 
     override suspend fun getPersonStats(personId: Int): PersonStatsDto = personStatsResult
 
-    override suspend fun createPerson(request: CreatePersonRequestDto): PersonDto =
-        error("not configured")
+    override suspend fun createPerson(request: CreatePersonRequestDto): PersonDto {
+        lastCreatePersonRequest = request
+        return createPersonResult ?: error("FakeChoresApi.createPersonResult not configured")
+    }
 
-    override suspend fun updatePerson(personId: Int, request: UpdatePersonRequestDto): PersonDto =
-        error("not configured")
+    override suspend fun updatePerson(personId: Int, request: UpdatePersonRequestDto): PersonDto {
+        lastUpdatePersonId = personId
+        updatePersonError?.let { throw it }
+        return updatePersonResult ?: error("FakeChoresApi.updatePersonResult not configured")
+    }
 
-    override suspend fun deletePerson(personId: Int) = Unit
+    override suspend fun deletePerson(personId: Int) {
+        lastDeletePersonId = personId
+    }
 
     override suspend fun redeemPoints(personId: Int, request: RedeemRequestDto): PersonStatsDto =
         redeemResult ?: error("FakeChoresApi.redeemResult not configured")

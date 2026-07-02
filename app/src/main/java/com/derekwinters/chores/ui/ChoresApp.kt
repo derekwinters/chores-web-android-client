@@ -55,6 +55,7 @@ import com.derekwinters.chores.ui.common.PlaceholderScreen
 import com.derekwinters.chores.ui.dashboard.DashboardNavActions
 import com.derekwinters.chores.ui.dashboard.DashboardScreen
 import com.derekwinters.chores.ui.users.UserDetailScreen
+import com.derekwinters.chores.ui.users.UserManagementScreen
 import kotlinx.coroutines.launch
 
 /**
@@ -166,7 +167,9 @@ fun ChoresAppContent(
         UserDetailScreen(onNavigateToHistory = onNavigateToHistory)
     },
     logContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
-    usersContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
+    usersContent: @Composable (onHistoryClick: (String) -> Unit) -> Unit = { onHistoryClick ->
+        UserManagementScreen(onHistoryClick = onHistoryClick)
+    },
     settingsContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     preferencesContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     currentUserProvider: @Composable () -> UiState<CurrentUser> = {
@@ -218,7 +221,7 @@ private fun ChoresAuthenticatedScaffold(
     choreFormContent: @Composable (onDone: () -> Unit) -> Unit,
     userDetailContent: @Composable (onNavigateToHistory: () -> Unit) -> Unit,
     logContent: @Composable () -> Unit,
-    usersContent: @Composable () -> Unit,
+    usersContent: @Composable (onHistoryClick: (String) -> Unit) -> Unit,
     settingsContent: @Composable () -> Unit,
     preferencesContent: @Composable () -> Unit,
     notificationContent: @Composable () -> Unit
@@ -365,7 +368,9 @@ private fun ChoresAuthenticatedScaffold(
                         navController.navigate(logRouteWithArgs(chore = null, person = username))
                     }
                 }
-                composable(ChoresDestination.Users.route) { usersContent() }
+                composable(ChoresDestination.Users.route) {
+                    usersContent { username -> navController.navigate(logRouteWithArgs(chore = null, person = username)) }
+                }
                 composable(ChoresDestination.Settings.route) { settingsContent() }
                 composable(ChoresDestination.Preferences.route) { preferencesContent() }
                 composable(ChoresDestination.Notification.route) { notificationContent() }
