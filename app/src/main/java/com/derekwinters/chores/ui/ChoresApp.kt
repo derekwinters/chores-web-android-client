@@ -54,6 +54,7 @@ import com.derekwinters.chores.ui.common.DbReadinessGate
 import com.derekwinters.chores.ui.common.PlaceholderScreen
 import com.derekwinters.chores.ui.dashboard.DashboardNavActions
 import com.derekwinters.chores.ui.dashboard.DashboardScreen
+import com.derekwinters.chores.ui.log.ActivityLogScreen
 import com.derekwinters.chores.ui.users.UserDetailScreen
 import com.derekwinters.chores.ui.users.UserManagementScreen
 import kotlinx.coroutines.launch
@@ -166,7 +167,7 @@ fun ChoresAppContent(
     userDetailContent: @Composable (onNavigateToHistory: () -> Unit) -> Unit = { onNavigateToHistory ->
         UserDetailScreen(onNavigateToHistory = onNavigateToHistory)
     },
-    logContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
+    logContent: @Composable () -> Unit = { ActivityLogScreen() },
     usersContent: @Composable (onHistoryClick: (String) -> Unit) -> Unit = { onHistoryClick ->
         UserManagementScreen(onHistoryClick = onHistoryClick)
     },
