@@ -71,7 +71,8 @@ class FakeChoresApi(
     private val createPersonResult: PersonDto? = null,
     private val updatePersonResult: PersonDto? = null,
     private val updatePersonError: Throwable? = null,
-    private val authLogResult: AuthLogPageDto = AuthLogPageDto()
+    private val authLogResult: AuthLogPageDto = AuthLogPageDto(),
+    private val importConfigResult: ImportResultDto? = null
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -209,7 +210,8 @@ class FakeChoresApi(
 
     override suspend fun exportConfig(): ResponseBody = error("not configured")
 
-    override suspend fun importConfig(body: RequestBody): ImportResultDto = error("not configured")
+    override suspend fun importConfig(body: RequestBody): ImportResultDto =
+        importConfigResult ?: error("FakeChoresApi.importConfigResult not configured")
 
     override suspend fun getPointsLog(page: Int): PointsLogPageDto = PointsLogPageDto()
 
