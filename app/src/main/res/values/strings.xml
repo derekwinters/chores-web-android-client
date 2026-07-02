@@ -2,11 +2,31 @@
     <string name="app_name">Chores</string>
     <string name="nav_home">Home</string>
     <string name="nav_notification">Notification</string>
-    <string name="home_greeting">Hello World</string>
     <string name="notification_screen_title">Notifications</string>
     <string name="send_test_notification">Send Test Notification</string>
     <string name="notification_channel_name">Test Notifications</string>
     <string name="notification_channel_description">Channel used for test notifications triggered from the Notification screen</string>
     <string name="test_notification_title">Test Notification</string>
     <string name="test_notification_body">This is a test notification from Chores.</string>
+
+    <!-- Login (issue #5) -->
+    <string name="login_title">Log in to Chores</string>
+    <string name="login_server_url_label">Server URL</string>
+    <string name="login_username_label">Username</string>
+    <string name="login_password_label">Password</string>
+    <string name="login_button">Log In</string>
+
+    <!-- Chore list (issue #5) -->
+    <string name="chore_list_title">Chores</string>
+    <string name="chore_list_empty">No chores yet</string>
+    <string name="chore_list_retry">Retry</string>
+    <string name="chore_needs_completer">Needs a Completer</string>
+    <string name="chore_points_format">%1$d points</string>
+    <string name="chore_next_due_format">Next due: %1$s</string>
+    <string name="chore_complete_button">Complete</string>
+
+    <!-- Completer picker (issue #5) -->
+    <string name="completer_picker_title">Who completed \"%1$s\"?</string>
+    <string name="completer_picker_confirm">Complete</string>
+    <string name="completer_picker_cancel">Cancel</string>
 </resources>

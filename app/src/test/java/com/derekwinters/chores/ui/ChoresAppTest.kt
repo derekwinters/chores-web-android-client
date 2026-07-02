@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui
 
+import androidx.compose.material3.Text
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -11,6 +12,10 @@ import org.robolectric.annotation.Config
 
 /**
  * Behavior: Bottom nav bar wiring Home <-> Notification screens (area: ui)
+ *
+ * The real Home tab content ([com.derekwinters.chores.ui.chores.ChoreListRoute]) requires Hilt
+ * DI, so these tests exercise the bottom-nav wiring itself via [ChoresApp]'s injectable
+ * [ChoresApp]'s `homeContent` slot rather than the Hilt-wired route.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
@@ -19,20 +24,27 @@ class ChoresAppTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    @Test
-    fun choresApp_startsOnHomeScreen() {
-        composeTestRule.setContent {
-            ChoresApp(onSendTestNotification = {})
-        }
+    private val fakeHomeContentMarker = "Fake Home Content"
 
-        composeTestRule.onNodeWithText("Hello World").assertExists()
+    private fun setContent() {
+        composeTestRule.setContent {
+            ChoresApp(
+                onSendTestNotification = {},
+                homeContent = { Text(fakeHomeContentMarker) }
+            )
+        }
+    }
+
+    @Test
+    fun choresApp_startsOnHomeTab() {
+        setContent()
+
+        composeTestRule.onNodeWithText(fakeHomeContentMarker).assertExists()
     }
 
     @Test
     fun choresApp_bottomNav_navigatesToNotificationScreen() {
-        composeTestRule.setContent {
-            ChoresApp(onSendTestNotification = {})
-        }
+        setContent()
 
         composeTestRule.onNodeWithText("Notification").performClick()
 
@@ -40,14 +52,12 @@ class ChoresAppTest {
     }
 
     @Test
-    fun choresApp_bottomNav_navigatesBackToHomeScreen() {
-        composeTestRule.setContent {
-            ChoresApp(onSendTestNotification = {})
-        }
+    fun choresApp_bottomNav_navigatesBackToHomeTab() {
+        setContent()
 
         composeTestRule.onNodeWithText("Notification").performClick()
         composeTestRule.onNodeWithText("Home").performClick()
 
-        composeTestRule.onNodeWithText("Hello World").assertExists()
+        composeTestRule.onNodeWithText(fakeHomeContentMarker).assertExists()
     }
 }

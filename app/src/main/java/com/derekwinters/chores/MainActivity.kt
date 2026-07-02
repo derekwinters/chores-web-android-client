@@ -8,15 +8,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.derekwinters.chores.notification.NotificationSender
-import com.derekwinters.chores.ui.ChoresApp
+import com.derekwinters.chores.ui.ChoresRoot
+import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * App entry point.
  *
- * Owns the one "impure" boundary in this bootstrap app: requesting the POST_NOTIFICATIONS
- * runtime permission and posting the test notification (issue #2, area: android). Screens
- * themselves stay plain, stateless composables per the issue #2 grilling decisions.
+ * Owns the one "impure" boundary for notifications: requesting the POST_NOTIFICATIONS runtime
+ * permission and posting the test notification (issue #2, area: android). Screens themselves stay
+ * plain, stateless composables (issue #2 grilling decision) with thin Hilt-wired Route wrappers
+ * for the first ViewModels, introduced in issue #5 (see docs/adr/0002-network-auth-architecture.md).
  */
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val notificationSender by lazy { NotificationSender(this) }
@@ -31,7 +34,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ChoresApp(onSendTestNotification = ::sendTestNotification)
+            ChoresRoot(onSendTestNotification = ::sendTestNotification)
         }
     }
 

@@ -21,6 +21,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.derekwinters.chores.R
+import com.derekwinters.chores.ui.chores.ChoreListRoute
 
 /**
  * Navigation destinations for the bottom nav bar (issue #2: 2 destinations, Home <-> Notification).
@@ -33,15 +34,23 @@ sealed class ChoresDestination(val route: String, @StringRes val labelRes: Int) 
 private val bottomNavDestinations = listOf(ChoresDestination.Home, ChoresDestination.Notification)
 
 /**
- * Root app composable: bottom navigation bar wiring the Home and Notification screens.
+ * Root app composable (behind the Login gate, see [com.derekwinters.chores.ui.ChoresRoot]):
+ * bottom navigation bar wiring the Home and Notification screens.
  *
- * Stateless / no ViewModel-Hilt for this bootstrap issue (see issue #2 grilling notes).
+ * The Notification tab remains the stateless composable from issue #2. The Home tab's
+ * "Hello World" bootstrap content is replaced by the chore list (issue #5); [homeContent]
+ * defaults to the real Hilt-wired [ChoreListRoute] but is overridable so this composable's
+ * bottom-nav wiring can be unit tested without a Hilt test harness.
  *
  * @param onSendTestNotification invoked when the user taps "Send Test Notification" on the
  *   Notification screen. The caller (MainActivity) owns permission handling and posting.
+ * @param homeContent the content shown on the Home tab.
  */
 @Composable
-fun ChoresApp(onSendTestNotification: () -> Unit) {
+fun ChoresApp(
+    onSendTestNotification: () -> Unit,
+    homeContent: @Composable () -> Unit = { ChoreListRoute() }
+) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -85,7 +94,7 @@ fun ChoresApp(onSendTestNotification: () -> Unit) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(ChoresDestination.Home.route) {
-                HomeScreen()
+                homeContent()
             }
             composable(ChoresDestination.Notification.route) {
                 NotificationScreen(onSendTestNotification = onSendTestNotification)
