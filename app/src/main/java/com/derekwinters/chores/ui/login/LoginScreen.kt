@@ -12,6 +12,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,31 +32,51 @@ import com.derekwinters.chores.ui.UiState
 /**
  * Issue #5 behavior: "Login screen: server URL + username/password fields, calls
  * POST /auth/login, persists token + URL". Successful login is observed by ChoresApp via
- * [com.derekwinters.chores.ui.SessionViewModel] — this screen doesn't navigate itself.
+ * [com.derekwinters.chores.ui.SessionViewModel] — this screen doesn't navigate itself. Issue #11
+ * extends this with the forced-password-reset flow.
  *
- * Thin Hilt-wired wrapper around [LoginContent] so this composable itself doesn't need to be
- * exercised in tests (which would require a Hilt test component); see LoginContentTest.
+ * Thin Hilt-wired wrapper around [LoginContent]/[ForcedPasswordResetContent] so this composable
+ * itself doesn't need to be exercised in tests (which would require a Hilt test component); see
+ * LoginContentTest.
+ *
+ * @param initialServerUrl pre-fills the Server URL field (issue #11: arriving here from
+ *   [com.derekwinters.chores.ui.auth.AuthGateScreen] after a setup-status check already knows it).
  */
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
+    initialServerUrl: String = "",
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    LoginContent(
-        modifier = modifier,
-        uiState = uiState,
-        onLogin = viewModel::login
-    )
+    val resetRequired by viewModel.resetRequired.collectAsState()
+
+    val resetToken = resetRequired
+    if (resetToken != null) {
+        ForcedPasswordResetContent(
+            modifier = modifier,
+            uiState = uiState,
+            onSubmit = viewModel::submitPasswordReset,
+            onCancel = viewModel::cancelPasswordReset
+        )
+    } else {
+        LoginContent(
+            modifier = modifier,
+            uiState = uiState,
+            initialServerUrl = initialServerUrl,
+            onLogin = viewModel::login
+        )
+    }
 }
 
 @Composable
 fun LoginContent(
     uiState: UiState<Unit>,
     onLogin: (serverUrl: String, username: String, password: String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialServerUrl: String = ""
 ) {
-    var serverUrl by remember { mutableStateOf("") }
+    var serverUrl by remember { mutableStateOf(initialServerUrl) }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -127,6 +148,101 @@ fun LoginContent(
                 CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 8.dp))
             }
             Text(stringResource(R.string.login_button))
+        }
+    }
+}
+
+/**
+ * Issue #11: shown instead of the normal login form when the backend returns a 403 with a
+ * `reset_token` — lets the user set a new password (min 8 chars, confirm) rather than seeing a
+ * dead-end login error.
+ */
+@Composable
+fun ForcedPasswordResetContent(
+    uiState: UiState<Unit>,
+    onSubmit: (newPassword: String) -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+
+    val isLoading = uiState is UiState.Loading
+    val passwordsMatch = newPassword == confirmPassword
+    val meetsMinLength = newPassword.length >= 8
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = stringResource(R.string.password_reset_title),
+            style = MaterialTheme.typography.headlineMedium
+        )
+        Text(
+            modifier = Modifier.padding(top = 8.dp),
+            text = stringResource(R.string.password_reset_description),
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+            value = newPassword,
+            onValueChange = { newPassword = it },
+            label = { Text(stringResource(R.string.new_password_label)) },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            enabled = !isLoading
+        )
+
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text(stringResource(R.string.confirm_password_label)) },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            enabled = !isLoading
+        )
+
+        if (newPassword.isNotEmpty() && !meetsMinLength) {
+            Text(
+                modifier = Modifier.padding(top = 8.dp),
+                text = stringResource(R.string.password_too_short),
+                color = MaterialTheme.colorScheme.error
+            )
+        } else if (confirmPassword.isNotEmpty() && !passwordsMatch) {
+            Text(
+                modifier = Modifier.padding(top = 8.dp),
+                text = stringResource(R.string.passwords_do_not_match),
+                color = MaterialTheme.colorScheme.error
+            )
+        } else if (uiState is UiState.Error) {
+            Text(
+                modifier = Modifier.padding(top = 8.dp),
+                text = uiState.message,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        Button(
+            modifier = Modifier.padding(top = 16.dp),
+            onClick = { onSubmit(newPassword) },
+            enabled = !isLoading && meetsMinLength && passwordsMatch
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 8.dp))
+            }
+            Text(stringResource(R.string.password_reset_submit))
+        }
+
+        TextButton(modifier = Modifier.padding(top = 8.dp), onClick = onCancel, enabled = !isLoading) {
+            Text(stringResource(R.string.cancel))
         }
     }
 }

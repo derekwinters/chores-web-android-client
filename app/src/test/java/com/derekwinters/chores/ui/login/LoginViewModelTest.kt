@@ -5,14 +5,23 @@ import com.derekwinters.chores.data.auth.FakeCredentialStore
 import com.derekwinters.chores.data.auth.SessionManager
 import com.derekwinters.chores.data.network.FakeChoresApi
 import com.derekwinters.chores.data.network.HttpErrorMessages
+import com.derekwinters.chores.data.network.buildTestApi
 import com.derekwinters.chores.data.network.dto.LoginResponseDto
 import com.derekwinters.chores.data.network.dto.UserInfoDto
 import com.derekwinters.chores.data.repository.AuthRepository
 import com.derekwinters.chores.ui.UiState
 import java.io.IOException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeout
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -77,5 +86,87 @@ class LoginViewModelTest {
         assertTrue(state is UiState.Error)
         assertEquals(HttpErrorMessages.NETWORK_ERROR, (state as UiState.Error).message)
         assertTrue(!sessionManager.isAuthenticated.value)
+    }
+
+    /**
+     * Issue #11 behavior: "if login returns HTTP 403 with a reset_token, show a 'set new
+     * password' form instead of failing the login outright" — exercised against a real
+     * MockWebServer response (not [FakeChoresApi], whose login() only throws a configured
+     * Throwable, not a real HttpException with a parseable body) via [buildTestApi].
+     *
+     * This goes through [LoginViewModel.login]'s fire-and-forget `viewModelScope.launch`, whose
+     * completion crosses a real MockWebServer background thread — unlike the rest of this
+     * file's tests (all [FakeChoresApi]-backed, no real I/O), `advanceUntilIdle()` on the shared
+     * `StandardTestDispatcher` only drains what's already scheduled and doesn't wait for that
+     * real thread, so it races and observes the launch before the response lands. Using
+     * `Dispatchers.Unconfined` for Main plus a real (non-virtual) polling wait under
+     * `runBlocking` avoids that race.
+     */
+    @Test
+    fun login_forcedPasswordReset_exposesResetTokenInsteadOfError() {
+        Dispatchers.setMain(Dispatchers.Unconfined)
+        runBlocking {
+            val server = MockWebServer()
+            server.start()
+            server.enqueue(
+                MockResponse().setResponseCode(403).setBody(
+                    """{"detail":"Password reset required","reset_token":"reset-abc"}"""
+                )
+            )
+            val credentialStore = FakeCredentialStore()
+            val sessionManager = SessionManager(credentialStore)
+            val viewModel = LoginViewModel(
+                AuthRepository(
+                    buildTestApi(credentialStore, sessionManager),
+                    credentialStore,
+                    sessionManager
+                )
+            )
+
+            viewModel.login(server.url("/").toString(), "alice", "oldpassword")
+            withTimeout(5_000) {
+                while (viewModel.resetRequired.value == null) delay(10)
+            }
+
+            assertEquals("reset-abc", viewModel.resetRequired.value)
+            assertEquals(UiState.Idle, viewModel.uiState.value)
+            assertTrue(!sessionManager.isAuthenticated.value)
+
+            server.shutdown()
+        }
+    }
+
+    @Test
+    fun cancelPasswordReset_clearsResetTokenAndReturnsToIdle() {
+        Dispatchers.setMain(Dispatchers.Unconfined)
+        runBlocking {
+            val server = MockWebServer()
+            server.start()
+            server.enqueue(
+                MockResponse().setResponseCode(403).setBody("""{"reset_token":"reset-abc"}""")
+            )
+            val credentialStore = FakeCredentialStore()
+            val sessionManager = SessionManager(credentialStore)
+            val viewModel = LoginViewModel(
+                AuthRepository(
+                    buildTestApi(credentialStore, sessionManager),
+                    credentialStore,
+                    sessionManager
+                )
+            )
+
+            viewModel.login(server.url("/").toString(), "alice", "oldpassword")
+            withTimeout(5_000) {
+                while (viewModel.resetRequired.value == null) delay(10)
+            }
+            assertEquals("reset-abc", viewModel.resetRequired.value)
+
+            viewModel.cancelPasswordReset()
+
+            assertNull(viewModel.resetRequired.value)
+            assertEquals(UiState.Idle, viewModel.uiState.value)
+
+            server.shutdown()
+        }
     }
 }

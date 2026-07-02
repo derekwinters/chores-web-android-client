@@ -32,3 +32,54 @@ data class UserInfoDto(
     val username: String,
     val is_admin: Boolean
 )
+
+/**
+ * Response for `GET /v1/auth/setup-status`, issue #11: whether the backend has no users yet and
+ * should show the first-run "Create Admin Account" flow instead of Login.
+ */
+@Serializable
+data class SetupStatusDto(
+    val setup_needed: Boolean = false
+)
+
+/**
+ * Request body for `POST /v1/auth/setup`, issue #11: creates the first (admin) user. The
+ * "Require Authentication" toggle is applied afterwards via a separate `PUT /v1/config` call
+ * (see AuthRepository.setup), matching the issue's "creates the first user as admin, then sets
+ * auth_enabled via config" sequencing.
+ */
+@Serializable
+data class SetupRequestDto(
+    val username: String,
+    val password: String
+)
+
+/**
+ * Request body for `PUT /v1/auth/password/reset`, issue #11's forced-reset flow. Sent with the
+ * one-time `reset_token` (from the 403 login response) as bearer auth, not the normal session
+ * token.
+ */
+@Serializable
+data class ResetPasswordRequestDto(
+    val new_password: String
+)
+
+/**
+ * Error body shape for a 403 login response that carries a forced-password-reset token
+ * (issue #11), parsed alongside the plain `{"detail": ...}` shape that other errors use.
+ */
+@Serializable
+data class LoginResetRequiredDto(
+    val detail: String? = null,
+    val reset_token: String? = null
+)
+
+/**
+ * Response for `GET /status/db-status` (not under the `v1/` prefix), issue #11's readiness gate.
+ * `status` is one of "initializing"/"ready"/"error" per the backend's OpenAPI description.
+ */
+@Serializable
+data class DbStatusDto(
+    val status: String = "initializing",
+    val migrations_in_progress: Boolean = false
+)

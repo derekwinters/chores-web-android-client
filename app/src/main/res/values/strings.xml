@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Chores</string>
-    <string name="nav_home">Home</string>
     <string name="nav_notification">Notification</string>
     <string name="notification_screen_title">Notifications</string>
     <string name="send_test_notification">Send Test Notification</string>
@@ -8,6 +7,33 @@
     <string name="notification_channel_description">Channel used for test notifications triggered from the Notification screen</string>
     <string name="test_notification_title">Test Notification</string>
     <string name="test_notification_body">This is a test notification from Chores.</string>
+
+    <!-- Navigation shell (issue #10) -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_chores">Chores</string>
+    <string name="nav_log">Activity Log</string>
+    <string name="nav_users">Users</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_preferences">Preferences</string>
+    <string name="open_navigation_menu">Open navigation menu</string>
+    <string name="user_menu">User menu</string>
+    <string name="logout">Logout</string>
+    <string name="coming_soon">Coming soon</string>
+
+    <!-- Auth parity: first-run setup, forced password reset, DB-readiness gate (issue #11) -->
+    <string name="continue_button">Continue</string>
+    <string name="retry">Retry</string>
+    <string name="database_initializing">Database initializing…</string>
+    <string name="setup_title">Create Admin Account</string>
+    <string name="setup_submit">Create Account</string>
+    <string name="require_authentication_label">Require Authentication</string>
+    <string name="confirm_password_label">Confirm Password</string>
+    <string name="passwords_do_not_match">Passwords do not match</string>
+    <string name="password_reset_title">Password Reset Required</string>
+    <string name="password_reset_description">Your password must be reset before you can log in.</string>
+    <string name="new_password_label">New Password</string>
+    <string name="password_too_short">Password must be at least 8 characters</string>
+    <string name="password_reset_submit">Set New Password</string>
 
     <!-- Login screen (issue #5) -->
     <string name="login_screen_title">Log in to Chores</string>
@@ -26,4 +52,58 @@
     <string name="completer_picker_title">Who completed this?</string>
     <string name="completer_picker_confirm">Confirm</string>
     <string name="cancel">Cancel</string>
+
+    <!-- Chore card actions: skip, mark due now, delete, expand/collapse (issue #15) -->
+    <string name="chore_edit_action">Edit</string>
+    <string name="add_chore">Add chore</string>
+    <string name="chore_history_action">History</string>
+    <string name="chore_skip_action">Skip</string>
+    <string name="chore_mark_due_action">Mark Due Now</string>
+    <string name="chore_delete_action">Delete</string>
+    <string name="chore_delete_confirm_title">Delete this chore?</string>
+    <string name="chore_delete_confirmation">This also removes all points history for this chore and cannot be undone.</string>
+    <string name="chore_detail_status_format">Status: %1$s</string>
+    <string name="chore_detail_frequency_format">Frequency: %1$s</string>
+    <string name="chore_detail_points_format">Points: %1$d</string>
+    <string name="chore_detail_assignee_format">Assignee: %1$s</string>
+
+    <!-- Chores screen: search, filters, sorting (issue #13) -->
+    <string name="search_chores_label">Search chores</string>
+    <string name="filters_title">Filters</string>
+    <string name="apply">Apply</string>
+    <string name="clear_filters">Clear filters</string>
+    <string name="showing_n_of_m_chores">Showing %1$d of %2$d chores</string>
+    <string name="filter_assignee">Assignee</string>
+    <string name="filter_state">State</string>
+    <string name="filter_state_all">All</string>
+    <string name="filter_state_due">Due</string>
+    <string name="filter_state_complete">Complete</string>
+    <string name="filter_due_within">Due within</string>
+    <string name="due_within_all">All</string>
+    <string name="due_within_today">Today (incl. overdue)</string>
+    <string name="due_within_3_days">Next 3 days</string>
+    <string name="due_within_7_days">Next 7 days</string>
+    <string name="due_within_30_days">Next 30 days</string>
+    <string name="filter_enabled_status">Status</string>
+    <string name="filter_enabled">Enabled</string>
+    <string name="filter_disabled">Disabled</string>
+    <string name="filter_schedule_type">Schedule type</string>
+    <string name="filter_assignment_type">Assignment type</string>
+
+    <!-- Chores screen: stats panel (issue #14) -->
+    <string name="stats_panel_title">Stats</string>
+    <string name="expand_stats_panel">Expand stats panel</string>
+    <string name="collapse_stats_panel">Collapse stats panel</string>
+    <string name="stat_total_chores">Total Chores</string>
+    <string name="stat_total_points">Total Points</string>
+    <string name="stat_completed_7_days">Completed Last 7 Days</string>
+    <string name="stat_due_7_days">Due Next 7 Days</string>
+    <string name="loading">Loading…</string>
+
+    <!-- Dashboard screen (issue #12) -->
+    <string name="dashboard_empty">No people added yet…</string>
+    <string name="dashboard_7_day_progress">7-day: %1$d / %2$d pts</string>
+    <string name="dashboard_30_day_progress">30-day: %1$d / %2$d pts</string>
+    <string name="dashboard_due_now_format">Due Now: %1$d</string>
+    <string name="dashboard_due_soon_format">Due Soon: %1$d</string>
 </resources>

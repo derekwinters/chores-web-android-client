@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -89,6 +91,19 @@ androidComponents {
     }
 }
 
+// Bounds the unit test task so a hung test fails CI within minutes instead of running until the
+// job's own multi-hour timeout, and logs each test's start so the offending test name shows up
+// in the console right before the freeze rather than only in the (never-written) HTML report.
+tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(10))
+    testLogging {
+        events("started", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStackTraces = true
+        showCauses = true
+    }
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.0")
@@ -98,6 +113,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
+    // Full icon set for the v1.0.0 nav shell (issue #10: Dashboard/Chores/Log/Users/Settings/
+    // Preferences each need a distinct icon beyond material-icons-core's small default subset).
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // ViewModel + StateFlow collection in Compose (issue #5: first ViewModel pattern).
