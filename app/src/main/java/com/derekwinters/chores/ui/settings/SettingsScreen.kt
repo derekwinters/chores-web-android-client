@@ -30,10 +30,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.data.model.AppConfig
 import com.derekwinters.chores.ui.UiState
 
-/** Issue #20/#21/#22: cross-screen nav callbacks the Settings destination needs. */
+/** Issue #20/#21/#22/#24: cross-screen nav callbacks the Settings destination needs. */
 data class SettingsNavActions(
     val onNavigateToAuthLog: () -> Unit = {},
-    val onNavigateToData: () -> Unit = {}
+    val onNavigateToData: () -> Unit = {},
+    val onNavigateToTheming: () -> Unit = {}
 )
 
 /**
@@ -144,6 +145,10 @@ fun SettingsContent(
                         )
                     }
                     TextButton(onClick = onCheckForUpdates) { Text("Check Now") }
+
+                    Divider(modifier = Modifier.padding(vertical = 16.dp))
+                    Text("Theming", style = MaterialTheme.typography.titleMedium)
+                    TextButton(onClick = navActions.onNavigateToTheming) { Text("Household Default Theme") }
 
                     if (saveState is UiState.Error) {
                         Text(saveState.message, color = MaterialTheme.colorScheme.error)

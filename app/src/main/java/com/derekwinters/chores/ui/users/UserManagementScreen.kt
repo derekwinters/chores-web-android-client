@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.users
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -168,7 +169,7 @@ private fun PersonRow(person: Person, onClick: () -> Unit, onHistoryClick: () ->
 }
 
 private fun Modifier.clickableRow(onClick: () -> Unit): Modifier =
-    this.then(androidx.compose.foundation.clickable(onClick = onClick))
+    this.then(Modifier.clickable(onClick = onClick))
 
 @Composable
 private fun CreateUserDialog(onCreate: (String, String) -> Unit, onDismiss: () -> Unit) {

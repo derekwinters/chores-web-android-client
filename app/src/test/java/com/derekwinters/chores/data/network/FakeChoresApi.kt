@@ -74,7 +74,12 @@ class FakeChoresApi(
     private val authLogResult: AuthLogPageDto = AuthLogPageDto(),
     private val importConfigResult: ImportResultDto? = null,
     private val pointsLogResult: PointsLogPageDto = PointsLogPageDto(),
-    private val updatePointsLogResult: PointsLogEntryDto? = null
+    private val updatePointsLogResult: PointsLogEntryDto? = null,
+    private val themesResult: List<ThemeDto> = emptyList(),
+    private val createThemeResult: ThemeDto? = null,
+    private val updateThemeResult: ThemeDto? = null,
+    private val setDefaultThemeResult: ThemeDto? = null,
+    private val currentThemeResult: CurrentThemeDto? = null
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -234,19 +239,42 @@ class FakeChoresApi(
         lastDeletePointsLogEntryId = entryId
     }
 
-    override suspend fun getThemes(): List<ThemeDto> = emptyList()
+    var lastCreateThemeRequest: CreateThemeRequestDto? = null
+        private set
+    var lastUpdateThemeId: Int? = null
+        private set
+    var lastDeleteThemeId: Int? = null
+        private set
+    var lastSetDefaultThemeId: Int? = null
+        private set
+    var lastSetPersonalThemeId: Int? = null
+        private set
 
-    override suspend fun createTheme(request: CreateThemeRequestDto): ThemeDto =
-        error("not configured")
+    override suspend fun getThemes(): List<ThemeDto> = themesResult
 
-    override suspend fun updateTheme(themeId: Int, request: UpdateThemeRequestDto): ThemeDto =
-        error("not configured")
+    override suspend fun createTheme(request: CreateThemeRequestDto): ThemeDto {
+        lastCreateThemeRequest = request
+        return createThemeResult ?: error("FakeChoresApi.createThemeResult not configured")
+    }
 
-    override suspend fun deleteTheme(themeId: Int) = Unit
+    override suspend fun updateTheme(themeId: Int, request: UpdateThemeRequestDto): ThemeDto {
+        lastUpdateThemeId = themeId
+        return updateThemeResult ?: error("FakeChoresApi.updateThemeResult not configured")
+    }
 
-    override suspend fun setDefaultTheme(themeId: Int): ThemeDto = error("not configured")
+    override suspend fun deleteTheme(themeId: Int) {
+        lastDeleteThemeId = themeId
+    }
 
-    override suspend fun getCurrentTheme(): CurrentThemeDto = error("not configured")
+    override suspend fun setDefaultTheme(themeId: Int): ThemeDto {
+        lastSetDefaultThemeId = themeId
+        return setDefaultThemeResult ?: error("FakeChoresApi.setDefaultThemeResult not configured")
+    }
 
-    override suspend fun setPersonalTheme(themeId: Int) = Unit
+    override suspend fun getCurrentTheme(): CurrentThemeDto =
+        currentThemeResult ?: error("FakeChoresApi.currentThemeResult not configured")
+
+    override suspend fun setPersonalTheme(themeId: Int) {
+        lastSetPersonalThemeId = themeId
+    }
 }

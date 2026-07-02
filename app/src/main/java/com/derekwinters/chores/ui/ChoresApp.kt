@@ -46,12 +46,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.derekwinters.chores.R
 import com.derekwinters.chores.data.model.CurrentUser
+import com.derekwinters.chores.data.model.ThemeOption
 import com.derekwinters.chores.ui.auth.AuthGateScreen
 import com.derekwinters.chores.ui.chores.ChoreFormScreen
 import com.derekwinters.chores.ui.chores.ChoreListScreen
 import com.derekwinters.chores.ui.chores.ChoresNavActions
 import com.derekwinters.chores.ui.common.DbReadinessGate
-import com.derekwinters.chores.ui.common.PlaceholderScreen
 import com.derekwinters.chores.ui.dashboard.DashboardNavActions
 import com.derekwinters.chores.ui.dashboard.DashboardScreen
 import com.derekwinters.chores.ui.log.ActivityLogScreen
@@ -59,6 +59,10 @@ import com.derekwinters.chores.ui.settings.AuthLogScreen
 import com.derekwinters.chores.ui.settings.DataSettingsNavActions
 import com.derekwinters.chores.ui.settings.DataSettingsScreen
 import com.derekwinters.chores.ui.settings.PointsLogScreen
+import com.derekwinters.chores.ui.theme.AppThemeViewModel
+import com.derekwinters.chores.ui.theme.ChoresTheme
+import com.derekwinters.chores.ui.theme.ThemeAdminScreen
+import com.derekwinters.chores.ui.theme.ThemePreferenceScreen
 import com.derekwinters.chores.ui.settings.SettingsNavActions
 import com.derekwinters.chores.ui.settings.SettingsScreen
 import com.derekwinters.chores.ui.users.UserDetailScreen
@@ -183,7 +187,8 @@ fun ChoresAppContent(
         DataSettingsScreen(navActions = navActions)
     },
     pointsLogContent: @Composable () -> Unit = { PointsLogScreen() },
-    preferencesContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
+    preferencesContent: @Composable () -> Unit = { ThemePreferenceScreen() },
+    themeAdminContent: @Composable () -> Unit = { ThemeAdminScreen() },
     currentUserProvider: @Composable () -> UiState<CurrentUser> = {
         val viewModel: CurrentUserViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsState()
@@ -193,6 +198,11 @@ fun ChoresAppContent(
         val viewModel: DbReadinessViewModel = hiltViewModel()
         val ready by viewModel.isReady.collectAsState()
         ready
+    },
+    currentThemeProvider: @Composable () -> ThemeOption? = {
+        val viewModel: AppThemeViewModel = hiltViewModel()
+        val theme by viewModel.currentTheme.collectAsState()
+        theme
     }
 ) {
     if (!isAuthenticated) {
@@ -205,23 +215,27 @@ fun ChoresAppContent(
     DbReadinessGate(isReady = isDatabaseReady, modifier = modifier) {
         val currentUserState = currentUserProvider()
         val isAdmin = (currentUserState as? UiState.Success)?.data?.isAdmin == true
+        val currentTheme = currentThemeProvider()
 
-        ChoresAuthenticatedScaffold(
-            isAdmin = isAdmin,
-            onLogout = onLogout,
-            dashboardContent = dashboardContent,
-            choresContent = choresContent,
-            choreFormContent = choreFormContent,
-            userDetailContent = userDetailContent,
-            logContent = logContent,
-            usersContent = usersContent,
-            settingsContent = settingsContent,
-            authLogContent = authLogContent,
-            dataSettingsContent = dataSettingsContent,
-            pointsLogContent = pointsLogContent,
-            preferencesContent = preferencesContent,
-            notificationContent = { NotificationScreen(onSendTestNotification = onSendTestNotification) }
-        )
+        ChoresTheme(themeOption = currentTheme) {
+            ChoresAuthenticatedScaffold(
+                isAdmin = isAdmin,
+                onLogout = onLogout,
+                dashboardContent = dashboardContent,
+                choresContent = choresContent,
+                choreFormContent = choreFormContent,
+                userDetailContent = userDetailContent,
+                logContent = logContent,
+                usersContent = usersContent,
+                settingsContent = settingsContent,
+                authLogContent = authLogContent,
+                dataSettingsContent = dataSettingsContent,
+                pointsLogContent = pointsLogContent,
+                preferencesContent = preferencesContent,
+                themeAdminContent = themeAdminContent,
+                notificationContent = { NotificationScreen(onSendTestNotification = onSendTestNotification) }
+            )
+        }
     }
 }
 
@@ -242,6 +256,7 @@ private fun ChoresAuthenticatedScaffold(
     dataSettingsContent: @Composable (DataSettingsNavActions) -> Unit,
     pointsLogContent: @Composable () -> Unit,
     preferencesContent: @Composable () -> Unit,
+    themeAdminContent: @Composable () -> Unit,
     notificationContent: @Composable () -> Unit
 ) {
     val navController = rememberNavController()
@@ -393,11 +408,13 @@ private fun ChoresAuthenticatedScaffold(
                     settingsContent(
                         SettingsNavActions(
                             onNavigateToAuthLog = { navController.navigate("settings/authLog") },
-                            onNavigateToData = { navController.navigate("settings/data") }
+                            onNavigateToData = { navController.navigate("settings/data") },
+                            onNavigateToTheming = { navController.navigate("settings/theme") }
                         )
                     )
                 }
                 composable("settings/authLog") { authLogContent() }
+                composable("settings/theme") { themeAdminContent() }
                 composable("settings/data") {
                     dataSettingsContent(DataSettingsNavActions(onNavigateToPointsLog = { navController.navigate("settings/data/pointsLog") }))
                 }
