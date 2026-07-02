@@ -54,6 +54,8 @@
     <string name="cancel">Cancel</string>
 
     <!-- Chore card actions: skip, mark due now, delete, expand/collapse (issue #15) -->
+    <string name="chore_edit_action">Edit</string>
+    <string name="add_chore">Add chore</string>
     <string name="chore_history_action">History</string>
     <string name="chore_skip_action">Skip</string>
     <string name="chore_mark_due_action">Mark Due Now</string>

@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +47,8 @@ import com.derekwinters.chores.ui.UiState
  * current_assignee == null". Issue #13 adds live search, filters, and sorting; issue #14 adds
  * the stats panel above this (see ChoresStatsPanel); issue #12 adds [initialAssignee]/
  * [initialDueWithin] so Dashboard's Due Now/Due Soon links land here pre-filtered; issue #15
- * adds tap-to-expand row detail plus Skip/Mark Due Now/Delete/History actions.
+ * adds tap-to-expand row detail plus Skip/Mark Due Now/Delete/History actions; issue #16 adds
+ * the Add-chore FAB and per-row Edit action via [navActions].
  *
  * Thin Hilt-wired wrapper around [ChoreListContent]; see ChoreListContentTest for behavior
  * coverage that doesn't require a Hilt test component.
@@ -55,7 +58,7 @@ fun ChoreListScreen(
     modifier: Modifier = Modifier,
     initialAssignee: String? = null,
     initialDueWithin: String? = null,
-    onNavigateToHistory: (choreName: String) -> Unit = {},
+    navActions: ChoresNavActions = ChoresNavActions(),
     viewModel: ChoreListViewModel = hiltViewModel()
 ) {
     val visibleState by viewModel.visibleChores.collectAsState()
@@ -88,7 +91,9 @@ fun ChoreListScreen(
         onSkip = viewModel::skipChore,
         onMarkDue = viewModel::markChoreDue,
         onDelete = viewModel::deleteChore,
-        onHistory = { chore -> onNavigateToHistory(chore.name) },
+        onHistory = { chore -> navActions.onNavigateToHistory(chore.name) },
+        onEdit = { chore -> navActions.onNavigateToEditChore(chore.id) },
+        onAddChore = navActions.onNavigateToCreateChore,
         onQueryChange = viewModel::updateQuery,
         onFiltersChange = viewModel::updateFilters
     )
@@ -110,6 +115,8 @@ fun ChoreListContent(
     onMarkDue: (Chore) -> Unit = {},
     onDelete: (Chore) -> Unit = {},
     onHistory: (Chore) -> Unit = {},
+    onEdit: (Chore) -> Unit = {},
+    onAddChore: () -> Unit = {},
     onQueryChange: (String) -> Unit = {},
     onFiltersChange: (ChoreFilters) -> Unit = {},
     statsPanel: @Composable () -> Unit = {}
@@ -117,8 +124,9 @@ fun ChoreListContent(
     var choreAwaitingCompleter by remember { mutableStateOf<Chore?>(null) }
     var showFiltersDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        statsPanel()
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            statsPanel()
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -192,13 +200,22 @@ fun ChoreListContent(
                                     onSkip = { onSkip(chore) },
                                     onMarkDue = { onMarkDue(chore) },
                                     onDelete = { onDelete(chore) },
-                                    onHistory = { onHistory(chore) }
+                                    onHistory = { onHistory(chore) },
+                                    onEdit = { onEdit(chore) }
                                 )
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+        FloatingActionButton(
+            onClick = onAddChore,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_chore))
         }
     }
 
@@ -237,7 +254,8 @@ private fun ChoreRow(
     onSkip: () -> Unit,
     onMarkDue: () -> Unit,
     onDelete: () -> Unit,
-    onHistory: () -> Unit
+    onHistory: () -> Unit,
+    onEdit: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -273,6 +291,7 @@ private fun ChoreRow(
                     if (isPendingAction) {
                         CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                     } else {
+                        TextButton(onClick = onEdit) { Text(stringResource(R.string.chore_edit_action)) }
                         TextButton(onClick = onHistory) { Text(stringResource(R.string.chore_history_action)) }
                         if (chore.isDue) {
                             TextButton(onClick = onSkip) { Text(stringResource(R.string.chore_skip_action)) }

@@ -61,7 +61,9 @@ class FakeChoresApi(
     private val peopleResult: List<PersonDto> = emptyList(),
     private val configResult: ConfigDto = ConfigDto(),
     private val skipResult: ChoreDto? = null,
-    private val markDueResult: ChoreDto? = null
+    private val markDueResult: ChoreDto? = null,
+    private val createChoreResult: ChoreDto? = null,
+    private val updateChoreResult: ChoreDto? = null
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -73,6 +75,12 @@ class FakeChoresApi(
     var lastMarkDueChoreId: Int? = null
         private set
     var lastDeleteChoreId: Int? = null
+        private set
+    var lastCreateChoreRequest: ChoreRequestDto? = null
+        private set
+    var lastUpdateChoreId: Int? = null
+        private set
+    var lastUpdateChoreRequest: ChoreRequestDto? = null
         private set
 
     override suspend fun login(request: LoginRequestDto): LoginResponseDto {
@@ -122,10 +130,16 @@ class FakeChoresApi(
         lastDeleteChoreId = choreId
     }
 
-    override suspend fun createChore(request: ChoreRequestDto): ChoreDto = error("not configured")
+    override suspend fun createChore(request: ChoreRequestDto): ChoreDto {
+        lastCreateChoreRequest = request
+        return createChoreResult ?: error("FakeChoresApi.createChoreResult not configured")
+    }
 
-    override suspend fun updateChore(choreId: Int, request: ChoreRequestDto): ChoreDto =
-        error("not configured")
+    override suspend fun updateChore(choreId: Int, request: ChoreRequestDto): ChoreDto {
+        lastUpdateChoreId = choreId
+        lastUpdateChoreRequest = request
+        return updateChoreResult ?: error("FakeChoresApi.updateChoreResult not configured")
+    }
 
     override suspend fun reassignChore(choreId: Int, request: ReassignRequestDto): ChoreDto =
         error("not configured")

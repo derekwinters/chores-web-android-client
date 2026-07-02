@@ -47,7 +47,9 @@ import androidx.navigation.navArgument
 import com.derekwinters.chores.R
 import com.derekwinters.chores.data.model.CurrentUser
 import com.derekwinters.chores.ui.auth.AuthGateScreen
+import com.derekwinters.chores.ui.chores.ChoreFormScreen
 import com.derekwinters.chores.ui.chores.ChoreListScreen
+import com.derekwinters.chores.ui.chores.ChoresNavActions
 import com.derekwinters.chores.ui.common.DbReadinessGate
 import com.derekwinters.chores.ui.common.PlaceholderScreen
 import com.derekwinters.chores.ui.dashboard.DashboardScreen
@@ -148,8 +150,11 @@ fun ChoresAppContent(
     dashboardContent: @Composable ((assignee: String?, dueWithin: String?) -> Unit) -> Unit = { onNavigateToChores ->
         DashboardScreen(onNavigateToChores = onNavigateToChores)
     },
-    choresContent: @Composable (assignee: String?, dueWithin: String?, onNavigateToHistory: (String) -> Unit) -> Unit = { assignee, dueWithin, onNavigateToHistory ->
-        ChoreListScreen(initialAssignee = assignee, initialDueWithin = dueWithin, onNavigateToHistory = onNavigateToHistory)
+    choresContent: @Composable (assignee: String?, dueWithin: String?, navActions: ChoresNavActions) -> Unit = { assignee, dueWithin, navActions ->
+        ChoreListScreen(initialAssignee = assignee, initialDueWithin = dueWithin, navActions = navActions)
+    },
+    choreFormContent: @Composable (onDone: () -> Unit) -> Unit = { onDone ->
+        ChoreFormScreen(onSaved = onDone, onCancel = onDone)
     },
     logContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     usersContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
@@ -182,6 +187,7 @@ fun ChoresAppContent(
             onLogout = onLogout,
             dashboardContent = dashboardContent,
             choresContent = choresContent,
+            choreFormContent = choreFormContent,
             logContent = logContent,
             usersContent = usersContent,
             settingsContent = settingsContent,
@@ -198,7 +204,8 @@ private fun ChoresAuthenticatedScaffold(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     dashboardContent: @Composable ((assignee: String?, dueWithin: String?) -> Unit) -> Unit,
-    choresContent: @Composable (assignee: String?, dueWithin: String?, onNavigateToHistory: (String) -> Unit) -> Unit,
+    choresContent: @Composable (assignee: String?, dueWithin: String?, navActions: ChoresNavActions) -> Unit,
+    choreFormContent: @Composable (onDone: () -> Unit) -> Unit,
     logContent: @Composable () -> Unit,
     usersContent: @Composable () -> Unit,
     settingsContent: @Composable () -> Unit,
@@ -302,10 +309,24 @@ private fun ChoresAuthenticatedScaffold(
                 ) { backStackEntry ->
                     choresContent(
                         backStackEntry.arguments?.getString("assignee"),
-                        backStackEntry.arguments?.getString("dueWithin")
-                    ) { choreName ->
-                        navController.navigate(logRouteWithArgs(chore = choreName, person = null))
-                    }
+                        backStackEntry.arguments?.getString("dueWithin"),
+                        ChoresNavActions(
+                            onNavigateToHistory = { choreName ->
+                                navController.navigate(logRouteWithArgs(chore = choreName, person = null))
+                            },
+                            onNavigateToCreateChore = { navController.navigate("chores/new") },
+                            onNavigateToEditChore = { choreId -> navController.navigate("chores/$choreId/edit") }
+                        )
+                    )
+                }
+                composable("chores/new") {
+                    choreFormContent { navController.popBackStack() }
+                }
+                composable(
+                    route = "chores/{choreId}/edit",
+                    arguments = listOf(navArgument("choreId") { type = NavType.IntType })
+                ) {
+                    choreFormContent { navController.popBackStack() }
                 }
                 composable(
                     route = "${ChoresDestination.ActivityLog.route}?chore={chore}&person={person}",
