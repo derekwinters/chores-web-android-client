@@ -83,8 +83,11 @@ class UserDetailViewModelTest {
 
     @Test
     fun redeem_success_reloadsStats() = runTest(mainDispatcherRule.testDispatcher) {
+        // redeem() reloads stats from getPersonStats() after a successful redeem rather than
+        // trusting redeemPoints()'s response body, so FakeChoresApi's static personStatsResult
+        // (not redeemResult) is what the post-redeem assertion below observes.
         val api = FakeChoresApi(
-            personStatsResult = PersonStatsDto(available_points = 20),
+            personStatsResult = PersonStatsDto(available_points = 10),
             redeemResult = PersonStatsDto(available_points = 10)
         )
         val viewModel = buildViewModel(api)

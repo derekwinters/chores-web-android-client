@@ -3,6 +3,7 @@ package com.derekwinters.chores.ui.settings
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -41,7 +42,7 @@ class SettingsContentTest {
 
         composeTestRule.onNodeWithText("App Title").performTextClearance()
         composeTestRule.onNodeWithText("App Title").performTextInput("My House")
-        composeTestRule.onNodeWithText("Save Settings").performClick()
+        composeTestRule.onNodeWithText("Save Settings").performScrollTo().performClick()
 
         assert(saved?.appTitle == "My House")
     }
@@ -77,7 +78,7 @@ class SettingsContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Check Now").performClick()
+        composeTestRule.onNodeWithText("Check Now").performScrollTo().performClick()
 
         assert(checked)
     }

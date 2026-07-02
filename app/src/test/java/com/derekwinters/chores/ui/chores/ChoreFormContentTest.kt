@@ -3,6 +3,7 @@ package com.derekwinters.chores.ui.chores
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.ui.UiState
@@ -58,7 +59,7 @@ class ChoreFormContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Cancel").performClick()
+        composeTestRule.onNodeWithText("Cancel").performScrollTo().performClick()
 
         assert(cancelled)
     }
