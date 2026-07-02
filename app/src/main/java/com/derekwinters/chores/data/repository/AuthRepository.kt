@@ -1,5 +1,6 @@
 package com.derekwinters.chores.data.repository
 
+import android.util.Log
 import com.derekwinters.chores.data.auth.CredentialStore
 import com.derekwinters.chores.data.auth.SessionManager
 import com.derekwinters.chores.data.model.CurrentUser
@@ -26,6 +27,7 @@ sealed interface LoginOutcome {
 }
 
 private val loginErrorJson = Json { ignoreUnknownKeys = true }
+private const val TAG = "ChoresApi"
 
 /**
  * Issue #5 behavior: "Login screen ... calls POST /auth/login, persists token + URL". Extended
@@ -76,10 +78,12 @@ class AuthRepository @Inject constructor(
                 Result.failure(ApiException(e.code(), parsed?.detail ?: HttpErrorMessages.forStatusCode(e.code())))
             }
         } catch (e: IOException) {
+            Log.w(TAG, "Network I/O failure during login", e)
             Result.failure(ApiException(-1, HttpErrorMessages.NETWORK_ERROR))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            Log.e(TAG, "Unexpected ${e.javaClass.simpleName} during login, likely a response shape mismatch", e)
             Result.failure(ApiException(-1, HttpErrorMessages.NETWORK_ERROR))
         }
     }

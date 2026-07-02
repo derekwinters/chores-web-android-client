@@ -1,11 +1,14 @@
 package com.derekwinters.chores.data.network
 
+import android.util.Log
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
+
+private const val TAG = "ChoresApi"
 
 @Serializable
 private data class ErrorDetailDto(val detail: String? = null)
@@ -33,9 +36,14 @@ suspend fun <T> safeApiCall(block: suspend () -> T): Result<T> = try {
         ?.detail
     Result.failure(ApiException(e.code(), detail ?: HttpErrorMessages.forStatusCode(e.code())))
 } catch (e: IOException) {
+    Log.w(TAG, "Network I/O failure", e)
     Result.failure(ApiException(-1, HttpErrorMessages.NETWORK_ERROR))
 } catch (e: CancellationException) {
     throw e
 } catch (e: Exception) {
+    // Most plausibly a response body that doesn't parse into the expected DTO shape (see class
+    // doc) rather than a real connectivity problem — logged distinctly from the IOException case
+    // above since both surface the same generic NETWORK_ERROR message to the user.
+    Log.e(TAG, "Unexpected ${e.javaClass.simpleName}, likely a response shape mismatch", e)
     Result.failure(ApiException(-1, HttpErrorMessages.NETWORK_ERROR))
 }
