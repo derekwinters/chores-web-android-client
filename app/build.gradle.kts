@@ -11,8 +11,15 @@ android {
         applicationId = "com.derekwinters.chores"
         minSdk = 33
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.0.1"
+        // Version is sourced from gradle.properties (VERSION_NAME / VERSION_CODE) so the
+        // Release Please workflow can bump it in one place — see
+        // .github/release-please/config.json.
+        // VERSION_NAME carries a trailing "# x-release-please-version" marker comment that
+        // Release Please's generic updater requires on the same line as the value; strip it
+        // here since gradle.properties (java.util.Properties) doesn't treat inline "#" as a
+        // comment delimiter, only leading ones.
+        versionCode = (project.findProperty("VERSION_CODE") as String).toInt()
+        versionName = (project.findProperty("VERSION_NAME") as String).substringBefore("#").trim()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -24,6 +31,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Debug-signed until Play Store launch is planned — see
+            // docs/adr/0001-debug-signing-until-play-store-launch.md. This lets CI produce
+            // installable release-candidate and tagged-release APKs without a real keystore.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
