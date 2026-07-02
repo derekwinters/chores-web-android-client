@@ -31,7 +31,12 @@ class DbReadinessViewModel @Inject constructor(
     private fun pollUntilReady() {
         viewModelScope.launch {
             repeat(MAX_ATTEMPTS) {
-                val ready = authRepository.isDatabaseReady().getOrDefault(false)
+                // runCatching guards against more than the HttpException/IOException that
+                // isDatabaseReady()'s Result already covers (e.g. a response body that doesn't
+                // parse the way DbStatusDto expects) — any such failure must be treated as
+                // "not ready yet" rather than escape uncaught and kill this coroutine before it
+                // ever reaches the give-up fallback below, which would strand the gate forever.
+                val ready = runCatching { authRepository.isDatabaseReady().getOrDefault(false) }.getOrDefault(false)
                 if (ready) {
                     _isReady.value = true
                     return@launch
