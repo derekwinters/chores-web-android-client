@@ -21,7 +21,7 @@ class SettingsViewModelTest {
 
     @Test
     fun load_populatesConfig() = runTest(mainDispatcherRule.testDispatcher) {
-        val api = FakeChoresApi(configResult = ConfigDto(app_title = "My Chores"))
+        val api = FakeChoresApi(configResult = ConfigDto(title = "My Chores"))
         val viewModel = SettingsViewModel(ConfigRepository(api))
         advanceUntilIdle()
 
@@ -36,7 +36,7 @@ class SettingsViewModelTest {
         val viewModel = SettingsViewModel(ConfigRepository(api))
         advanceUntilIdle()
 
-        viewModel.save(ConfigDto(app_title = "New Title").toDomain())
+        viewModel.save(ConfigDto(title = "New Title").toDomain())
         advanceUntilIdle()
 
         assertEquals(UiState.Success(Unit), viewModel.saveState.value)

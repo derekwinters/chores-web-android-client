@@ -25,6 +25,7 @@ import com.derekwinters.chores.data.network.dto.ResetPasswordRequestDto
 import com.derekwinters.chores.data.network.dto.SetupRequestDto
 import com.derekwinters.chores.data.network.dto.SetupStatusDto
 import com.derekwinters.chores.data.network.dto.ThemeDto
+import com.derekwinters.chores.data.network.dto.UpdateCheckStatusDto
 import com.derekwinters.chores.data.network.dto.UpdatePersonRequestDto
 import com.derekwinters.chores.data.network.dto.UpdatePointsLogRequestDto
 import com.derekwinters.chores.data.network.dto.UpdateThemeRequestDto
@@ -187,9 +188,13 @@ interface ChoresApi {
     @PUT("v1/config")
     suspend fun updateConfig(@Body request: ConfigDto): ConfigDto
 
-    /** Issue #20: "Check Now" manual update check. */
+    /** Issue #20: "About" tab's version info, fetched on Settings load (admin only). */
+    @GET("v1/config/updates/status")
+    suspend fun getUpdateCheckStatus(): UpdateCheckStatusDto
+
+    /** Issue #20: "Check Now" manual update check (admin only). */
     @POST("v1/config/updates/check")
-    suspend fun checkForUpdates(): ConfigDto
+    suspend fun checkForUpdates(): UpdateCheckStatusDto
 
     // --- Data export/import (issue #22) ---
 

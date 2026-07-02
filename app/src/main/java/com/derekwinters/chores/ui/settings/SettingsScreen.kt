@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.data.model.AppConfig
+import com.derekwinters.chores.data.model.UpdateCheckStatus
 import com.derekwinters.chores.ui.UiState
 
 /** Issue #20/#21/#22/#24: cross-screen nav callbacks the Settings destination needs. */
@@ -52,11 +53,13 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val saveState by viewModel.saveState.collectAsState()
+    val updateStatus by viewModel.updateStatus.collectAsState()
 
     SettingsContent(
         modifier = modifier,
         uiState = uiState,
         saveState = saveState,
+        updateStatus = updateStatus,
         navActions = navActions,
         onSave = viewModel::save,
         onCheckForUpdates = viewModel::checkForUpdates
@@ -67,6 +70,7 @@ fun SettingsScreen(
 fun SettingsContent(
     uiState: UiState<AppConfig>,
     saveState: UiState<Unit>,
+    updateStatus: UpdateCheckStatus?,
     navActions: SettingsNavActions,
     onSave: (AppConfig) -> Unit,
     onCheckForUpdates: () -> Unit,
@@ -114,26 +118,26 @@ fun SettingsContent(
                     Text("Chores", style = MaterialTheme.typography.titleMedium)
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        value = draft.notifyDaysBefore.toString(),
-                        onValueChange = { value -> value.toIntOrNull()?.let { draft = draft.copy(notifyDaysBefore = it) } },
+                        value = draft.dueSoonDays.toString(),
+                        onValueChange = { value -> value.toIntOrNull()?.let { draft = draft.copy(dueSoonDays = it) } },
                         label = { Text("Notify when due in — N days") }
                     )
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        value = draft.dueHour.toString(),
-                        onValueChange = { value -> value.toIntOrNull()?.let { draft = draft.copy(dueHour = it) } },
+                        value = draft.dueTimeHour.toString(),
+                        onValueChange = { value -> value.toIntOrNull()?.let { draft = draft.copy(dueTimeHour = it) } },
                         label = { Text("Mark chores due at — hour") }
                     )
                     TextButton(onClick = navActions.onNavigateToData) { Text("Data (Export/Import, Points Log)") }
 
                     Divider(modifier = Modifier.padding(vertical = 16.dp))
                     Text("About", style = MaterialTheme.typography.titleMedium)
-                    Text("Current version: ${draft.appVersion ?: "unknown"}")
-                    Text("Latest version: ${draft.latestVersion ?: "unknown"}")
-                    if (draft.updateAvailable) {
+                    Text("Current version: ${updateStatus?.currentVersion ?: "unknown"}")
+                    Text("Latest version: ${updateStatus?.latestVersion ?: "unknown"}")
+                    if (updateStatus?.updateAvailable == true) {
                         Text("Update available!", color = MaterialTheme.colorScheme.error)
                     }
-                    Text("Last checked: ${draft.lastCheckedAt ?: "never"}")
+                    Text("Last checked: ${updateStatus?.lastCheckedAt ?: "never"}")
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween

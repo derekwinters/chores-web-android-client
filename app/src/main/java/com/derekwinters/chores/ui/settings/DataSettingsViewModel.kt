@@ -26,7 +26,14 @@ private val previewJson = Json { ignoreUnknownKeys = true }
 /**
  * Issue #22 behaviors: "Export: download a full backup ... as a timestamped JSON file",
  * "Import: pick a .json file, show a confirmation summary ... then submit; report imported
- * counts on success", and log retention (a field on the shared config, see issue #20).
+ * counts on success".
+ *
+ * The log-retention setting was originally modeled as a field on the shared config (issue #20's
+ * `log_retention_days`); the real backend's `ConfigOut`/`ConfigUpdate` schemas have no such
+ * field, so [logRetentionDays] is local-only UI state for now rather than round-tripped through
+ * [configRepository] — there is nothing on the backend to read it from or persist it to. The
+ * `configRepository` dependency is otherwise unused here but kept so this doesn't need a
+ * (currently unnecessary) Hilt module change; it's harmless to drop later if still unused.
  */
 @HiltViewModel
 class DataSettingsViewModel @Inject constructor(
@@ -34,25 +41,14 @@ class DataSettingsViewModel @Inject constructor(
     private val configRepository: ConfigRepository
 ) : ViewModel() {
 
-    private val _logRetentionDays = MutableStateFlow<Int?>(null)
+    private val _logRetentionDays = MutableStateFlow<Int?>(DEFAULT_LOG_RETENTION_DAYS)
     val logRetentionDays: StateFlow<Int?> = _logRetentionDays.asStateFlow()
 
     private val _exportState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val exportState: StateFlow<UiState<String>> = _exportState.asStateFlow()
 
-    init {
-        viewModelScope.launch {
-            configRepository.getConfig().onSuccess { config -> _logRetentionDays.value = config.logRetentionDays }
-        }
-    }
-
     fun updateLogRetentionDays(days: Int) {
         _logRetentionDays.value = days
-        viewModelScope.launch {
-            configRepository.getConfig().onSuccess { config ->
-                configRepository.updateConfig(config.copy(logRetentionDays = days))
-            }
-        }
     }
 
     private val _importPreview = MutableStateFlow<ImportPreview?>(null)
@@ -111,4 +107,8 @@ class DataSettingsViewModel @Inject constructor(
 
     private fun errorMessage(error: Throwable): String =
         (error as? ApiException)?.message ?: HttpErrorMessages.NETWORK_ERROR
+
+    companion object {
+        private const val DEFAULT_LOG_RETENTION_DAYS = 90
+    }
 }

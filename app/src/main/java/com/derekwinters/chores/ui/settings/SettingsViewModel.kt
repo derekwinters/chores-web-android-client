@@ -3,6 +3,7 @@ package com.derekwinters.chores.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.derekwinters.chores.data.model.AppConfig
+import com.derekwinters.chores.data.model.UpdateCheckStatus
 import com.derekwinters.chores.data.network.ApiException
 import com.derekwinters.chores.data.network.HttpErrorMessages
 import com.derekwinters.chores.data.repository.ConfigRepository
@@ -15,8 +16,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Issue #20 behaviors: General/Auth/Chores/About settings forms, all against the same
- * `GET/PUT /config` endpoint. Issue #21/#22 add nav entries (Auth Event Log, Data settings) from
+ * Issue #20 behaviors: General/Auth/Chores/About settings forms. General/Auth/Chores read/write
+ * the shared `GET/PUT /v1/config` endpoint (`AppConfig`); About's version info comes from the
+ * separate `/v1/config/updates/*` endpoints (`UpdateCheckStatus` isn't part of the config
+ * resource on the backend). Issue #21/#22 add nav entries (Auth Event Log, Data settings) from
  * within the Auth/Chores sections respectively.
  */
 @HiltViewModel
@@ -30,6 +33,9 @@ class SettingsViewModel @Inject constructor(
     private val _saveState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val saveState: StateFlow<UiState<Unit>> = _saveState.asStateFlow()
 
+    private val _updateStatus = MutableStateFlow<UpdateCheckStatus?>(null)
+    val updateStatus: StateFlow<UpdateCheckStatus?> = _updateStatus.asStateFlow()
+
     init {
         load()
     }
@@ -40,6 +46,9 @@ class SettingsViewModel @Inject constructor(
             configRepository.getConfig()
                 .onSuccess { config -> _uiState.value = UiState.Success(config) }
                 .onFailure { error -> _uiState.value = UiState.Error(errorMessage(error)) }
+        }
+        viewModelScope.launch {
+            configRepository.getUpdateCheckStatus().onSuccess { status -> _updateStatus.value = status }
         }
     }
 
@@ -58,7 +67,7 @@ class SettingsViewModel @Inject constructor(
     /** Issue #20: "About" tab's "Check Now" manual update check. */
     fun checkForUpdates() {
         viewModelScope.launch {
-            configRepository.checkForUpdates().onSuccess { config -> _uiState.value = UiState.Success(config) }
+            configRepository.checkForUpdates().onSuccess { status -> _updateStatus.value = status }
         }
     }
 

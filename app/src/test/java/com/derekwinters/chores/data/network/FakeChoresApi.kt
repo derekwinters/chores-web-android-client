@@ -25,6 +25,7 @@ import com.derekwinters.chores.data.network.dto.ResetPasswordRequestDto
 import com.derekwinters.chores.data.network.dto.SetupRequestDto
 import com.derekwinters.chores.data.network.dto.SetupStatusDto
 import com.derekwinters.chores.data.network.dto.ThemeDto
+import com.derekwinters.chores.data.network.dto.UpdateCheckStatusDto
 import com.derekwinters.chores.data.network.dto.UpdatePersonRequestDto
 import com.derekwinters.chores.data.network.dto.UpdatePointsLogRequestDto
 import com.derekwinters.chores.data.network.dto.UpdateThemeRequestDto
@@ -60,6 +61,7 @@ class FakeChoresApi(
     private val pointsSummaryResult: List<PointsSummaryDto> = emptyList(),
     private val peopleResult: List<PersonDto> = emptyList(),
     private val configResult: ConfigDto = ConfigDto(),
+    private val updateCheckStatusResult: UpdateCheckStatusDto = UpdateCheckStatusDto(current_version = "1.0.0"),
     private val skipResult: ChoreDto? = null,
     private val markDueResult: ChoreDto? = null,
     private val createChoreResult: ChoreDto? = null,
@@ -213,7 +215,9 @@ class FakeChoresApi(
 
     override suspend fun updateConfig(request: ConfigDto): ConfigDto = request
 
-    override suspend fun checkForUpdates(): ConfigDto = ConfigDto()
+    override suspend fun getUpdateCheckStatus(): UpdateCheckStatusDto = updateCheckStatusResult
+
+    override suspend fun checkForUpdates(): UpdateCheckStatusDto = updateCheckStatusResult
 
     override suspend fun exportConfig(): ResponseBody = error("not configured")
 

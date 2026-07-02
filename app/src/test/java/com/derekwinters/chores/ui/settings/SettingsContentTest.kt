@@ -32,8 +32,9 @@ class SettingsContentTest {
         var saved: AppConfig? = null
         composeTestRule.setContent {
             SettingsContent(
-                uiState = UiState.Success(ConfigDto(app_title = "Chores").toDomain()),
+                uiState = UiState.Success(ConfigDto(title = "Chores").toDomain()),
                 saveState = UiState.Idle,
+                updateStatus = null,
                 navActions = SettingsNavActions(),
                 onSave = { saved = it },
                 onCheckForUpdates = {}
@@ -54,6 +55,7 @@ class SettingsContentTest {
             SettingsContent(
                 uiState = UiState.Success(ConfigDto().toDomain()),
                 saveState = UiState.Idle,
+                updateStatus = null,
                 navActions = SettingsNavActions(onNavigateToAuthLog = { navigated = true }),
                 onSave = {},
                 onCheckForUpdates = {}
@@ -72,6 +74,7 @@ class SettingsContentTest {
             SettingsContent(
                 uiState = UiState.Success(ConfigDto().toDomain()),
                 saveState = UiState.Idle,
+                updateStatus = null,
                 navActions = SettingsNavActions(),
                 onSave = {},
                 onCheckForUpdates = { checked = true }
