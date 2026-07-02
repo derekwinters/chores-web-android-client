@@ -22,14 +22,14 @@ class PointsLogContentTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val entry = PointsLogEntry(id = 1, person = "alice", points = 5, chore = "Dishes", completedAt = "2026-07-01")
+    private val entry = PointsLogEntry(id = 1, person = "alice", points = 5, choreId = 4, completedAt = "2026-07-01")
 
     @Test
     fun pointsLogContent_editEntry_savesUpdatedValues() {
         var updated: Triple<Int, String, Int>? = null
         composeTestRule.setContent {
             PointsLogContent(
-                uiState = UiState.Success(PointsLogPage(listOf(entry), total = 1)),
+                uiState = UiState.Success(PointsLogPage(listOf(entry), total = 1, offset = 0, limit = 20)),
                 onUpdate = { id, person, points -> updated = Triple(id, person, points) },
                 onDelete = {},
                 onNextPage = {},
@@ -50,7 +50,7 @@ class PointsLogContentTest {
         var deletedId: Int? = null
         composeTestRule.setContent {
             PointsLogContent(
-                uiState = UiState.Success(PointsLogPage(listOf(entry), total = 1)),
+                uiState = UiState.Success(PointsLogPage(listOf(entry), total = 1, offset = 0, limit = 20)),
                 onUpdate = { _, _, _ -> },
                 onDelete = { deletedId = it },
                 onNextPage = {},

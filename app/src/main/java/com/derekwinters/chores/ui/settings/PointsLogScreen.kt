@@ -32,8 +32,9 @@ import com.derekwinters.chores.data.repository.PointsLogPage
 import com.derekwinters.chores.ui.UiState
 
 /**
- * Issue #23: admin table for directly correcting historical point credits — paginated (20/page),
- * inline edit (person and/or points), and delete with a confirmation warning.
+ * Issue #23: admin table for directly correcting historical point credits — paginated (offset-
+ * based server-side, per [PointsLogRepository.PAGE_SIZE]), inline edit (person and/or points),
+ * and delete with a confirmation warning.
  *
  * Thin Hilt-wired wrapper around [PointsLogContent].
  */
@@ -87,10 +88,11 @@ fun PointsLogContent(
         }
 
         if (uiState is UiState.Success) {
+            val page = uiState.data
             Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                TextButton(onClick = onPreviousPage) { Text("Previous") }
-                Text("${uiState.data.total} total")
-                TextButton(onClick = onNextPage) { Text("Next") }
+                TextButton(onClick = onPreviousPage, enabled = page.offset > 0) { Text("Previous") }
+                Text("${page.total} total")
+                TextButton(onClick = onNextPage, enabled = page.offset + page.limit < page.total) { Text("Next") }
             }
         }
     }
@@ -122,7 +124,7 @@ private fun PointsLogRow(entry: PointsLogEntry, onClick: () -> Unit) {
         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
                 Text(entry.person, style = MaterialTheme.typography.titleSmall)
-                Text("${entry.chore} · ${entry.completedAt}", style = MaterialTheme.typography.bodySmall)
+                Text("Chore #${entry.choreId} · ${entry.completedAt}", style = MaterialTheme.typography.bodySmall)
             }
             Text("${entry.points} pts")
         }
@@ -145,7 +147,10 @@ private fun EditPointsLogDialog(
         title = { Text("Edit Points Entry") },
         text = {
             Column {
-                OutlinedTextField(value = person, onValueChange = { person = it }, label = { Text("Person") })
+                // The backend's PointsLogUpdate takes `person` as a username string (reassigning
+                // the entry to a different person is valid), not a person id — a free-text field
+                // matches that directly without needing a separate id lookup.
+                OutlinedTextField(value = person, onValueChange = { person = it }, label = { Text("Person (username)") })
                 OutlinedTextField(value = pointsText, onValueChange = { pointsText = it }, label = { Text("Points") })
                 TextButton(onClick = { showDeleteConfirm = true }) { Text("Delete Entry") }
             }

@@ -232,8 +232,12 @@ interface ChoresApi {
 
     // --- Admin Points Log editor (issue #23) ---
 
+    /** Offset-based pagination — matches `list_points_log_v1_admin_db_points_log_get` exactly. */
     @GET("v1/admin/db/points-log")
-    suspend fun getPointsLog(@Query("page") page: Int = 1): PointsLogPageDto
+    suspend fun getPointsLog(
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0
+    ): PointsLogPageDto
 
     @PATCH("v1/admin/db/points-log/{id}")
     suspend fun updatePointsLogEntry(
@@ -243,6 +247,15 @@ interface ChoresApi {
 
     @DELETE("v1/admin/db/points-log/{id}")
     suspend fun deletePointsLogEntry(@Path("id") entryId: Int)
+
+    /**
+     * `GET /v1/points/{person}`: per-person raw points history, keyed by username. Not yet wired
+     * into any screen — this is a possible future feature (e.g. a per-person history view
+     * alongside the existing [getPersonStats] summary), exposed here in the correct shape so it's
+     * ready when that UI is built.
+     */
+    @GET("v1/points/{person}")
+    suspend fun getPersonPointsHistory(@Path("person") username: String): List<PointsLogEntryDto>
 
     // --- Theming (issues #24, #25) ---
 

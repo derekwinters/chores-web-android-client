@@ -79,6 +79,7 @@ class FakeChoresApi(
     private val authLogResult: AuthLogPageDto = AuthLogPageDto(),
     private val importConfigResult: ImportResultDto? = null,
     private val pointsLogResult: PointsLogPageDto = PointsLogPageDto(),
+    private val personPointsHistoryResult: List<PointsLogEntryDto> = emptyList(),
     private val updatePointsLogResult: PointsLogEntryDto? = null,
     private val themesResult: List<ThemeDto> = emptyList(),
     private val createThemeResult: ThemeDto? = null,
@@ -243,9 +244,20 @@ class FakeChoresApi(
     override suspend fun importConfig(body: RequestBody): ImportResultDto =
         importConfigResult ?: error("FakeChoresApi.importConfigResult not configured")
 
-    override suspend fun getPointsLog(page: Int): PointsLogPageDto = pointsLogResult
+    var lastGetPointsLogLimit: Int? = null
+        private set
+    var lastGetPointsLogOffset: Int? = null
+        private set
+
+    override suspend fun getPointsLog(limit: Int, offset: Int): PointsLogPageDto {
+        lastGetPointsLogLimit = limit
+        lastGetPointsLogOffset = offset
+        return pointsLogResult
+    }
 
     var lastUpdatePointsLogEntryId: Int? = null
+        private set
+    var lastUpdatePointsLogRequest: UpdatePointsLogRequestDto? = null
         private set
     var lastDeletePointsLogEntryId: Int? = null
         private set
@@ -255,12 +267,16 @@ class FakeChoresApi(
         request: UpdatePointsLogRequestDto
     ): PointsLogEntryDto {
         lastUpdatePointsLogEntryId = entryId
+        lastUpdatePointsLogRequest = request
         return updatePointsLogResult ?: error("FakeChoresApi.updatePointsLogResult not configured")
     }
 
     override suspend fun deletePointsLogEntry(entryId: Int) {
         lastDeletePointsLogEntryId = entryId
     }
+
+    override suspend fun getPersonPointsHistory(username: String): List<PointsLogEntryDto> =
+        personPointsHistoryResult
 
     var lastCreateThemeRequest: CreateThemeRequestDto? = null
         private set
