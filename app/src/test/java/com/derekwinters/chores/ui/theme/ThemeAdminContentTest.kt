@@ -1,6 +1,7 @@
 package com.derekwinters.chores.ui.theme
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
@@ -66,7 +67,10 @@ class ThemeAdminContentTest {
         }
 
         composeTestRule.onNodeWithText("Edit").performClick()
-        composeTestRule.onNodeWithText("Dark").performTextReplacement("Midnight")
+        // The edit dialog's pre-filled name field and the underlying theme row both display
+        // "Dark" simultaneously, so onNodeWithText alone is ambiguous — the field is the last
+        // ("Dark") node composed, since the dialog opens on top of the row.
+        composeTestRule.onAllNodesWithText("Dark").onLast().performTextReplacement("Midnight")
         composeTestRule.onNodeWithText("Save").performClick()
 
         assert(renamedId == "1")
