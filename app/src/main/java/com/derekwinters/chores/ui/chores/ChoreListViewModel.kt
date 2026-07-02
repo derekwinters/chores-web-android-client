@@ -10,13 +10,17 @@ import com.derekwinters.chores.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * Issue #5 behaviors: "Chore list screen: GET /chores, render name/assignee-or-Completer/
- * points/state/next_due" and "Sealed UiState + StateFlow pattern for ChoreListViewModel".
+ * Issue #5 behaviors: "Chore list screen: GET /chores ..." and "Sealed UiState + StateFlow
+ * pattern for ChoreListViewModel". Issue #13 adds live search/filters/sorting; issue #12's
+ * Dashboard deep links pre-seed [filters] via [applyInitialFilters].
  */
 @HiltViewModel
 class ChoreListViewModel @Inject constructor(
@@ -30,6 +34,17 @@ class ChoreListViewModel @Inject constructor(
     private val _completingChoreId = MutableStateFlow<Int?>(null)
     val completingChoreId: StateFlow<Int?> = _completingChoreId.asStateFlow()
 
+    private val _filters = MutableStateFlow(ChoreFilters())
+    val filters: StateFlow<ChoreFilters> = _filters.asStateFlow()
+
+    /** Issue #13: the filtered + sorted view of [uiState], recomputed whenever either changes. */
+    val visibleChores: StateFlow<UiState<List<Chore>>> = combine(_uiState, _filters) { state, filters ->
+        when (state) {
+            is UiState.Success -> UiState.Success(state.data.applyFilters(filters).sortedForChoresScreen())
+            else -> state
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Loading)
+
     init {
         loadChores()
     }
@@ -41,6 +56,26 @@ class ChoreListViewModel @Inject constructor(
                 .onSuccess { chores -> _uiState.value = UiState.Success(chores) }
                 .onFailure { error -> _uiState.value = UiState.Error(errorMessage(error)) }
         }
+    }
+
+    fun updateFilters(filters: ChoreFilters) {
+        _filters.value = filters
+    }
+
+    fun updateQuery(query: String) {
+        _filters.value = _filters.value.copy(query = query)
+    }
+
+    fun clearFilters() {
+        _filters.value = ChoreFilters()
+    }
+
+    /** Issue #12: seeds the assignee/due-within filters from a Dashboard deep link. */
+    fun applyInitialFilters(assignee: String?, dueWithin: DueWithinFilter?) {
+        _filters.value = _filters.value.copy(
+            assignees = assignee?.let { setOf(it) } ?: _filters.value.assignees,
+            dueWithin = dueWithin ?: _filters.value.dueWithin
+        )
     }
 
     /**

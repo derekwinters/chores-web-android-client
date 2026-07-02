@@ -52,4 +52,27 @@
     <string name="completer_picker_title">Who completed this?</string>
     <string name="completer_picker_confirm">Confirm</string>
     <string name="cancel">Cancel</string>
+
+    <!-- Chores screen: search, filters, sorting (issue #13) -->
+    <string name="search_chores_label">Search chores</string>
+    <string name="filters_title">Filters</string>
+    <string name="apply">Apply</string>
+    <string name="clear_filters">Clear filters</string>
+    <string name="showing_n_of_m_chores">Showing %1$d of %2$d chores</string>
+    <string name="filter_assignee">Assignee</string>
+    <string name="filter_state">State</string>
+    <string name="filter_state_all">All</string>
+    <string name="filter_state_due">Due</string>
+    <string name="filter_state_complete">Complete</string>
+    <string name="filter_due_within">Due within</string>
+    <string name="due_within_all">All</string>
+    <string name="due_within_today">Today (incl. overdue)</string>
+    <string name="due_within_3_days">Next 3 days</string>
+    <string name="due_within_7_days">Next 7 days</string>
+    <string name="due_within_30_days">Next 30 days</string>
+    <string name="filter_enabled_status">Status</string>
+    <string name="filter_enabled">Enabled</string>
+    <string name="filter_disabled">Disabled</string>
+    <string name="filter_schedule_type">Schedule type</string>
+    <string name="filter_assignment_type">Assignment type</string>
 </resources>

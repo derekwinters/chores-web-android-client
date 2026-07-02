@@ -113,4 +113,42 @@ class ChoreListViewModelTest {
         assertEquals(2, api.lastCompleteChoreId)
         assertEquals("bob", api.lastCompleteRequest?.completed_by)
     }
+
+    @Test
+    fun visibleChores_appliesQueryFilter_andSortsIndependentlyOfUiState() = runTest(mainDispatcherRule.testDispatcher) {
+        val viewModel = ChoreListViewModel(
+            ChoreRepository(FakeChoresApi(choresResult = listOf(unassignedChoreDto, assignedChoreDto)))
+        )
+        advanceUntilIdle()
+
+        // Raw uiState keeps API order; visibleChores is sorted (due-before-complete, then name).
+        assertEquals(listOf("Trash", "Dishes"), (viewModel.uiState.value as UiState.Success).data.map { it.name })
+        assertEquals(listOf("Dishes", "Trash"), (viewModel.visibleChores.value as UiState.Success).data.map { it.name })
+
+        viewModel.updateQuery("dish")
+        advanceUntilIdle()
+
+        assertEquals(listOf("Dishes"), (viewModel.visibleChores.value as UiState.Success).data.map { it.name })
+    }
+
+    @Test
+    fun applyInitialFilters_seedsAssigneeAndDueWithin_forDashboardDeepLinks() = runTest(mainDispatcherRule.testDispatcher) {
+        val viewModel = ChoreListViewModel(ChoreRepository(FakeChoresApi(choresResult = emptyList())))
+        advanceUntilIdle()
+
+        viewModel.applyInitialFilters(assignee = "alice", dueWithin = DueWithinFilter.NEXT_7_DAYS)
+
+        assertEquals(setOf("alice"), viewModel.filters.value.assignees)
+        assertEquals(DueWithinFilter.NEXT_7_DAYS, viewModel.filters.value.dueWithin)
+    }
+
+    @Test
+    fun clearFilters_resetsToDefault() = runTest(mainDispatcherRule.testDispatcher) {
+        val viewModel = ChoreListViewModel(ChoreRepository(FakeChoresApi(choresResult = emptyList())))
+        viewModel.updateQuery("dish")
+
+        viewModel.clearFilters()
+
+        assertEquals(ChoreFilters(), viewModel.filters.value)
+    }
 }

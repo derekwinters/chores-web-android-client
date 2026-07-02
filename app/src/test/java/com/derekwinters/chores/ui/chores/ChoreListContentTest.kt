@@ -3,6 +3,7 @@ package com.derekwinters.chores.ui.chores
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.Chore
 import com.derekwinters.chores.ui.UiState
@@ -120,5 +121,42 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Something went wrong. Please try again.").assertExists()
+    }
+
+    @Test
+    fun choreListContent_search_invokesOnQueryChange() {
+        var query: String? = null
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                onQueryChange = { query = it }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Search chores").performTextInput("dish")
+
+        assert(query == "dish")
+    }
+
+    @Test
+    fun choreListContent_activeFilters_showsCountAndClearAction() {
+        var cleared = false
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                totalCount = 2,
+                filters = ChoreFilters(query = "dish"),
+                onFiltersChange = { cleared = it == ChoreFilters() }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Showing 1 of 2 chores").assertExists()
+        composeTestRule.onNodeWithText("Clear filters").performClick()
+
+        assert(cleared)
     }
 }
