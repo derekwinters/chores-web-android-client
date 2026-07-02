@@ -1,8 +1,9 @@
 package com.derekwinters.chores.data.network
 
 import com.derekwinters.chores.data.network.dto.AuthLogPageDto
+import com.derekwinters.chores.data.network.dto.ChoreCreateRequestDto
 import com.derekwinters.chores.data.network.dto.ChoreDto
-import com.derekwinters.chores.data.network.dto.ChoreRequestDto
+import com.derekwinters.chores.data.network.dto.ChoreUpdateRequestDto
 import com.derekwinters.chores.data.network.dto.CompleteChoreRequestDto
 import com.derekwinters.chores.data.network.dto.ConfigDto
 import com.derekwinters.chores.data.network.dto.CreatePersonRequestDto
@@ -94,11 +95,11 @@ class FakeChoresApi(
         private set
     var lastDeleteChoreId: Int? = null
         private set
-    var lastCreateChoreRequest: ChoreRequestDto? = null
+    var lastCreateChoreRequest: ChoreCreateRequestDto? = null
         private set
     var lastUpdateChoreId: Int? = null
         private set
-    var lastUpdateChoreRequest: ChoreRequestDto? = null
+    var lastUpdateChoreRequest: ChoreUpdateRequestDto? = null
         private set
     var lastCreatePersonRequest: CreatePersonRequestDto? = null
         private set
@@ -154,12 +155,12 @@ class FakeChoresApi(
         lastDeleteChoreId = choreId
     }
 
-    override suspend fun createChore(request: ChoreRequestDto): ChoreDto {
+    override suspend fun createChore(request: ChoreCreateRequestDto): ChoreDto {
         lastCreateChoreRequest = request
         return createChoreResult ?: error("FakeChoresApi.createChoreResult not configured")
     }
 
-    override suspend fun updateChore(choreId: Int, request: ChoreRequestDto): ChoreDto {
+    override suspend fun updateChore(choreId: Int, request: ChoreUpdateRequestDto): ChoreDto {
         lastUpdateChoreId = choreId
         lastUpdateChoreRequest = request
         return updateChoreResult ?: error("FakeChoresApi.updateChoreResult not configured")

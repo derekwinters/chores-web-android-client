@@ -2,8 +2,9 @@ package com.derekwinters.chores.data.repository
 
 import com.derekwinters.chores.data.model.Chore
 import com.derekwinters.chores.data.model.ChoreDraft
+import com.derekwinters.chores.data.model.toCreateRequestDto
 import com.derekwinters.chores.data.model.toDomain
-import com.derekwinters.chores.data.model.toRequestDto
+import com.derekwinters.chores.data.model.toUpdateRequestDto
 import com.derekwinters.chores.data.network.ChoresApi
 import com.derekwinters.chores.data.network.dto.CompleteChoreRequestDto
 import com.derekwinters.chores.data.network.dto.ReassignRequestDto
@@ -46,16 +47,17 @@ class ChoreRepository @Inject constructor(
 
     /** Issue #16. */
     suspend fun createChore(draft: ChoreDraft): Result<Chore> =
-        safeApiCall { api.createChore(draft.toRequestDto()) }.map { it.toDomain() }
+        safeApiCall { api.createChore(draft.toCreateRequestDto()) }.map { it.toDomain() }
 
     /** Issue #16. */
     suspend fun updateChore(choreId: Int, draft: ChoreDraft): Result<Chore> =
-        safeApiCall { api.updateChore(choreId, draft.toRequestDto()) }.map { it.toDomain() }
+        safeApiCall { api.updateChore(choreId, draft.toUpdateRequestDto()) }.map { it.toDomain() }
 
     /**
      * Issue #16: editing an `open` chore's assignee field in edit mode IS reassignment (no
-     * separate quick-reassign button in the live web app).
+     * separate quick-reassign button in the live web app). `assignee` is required/non-nullable
+     * per the real `ReassignBody` schema.
      */
-    suspend fun reassignChore(choreId: Int, assignee: String?): Result<Chore> =
+    suspend fun reassignChore(choreId: Int, assignee: String): Result<Chore> =
         safeApiCall { api.reassignChore(choreId, ReassignRequestDto(assignee)) }.map { it.toDomain() }
 }

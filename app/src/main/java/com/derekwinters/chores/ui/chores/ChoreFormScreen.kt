@@ -120,8 +120,8 @@ fun ChoreFormContent(
         ) {
             Text("Enabled")
             Switch(
-                checked = formState.enabled,
-                onCheckedChange = { enabled -> onFormChange { it.copy(enabled = enabled) } },
+                checked = !formState.disabled,
+                onCheckedChange = { enabled -> onFormChange { it.copy(disabled = !enabled) } },
                 enabled = !isSaving
             )
         }
@@ -165,8 +165,10 @@ fun ChoreFormContent(
             AssignmentType.ROTATING -> {
                 SectionLabel("Rotation (2+ people)")
                 availablePeople.forEach { person ->
-                    CheckboxRow(person, person in formState.rotation, !isSaving) { checked ->
-                        onFormChange { it.copy(rotation = if (checked) it.rotation + person else it.rotation - person) }
+                    CheckboxRow(person, person in formState.eligiblePeople, !isSaving) { checked ->
+                        onFormChange {
+                            it.copy(eligiblePeople = if (checked) it.eligiblePeople + person else it.eligiblePeople - person)
+                        }
                     }
                 }
             }

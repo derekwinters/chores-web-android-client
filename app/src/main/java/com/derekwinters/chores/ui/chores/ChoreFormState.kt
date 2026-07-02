@@ -2,6 +2,7 @@ package com.derekwinters.chores.ui.chores
 
 import com.derekwinters.chores.data.model.Chore
 import com.derekwinters.chores.data.model.ChoreDraft
+import com.derekwinters.chores.data.network.dto.ScheduleConfig
 
 /** Issue #16 radio choices, matching chores-web's ChoreForm.jsx field names verbatim. */
 object AssignmentType {
@@ -33,19 +34,22 @@ object ConstraintBehavior {
  * Issue #16: full create/edit form state. Mirrors [ChoreDraft] field-for-field but keeps values
  * in edit-friendly shapes (e.g. `pointsIndex` into [com.derekwinters.chores.data.model.CHORE_POINT_OPTIONS]
  * instead of the raw point value, `weekdayConstraintText` isn't needed since weekday sets are
- * already simple `Set<Int>`).
+ * already simple `Set<Int>`), and keeps the schedule fields flat here (nested into
+ * [ScheduleConfig] only when building a draft) since that's simpler for per-field form editing.
+ *
+ * There is no separate "rotation" concept: [eligiblePeople] backs both the "open" assignment
+ * type's optional eligible-to-complete checklist and the "rotating" type's rotation-membership
+ * checklist, matching the real backend's single `eligible_people` field (see [Chore]'s KDoc).
  */
 data class ChoreFormState(
     val name: String = "",
     val points: Int = 1,
-    val enabled: Boolean = true,
+    val disabled: Boolean = false,
     val nextDue: String? = null,
     val assignmentType: String = AssignmentType.FIXED,
     val assignee: String? = null,
     val eligiblePeople: Set<String> = emptySet(),
-    val rotation: Set<String> = emptySet(),
     val currentAssignee: String? = null,
-    val assignedToNext: String? = null,
     val scheduleType: String = ScheduleType.WEEKLY,
     val weeklyDays: Set<Int> = emptySet(),
     val everyOtherWeek: Boolean = false,
@@ -63,60 +67,61 @@ data class ChoreFormState(
     fun toDraft(): ChoreDraft = ChoreDraft(
         name = name.trim(),
         points = points,
-        enabled = enabled,
+        disabled = disabled,
         nextDue = nextDue,
         assignmentType = assignmentType,
         assignee = assignee.takeIf { assignmentType == AssignmentType.FIXED },
         eligiblePeople = eligiblePeople.toList(),
-        rotation = rotation.toList(),
         currentAssignee = currentAssignee,
-        assignedToNext = assignedToNext,
         scheduleType = scheduleType,
-        weeklyDays = weeklyDays.toList(),
-        everyOtherWeek = everyOtherWeek,
-        monthlyMode = monthlyMode.takeIf { scheduleType == ScheduleType.MONTHLY },
-        dayOfMonth = dayOfMonth,
-        nthWeekdayIndex = nthWeekdayIndex,
-        nthWeekdayDay = nthWeekdayDay,
-        month = month.takeIf { scheduleType == ScheduleType.YEARLY },
-        intervalDays = intervalDays,
-        evenOddConstraint = evenOddConstraint.takeIf { scheduleType != ScheduleType.YEARLY },
-        weekdayConstraint = if (scheduleType != ScheduleType.YEARLY) weekdayConstraint.toList() else emptyList(),
-        constraintNotMetBehavior = constraintNotMetBehavior.takeIf { scheduleType != ScheduleType.YEARLY }
+        scheduleConfig = ScheduleConfig(
+            weekly_days = weeklyDays.toList(),
+            every_other_week = everyOtherWeek,
+            monthly_mode = monthlyMode.takeIf { scheduleType == ScheduleType.MONTHLY },
+            day_of_month = dayOfMonth,
+            nth_weekday_index = nthWeekdayIndex,
+            nth_weekday_day = nthWeekdayDay,
+            month = month.takeIf { scheduleType == ScheduleType.YEARLY },
+            interval_days = intervalDays,
+            even_odd_constraint = evenOddConstraint.takeIf { scheduleType != ScheduleType.YEARLY },
+            weekday_constraint = if (scheduleType != ScheduleType.YEARLY) weekdayConstraint.toList() else emptyList(),
+            constraint_not_met_behavior = constraintNotMetBehavior.takeIf { scheduleType != ScheduleType.YEARLY }
+        )
     )
 }
 
-fun Chore.toFormState(): ChoreFormState = ChoreFormState(
-    name = name,
-    points = points,
-    enabled = enabled,
-    nextDue = nextDue,
-    assignmentType = assignmentType ?: AssignmentType.FIXED,
-    assignee = currentAssignee,
-    eligiblePeople = eligiblePeople.toSet(),
-    rotation = rotation.toSet(),
-    currentAssignee = currentAssignee,
-    assignedToNext = assignedToNext,
-    scheduleType = scheduleType ?: ScheduleType.WEEKLY,
-    weeklyDays = weeklyDays.toSet(),
-    everyOtherWeek = everyOtherWeek,
-    monthlyMode = monthlyMode ?: MonthlyMode.DAY_OF_MONTH,
-    dayOfMonth = dayOfMonth,
-    nthWeekdayIndex = nthWeekdayIndex,
-    nthWeekdayDay = nthWeekdayDay,
-    month = month,
-    intervalDays = intervalDays,
-    evenOddConstraint = evenOddConstraint,
-    weekdayConstraint = weekdayConstraint.toSet(),
-    constraintNotMetBehavior = constraintNotMetBehavior ?: ConstraintBehavior.SKIP,
-    isEditMode = true
-)
+fun Chore.toFormState(): ChoreFormState {
+    val config = scheduleConfig
+    return ChoreFormState(
+        name = name,
+        points = points,
+        disabled = disabled,
+        nextDue = nextDue,
+        assignmentType = assignmentType ?: AssignmentType.FIXED,
+        assignee = assignee ?: currentAssignee,
+        eligiblePeople = eligiblePeople.toSet(),
+        currentAssignee = currentAssignee,
+        scheduleType = scheduleType ?: ScheduleType.WEEKLY,
+        weeklyDays = config.weekly_days?.toSet() ?: emptySet(),
+        everyOtherWeek = config.every_other_week ?: false,
+        monthlyMode = config.monthly_mode ?: MonthlyMode.DAY_OF_MONTH,
+        dayOfMonth = config.day_of_month,
+        nthWeekdayIndex = config.nth_weekday_index,
+        nthWeekdayDay = config.nth_weekday_day,
+        month = config.month,
+        intervalDays = config.interval_days,
+        evenOddConstraint = config.even_odd_constraint,
+        weekdayConstraint = config.weekday_constraint?.toSet() ?: emptySet(),
+        constraintNotMetBehavior = config.constraint_not_met_behavior ?: ConstraintBehavior.SKIP,
+        isEditMode = true
+    )
+}
 
 /**
  * Issue #16 validation rules: "name required; weekly needs ≥1 day; interval ≥1; not both
  * even+odd [not applicable — evenOddConstraint is a single nullable field so this is structurally
- * impossible]; fixed needs an assignee; rotating needs ≥2 eligible people; current/next assignee
- * must be within the rotation."
+ * impossible]; fixed needs an assignee; rotating needs ≥2 eligible people; current assignee must
+ * be within [ChoreFormState.eligiblePeople]."
  */
 fun ChoreFormState.validate(): List<String> {
     val errors = mutableListOf<String>()
@@ -125,12 +130,9 @@ fun ChoreFormState.validate(): List<String> {
     when (assignmentType) {
         AssignmentType.FIXED -> if (assignee.isNullOrBlank()) errors += "Fixed assignment requires an assignee"
         AssignmentType.ROTATING -> {
-            if (rotation.size < 2) errors += "Rotating assignment requires at least 2 people"
-            if (currentAssignee != null && currentAssignee !in rotation) {
+            if (eligiblePeople.size < 2) errors += "Rotating assignment requires at least 2 people"
+            if (currentAssignee != null && currentAssignee !in eligiblePeople) {
                 errors += "Current assignee must be in the rotation"
-            }
-            if (assignedToNext != null && assignedToNext !in rotation) {
-                errors += "Assigned-to-next must be in the rotation"
             }
         }
         AssignmentType.OPEN -> Unit

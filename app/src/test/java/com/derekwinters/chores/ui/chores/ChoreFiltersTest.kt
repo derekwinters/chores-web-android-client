@@ -28,7 +28,7 @@ class ChoreFiltersTest {
         nextDue = nextDue,
         currentAssignee = currentAssignee,
         eligiblePeople = listOf("alice", "bob"),
-        enabled = enabled,
+        disabled = !enabled,
         assignmentType = assignmentType,
         scheduleType = scheduleType
     )

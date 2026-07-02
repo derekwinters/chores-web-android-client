@@ -5,6 +5,7 @@ import com.derekwinters.chores.MainDispatcherRule
 import com.derekwinters.chores.data.network.FakeChoresApi
 import com.derekwinters.chores.data.network.dto.ChoreDto
 import com.derekwinters.chores.data.network.dto.PersonDto
+import com.derekwinters.chores.data.network.dto.ScheduleConfig
 import com.derekwinters.chores.data.repository.ChoreRepository
 import com.derekwinters.chores.data.repository.PeopleRepository
 import com.derekwinters.chores.ui.UiState
@@ -92,7 +93,7 @@ class ChoreFormViewModelTest {
                     state = "due",
                     current_assignee = "bob",
                     schedule_type = "weekly",
-                    weekly_days = listOf(1)
+                    schedule_config = ScheduleConfig(weekly_days = listOf(1))
                 )
             ),
             updateChoreResult = ChoreDto(id = 7, name = "Trash", points = 3, state = "due")

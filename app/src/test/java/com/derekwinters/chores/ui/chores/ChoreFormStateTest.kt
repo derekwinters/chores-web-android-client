@@ -25,7 +25,7 @@ class ChoreFormStateTest {
 
     @Test
     fun validate_rotatingWithFewerThanTwoPeople_isError() {
-        val state = ChoreFormState(name = "Dishes", assignmentType = AssignmentType.ROTATING, rotation = setOf("alice"))
+        val state = ChoreFormState(name = "Dishes", assignmentType = AssignmentType.ROTATING, eligiblePeople = setOf("alice"))
         assertTrue(state.validate().any { it.contains("Rotating") })
     }
 
@@ -34,7 +34,7 @@ class ChoreFormStateTest {
         val state = ChoreFormState(
             name = "Dishes",
             assignmentType = AssignmentType.ROTATING,
-            rotation = setOf("alice", "bob"),
+            eligiblePeople = setOf("alice", "bob"),
             currentAssignee = "carol"
         )
         assertTrue(state.validate().any { it.contains("Current assignee") })
@@ -102,7 +102,7 @@ class ChoreFormStateTest {
             weekdayConstraint = setOf(1, 2)
         )
         val draft = state.toDraft()
-        assertEquals(null, draft.evenOddConstraint)
-        assertEquals(emptyList<Int>(), draft.weekdayConstraint)
+        assertEquals(null, draft.scheduleConfig.even_odd_constraint)
+        assertEquals(emptyList<Int>(), draft.scheduleConfig.weekday_constraint)
     }
 }

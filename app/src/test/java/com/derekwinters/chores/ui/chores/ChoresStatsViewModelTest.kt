@@ -31,7 +31,7 @@ class ChoresStatsViewModelTest {
         state = state,
         next_due = nextDue,
         current_assignee = "alice",
-        enabled = enabled
+        disabled = !enabled
     )
 
     @Test

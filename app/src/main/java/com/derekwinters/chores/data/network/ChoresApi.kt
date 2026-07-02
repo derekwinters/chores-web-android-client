@@ -1,8 +1,9 @@
 package com.derekwinters.chores.data.network
 
 import com.derekwinters.chores.data.network.dto.AuthLogPageDto
+import com.derekwinters.chores.data.network.dto.ChoreCreateRequestDto
 import com.derekwinters.chores.data.network.dto.ChoreDto
-import com.derekwinters.chores.data.network.dto.ChoreRequestDto
+import com.derekwinters.chores.data.network.dto.ChoreUpdateRequestDto
 import com.derekwinters.chores.data.network.dto.CompleteChoreRequestDto
 import com.derekwinters.chores.data.network.dto.ConfigDto
 import com.derekwinters.chores.data.network.dto.CreatePersonRequestDto
@@ -113,11 +114,11 @@ interface ChoresApi {
 
     /** Issue #16. */
     @POST("v1/chores")
-    suspend fun createChore(@Body request: ChoreRequestDto): ChoreDto
+    suspend fun createChore(@Body request: ChoreCreateRequestDto): ChoreDto
 
     /** Issue #16. */
     @PUT("v1/chores/{id}")
-    suspend fun updateChore(@Path("id") choreId: Int, @Body request: ChoreRequestDto): ChoreDto
+    suspend fun updateChore(@Path("id") choreId: Int, @Body request: ChoreUpdateRequestDto): ChoreDto
 
     /** Issue #16: editing an `open` chore's assignee field IS reassignment. */
     @POST("v1/chores/{id}/reassign")
