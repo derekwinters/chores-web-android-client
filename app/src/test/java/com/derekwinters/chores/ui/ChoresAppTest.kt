@@ -38,6 +38,7 @@ class ChoresAppTest {
                 loginContent = { Text("Fake Login") },
                 dashboardContent = { Text("Fake Dashboard") },
                 choresContent = { _, _, _ -> Text("Fake Chores") },
+                userDetailContent = { Text("Fake User Detail") },
                 logContent = { Text("Fake Log") },
                 usersContent = { Text("Fake Users") },
                 settingsContent = { Text("Fake Settings") },

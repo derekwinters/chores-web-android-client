@@ -52,7 +52,9 @@ import com.derekwinters.chores.ui.chores.ChoreListScreen
 import com.derekwinters.chores.ui.chores.ChoresNavActions
 import com.derekwinters.chores.ui.common.DbReadinessGate
 import com.derekwinters.chores.ui.common.PlaceholderScreen
+import com.derekwinters.chores.ui.dashboard.DashboardNavActions
 import com.derekwinters.chores.ui.dashboard.DashboardScreen
+import com.derekwinters.chores.ui.users.UserDetailScreen
 import kotlinx.coroutines.launch
 
 /**
@@ -103,6 +105,10 @@ private fun logRouteWithArgs(chore: String?, person: String?): String {
     }
 }
 
+/** Issue #17: builds the "users/{personId}" route for a Dashboard card tap / User list row tap. */
+private fun userDetailRoute(personId: Int, username: String): String =
+    "users/$personId?username=${android.net.Uri.encode(username)}"
+
 private val drawerDestinations = listOf(
     ChoresDestination.Dashboard,
     ChoresDestination.Chores,
@@ -147,14 +153,17 @@ fun ChoresAppContent(
     onLogout: () -> Unit = {},
     modifier: Modifier = Modifier,
     loginContent: @Composable () -> Unit = { AuthGateScreen() },
-    dashboardContent: @Composable ((assignee: String?, dueWithin: String?) -> Unit) -> Unit = { onNavigateToChores ->
-        DashboardScreen(onNavigateToChores = onNavigateToChores)
+    dashboardContent: @Composable (DashboardNavActions) -> Unit = { navActions ->
+        DashboardScreen(navActions = navActions)
     },
     choresContent: @Composable (assignee: String?, dueWithin: String?, navActions: ChoresNavActions) -> Unit = { assignee, dueWithin, navActions ->
         ChoreListScreen(initialAssignee = assignee, initialDueWithin = dueWithin, navActions = navActions)
     },
     choreFormContent: @Composable (onDone: () -> Unit) -> Unit = { onDone ->
         ChoreFormScreen(onSaved = onDone, onCancel = onDone)
+    },
+    userDetailContent: @Composable (onNavigateToHistory: () -> Unit) -> Unit = { onNavigateToHistory ->
+        UserDetailScreen(onNavigateToHistory = onNavigateToHistory)
     },
     logContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     usersContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
@@ -188,6 +197,7 @@ fun ChoresAppContent(
             dashboardContent = dashboardContent,
             choresContent = choresContent,
             choreFormContent = choreFormContent,
+            userDetailContent = userDetailContent,
             logContent = logContent,
             usersContent = usersContent,
             settingsContent = settingsContent,
@@ -203,9 +213,10 @@ private fun ChoresAuthenticatedScaffold(
     isAdmin: Boolean,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
-    dashboardContent: @Composable ((assignee: String?, dueWithin: String?) -> Unit) -> Unit,
+    dashboardContent: @Composable (DashboardNavActions) -> Unit,
     choresContent: @Composable (assignee: String?, dueWithin: String?, navActions: ChoresNavActions) -> Unit,
     choreFormContent: @Composable (onDone: () -> Unit) -> Unit,
+    userDetailContent: @Composable (onNavigateToHistory: () -> Unit) -> Unit,
     logContent: @Composable () -> Unit,
     usersContent: @Composable () -> Unit,
     settingsContent: @Composable () -> Unit,
@@ -288,9 +299,16 @@ private fun ChoresAuthenticatedScaffold(
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(ChoresDestination.Dashboard.route) {
-                    dashboardContent { assignee, dueWithin ->
-                        navController.navigate(choresRouteWithArgs(assignee, dueWithin))
-                    }
+                    dashboardContent(
+                        DashboardNavActions(
+                            onNavigateToChores = { assignee, dueWithin ->
+                                navController.navigate(choresRouteWithArgs(assignee, dueWithin))
+                            },
+                            onNavigateToUserDetail = { personId, username ->
+                                navController.navigate(userDetailRoute(personId, username))
+                            }
+                        )
+                    )
                 }
                 composable(
                     route = "${ChoresDestination.Chores.route}?assignee={assignee}&dueWithin={dueWithin}",
@@ -335,6 +353,18 @@ private fun ChoresAuthenticatedScaffold(
                         navArgument("person") { type = NavType.StringType; nullable = true; defaultValue = null }
                     )
                 ) { logContent() }
+                composable(
+                    route = "users/{personId}?username={username}",
+                    arguments = listOf(
+                        navArgument("personId") { type = NavType.IntType },
+                        navArgument("username") { type = NavType.StringType; nullable = true; defaultValue = null }
+                    )
+                ) { backStackEntry ->
+                    val username = backStackEntry.arguments?.getString("username")
+                    userDetailContent {
+                        navController.navigate(logRouteWithArgs(chore = null, person = username))
+                    }
+                }
                 composable(ChoresDestination.Users.route) { usersContent() }
                 composable(ChoresDestination.Settings.route) { settingsContent() }
                 composable(ChoresDestination.Preferences.route) { preferencesContent() }

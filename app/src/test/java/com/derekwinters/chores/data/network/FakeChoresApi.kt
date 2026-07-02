@@ -63,7 +63,11 @@ class FakeChoresApi(
     private val skipResult: ChoreDto? = null,
     private val markDueResult: ChoreDto? = null,
     private val createChoreResult: ChoreDto? = null,
-    private val updateChoreResult: ChoreDto? = null
+    private val updateChoreResult: ChoreDto? = null,
+    private val personStatsResult: PersonStatsDto = PersonStatsDto(),
+    private val redemptionsResult: List<RedemptionDto> = emptyList(),
+    private val redeemResult: PersonStatsDto? = null,
+    private val logResult: LogPageDto = LogPageDto()
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -148,7 +152,7 @@ class FakeChoresApi(
 
     override suspend fun getPointsSummary(): List<PointsSummaryDto> = pointsSummaryResult
 
-    override suspend fun getPersonStats(personId: Int): PersonStatsDto = PersonStatsDto()
+    override suspend fun getPersonStats(personId: Int): PersonStatsDto = personStatsResult
 
     override suspend fun createPerson(request: CreatePersonRequestDto): PersonDto =
         error("not configured")
@@ -159,9 +163,9 @@ class FakeChoresApi(
     override suspend fun deletePerson(personId: Int) = Unit
 
     override suspend fun redeemPoints(personId: Int, request: RedeemRequestDto): PersonStatsDto =
-        error("not configured")
+        redeemResult ?: error("FakeChoresApi.redeemResult not configured")
 
-    override suspend fun getRedemptions(personId: Int): List<RedemptionDto> = emptyList()
+    override suspend fun getRedemptions(personId: Int): List<RedemptionDto> = redemptionsResult
 
     override suspend fun getLog(
         person: String?,
@@ -170,7 +174,7 @@ class FakeChoresApi(
         start: String?,
         end: String?,
         page: Int
-    ): LogPageDto = LogPageDto()
+    ): LogPageDto = logResult
 
     override suspend fun getAuthLog(
         username: String?,

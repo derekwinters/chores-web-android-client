@@ -35,29 +35,25 @@ import com.derekwinters.chores.ui.chores.DueWithinFilter
 /**
  * Issue #12: chores-web's default screen (Board) — a grid (here, a column on phone-width
  * screens) of per-person cards with 7d/30d progress and Due Now/Due Soon deep links into Chores.
+ * Issue #17: tapping a card (outside the Due Now/Due Soon buttons) opens that person's User
+ * Detail screen.
  *
  * Thin Hilt-wired wrapper around [DashboardContent].
- *
- * @param onNavigateToChores invoked with (assignee, dueWithin) when a Due Now/Due Soon count is
- *   tapped; `dueWithin` is null for Due Now (today incl. overdue) and
- *   [DueWithinFilter.NEXT_3_DAYS]'s name for Due Soon (issue #12's default `due_soon_days`
- *   window, matched at the ViewModel level to the actual config value for counting, and
- *   approximated here for the deep-link filter since Chores' filter only has fixed buckets).
  */
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
-    onNavigateToChores: (assignee: String?, dueWithin: String?) -> Unit = { _, _ -> },
+    navActions: DashboardNavActions = DashboardNavActions(),
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    DashboardContent(modifier = modifier, uiState = uiState, onNavigateToChores = onNavigateToChores)
+    DashboardContent(modifier = modifier, uiState = uiState, navActions = navActions)
 }
 
 @Composable
 fun DashboardContent(
     uiState: UiState<List<DashboardCard>>,
-    onNavigateToChores: (assignee: String?, dueWithin: String?) -> Unit,
+    navActions: DashboardNavActions,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -77,7 +73,7 @@ fun DashboardContent(
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(uiState.data, key = { it.personId }) { card ->
-                            DashboardUserCard(card = card, onNavigateToChores = onNavigateToChores)
+                            DashboardUserCard(card = card, navActions = navActions)
                         }
                     }
                 }
@@ -89,9 +85,14 @@ fun DashboardContent(
 @Composable
 private fun DashboardUserCard(
     card: DashboardCard,
-    onNavigateToChores: (assignee: String?, dueWithin: String?) -> Unit
+    navActions: DashboardNavActions
 ) {
-    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable { navActions.onNavigateToUserDetail(card.personId, card.username) }
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -124,10 +125,10 @@ private fun DashboardUserCard(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                TextButton(onClick = { onNavigateToChores(card.username, null) }) {
+                TextButton(onClick = { navActions.onNavigateToChores(card.username, null) }) {
                     Text(stringResource(R.string.dashboard_due_now_format, card.dueNowCount))
                 }
-                TextButton(onClick = { onNavigateToChores(card.username, DueWithinFilter.NEXT_3_DAYS.name) }) {
+                TextButton(onClick = { navActions.onNavigateToChores(card.username, DueWithinFilter.NEXT_3_DAYS.name) }) {
                     Text(stringResource(R.string.dashboard_due_soon_format, card.dueSoonCount))
                 }
             }
