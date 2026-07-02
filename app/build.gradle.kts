@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -93,7 +95,7 @@ androidComponents {
 // job's own multi-hour timeout, and logs each test's start so the offending test name shows up
 // in the console right before the freeze rather than only in the (never-written) HTML report.
 tasks.withType<Test>().configureEach {
-    timeout.set(java.time.Duration.ofMinutes(10))
+    timeout.set(Duration.ofMinutes(10))
     testLogging {
         events("started", "failed")
     }
