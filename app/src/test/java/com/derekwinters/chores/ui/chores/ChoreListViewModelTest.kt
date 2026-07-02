@@ -151,4 +151,41 @@ class ChoreListViewModelTest {
 
         assertEquals(ChoreFilters(), viewModel.filters.value)
     }
+
+    @Test
+    fun skipChore_reloadsListOnSuccess_andClearsPendingAction() = runTest(mainDispatcherRule.testDispatcher) {
+        val api = FakeChoresApi(choresResult = listOf(assignedChoreDto), skipResult = assignedChoreDto.copy(state = "not_due"))
+        val viewModel = ChoreListViewModel(ChoreRepository(api))
+        advanceUntilIdle()
+
+        viewModel.skipChore(Chore(1, "Dishes", 5, "due", "2026-07-05", "alice", listOf("alice", "bob")))
+        advanceUntilIdle()
+
+        assertEquals(1, api.lastSkipChoreId)
+        assertNull(viewModel.pendingActionChoreId.value)
+    }
+
+    @Test
+    fun markChoreDue_callsRepositoryAndReloads() = runTest(mainDispatcherRule.testDispatcher) {
+        val api = FakeChoresApi(choresResult = listOf(assignedChoreDto), markDueResult = assignedChoreDto.copy(state = "due"))
+        val viewModel = ChoreListViewModel(ChoreRepository(api))
+        advanceUntilIdle()
+
+        viewModel.markChoreDue(Chore(1, "Dishes", 5, "due", "2026-07-05", "alice", listOf("alice", "bob")))
+        advanceUntilIdle()
+
+        assertEquals(1, api.lastMarkDueChoreId)
+    }
+
+    @Test
+    fun deleteChore_callsRepositoryAndReloads() = runTest(mainDispatcherRule.testDispatcher) {
+        val api = FakeChoresApi(choresResult = listOf(assignedChoreDto))
+        val viewModel = ChoreListViewModel(ChoreRepository(api))
+        advanceUntilIdle()
+
+        viewModel.deleteChore(Chore(1, "Dishes", 5, "due", "2026-07-05", "alice", listOf("alice", "bob")))
+        advanceUntilIdle()
+
+        assertEquals(1, api.lastDeleteChoreId)
+    }
 }

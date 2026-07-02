@@ -34,6 +34,10 @@ class ChoreListViewModel @Inject constructor(
     private val _completingChoreId = MutableStateFlow<Int?>(null)
     val completingChoreId: StateFlow<Int?> = _completingChoreId.asStateFlow()
 
+    /** Issue #15: tracks which chore is mid Skip/Mark-Due-Now/Delete for its own progress state. */
+    private val _pendingActionChoreId = MutableStateFlow<Int?>(null)
+    val pendingActionChoreId: StateFlow<Int?> = _pendingActionChoreId.asStateFlow()
+
     private val _filters = MutableStateFlow(ChoreFilters())
     val filters: StateFlow<ChoreFilters> = _filters.asStateFlow()
 
@@ -90,6 +94,39 @@ class ChoreListViewModel @Inject constructor(
                 .onSuccess { loadChores() }
                 .onFailure { error -> _uiState.value = UiState.Error(errorMessage(error)) }
             _completingChoreId.value = null
+        }
+    }
+
+    /** Issue #15: "Skip (only when due) ... moves to next cycle without awarding points". */
+    fun skipChore(chore: Chore) {
+        _pendingActionChoreId.value = chore.id
+        viewModelScope.launch {
+            choreRepository.skipChore(chore.id)
+                .onSuccess { loadChores() }
+                .onFailure { error -> _uiState.value = UiState.Error(errorMessage(error)) }
+            _pendingActionChoreId.value = null
+        }
+    }
+
+    /** Issue #15: "Mark Due Now (only when not due)". */
+    fun markChoreDue(chore: Chore) {
+        _pendingActionChoreId.value = chore.id
+        viewModelScope.launch {
+            choreRepository.markChoreDue(chore.id)
+                .onSuccess { loadChores() }
+                .onFailure { error -> _uiState.value = UiState.Error(errorMessage(error)) }
+            _pendingActionChoreId.value = null
+        }
+    }
+
+    /** Issue #15: "also removes all points history for this chore and cannot be undone". */
+    fun deleteChore(chore: Chore) {
+        _pendingActionChoreId.value = chore.id
+        viewModelScope.launch {
+            choreRepository.deleteChore(chore.id)
+                .onSuccess { loadChores() }
+                .onFailure { error -> _uiState.value = UiState.Error(errorMessage(error)) }
+            _pendingActionChoreId.value = null
         }
     }
 

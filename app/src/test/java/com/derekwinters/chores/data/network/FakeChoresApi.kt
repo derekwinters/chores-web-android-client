@@ -59,12 +59,20 @@ class FakeChoresApi(
     private val dbStatusResult: DbStatusDto = DbStatusDto(ready = true),
     private val pointsSummaryResult: List<PointsSummaryDto> = emptyList(),
     private val peopleResult: List<PersonDto> = emptyList(),
-    private val configResult: ConfigDto = ConfigDto()
+    private val configResult: ConfigDto = ConfigDto(),
+    private val skipResult: ChoreDto? = null,
+    private val markDueResult: ChoreDto? = null
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
         private set
     var lastCompleteRequest: CompleteChoreRequestDto? = null
+        private set
+    var lastSkipChoreId: Int? = null
+        private set
+    var lastMarkDueChoreId: Int? = null
+        private set
+    var lastDeleteChoreId: Int? = null
         private set
 
     override suspend fun login(request: LoginRequestDto): LoginResponseDto {
@@ -100,11 +108,19 @@ class FakeChoresApi(
         return completeResult ?: error("FakeChoresApi.completeResult not configured")
     }
 
-    override suspend fun skipChore(choreId: Int): ChoreDto = error("not configured")
+    override suspend fun skipChore(choreId: Int): ChoreDto {
+        lastSkipChoreId = choreId
+        return skipResult ?: error("FakeChoresApi.skipResult not configured")
+    }
 
-    override suspend fun markChoreDue(choreId: Int): ChoreDto = error("not configured")
+    override suspend fun markChoreDue(choreId: Int): ChoreDto {
+        lastMarkDueChoreId = choreId
+        return markDueResult ?: error("FakeChoresApi.markDueResult not configured")
+    }
 
-    override suspend fun deleteChore(choreId: Int) = Unit
+    override suspend fun deleteChore(choreId: Int) {
+        lastDeleteChoreId = choreId
+    }
 
     override suspend fun createChore(request: ChoreRequestDto): ChoreDto = error("not configured")
 

@@ -53,6 +53,18 @@
     <string name="completer_picker_confirm">Confirm</string>
     <string name="cancel">Cancel</string>
 
+    <!-- Chore card actions: skip, mark due now, delete, expand/collapse (issue #15) -->
+    <string name="chore_history_action">History</string>
+    <string name="chore_skip_action">Skip</string>
+    <string name="chore_mark_due_action">Mark Due Now</string>
+    <string name="chore_delete_action">Delete</string>
+    <string name="chore_delete_confirm_title">Delete this chore?</string>
+    <string name="chore_delete_confirmation">This also removes all points history for this chore and cannot be undone.</string>
+    <string name="chore_detail_status_format">Status: %1$s</string>
+    <string name="chore_detail_frequency_format">Frequency: %1$s</string>
+    <string name="chore_detail_points_format">Points: %1$d</string>
+    <string name="chore_detail_assignee_format">Assignee: %1$s</string>
+
     <!-- Chores screen: search, filters, sorting (issue #13) -->
     <string name="search_chores_label">Search chores</string>
     <string name="filters_title">Filters</string>

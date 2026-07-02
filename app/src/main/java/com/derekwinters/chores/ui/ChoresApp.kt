@@ -85,6 +85,22 @@ private fun choresRouteWithArgs(assignee: String?, dueWithin: String?): String {
     return if (params.isEmpty()) ChoresDestination.Chores.route else "${ChoresDestination.Chores.route}?${params.joinToString("&")}"
 }
 
+/**
+ * Issue #15/#17: builds the Activity Log route + query args for a "History" deep link (Chore
+ * card History action, User Detail activity feed). The Log screen itself ships in issue #19.
+ */
+private fun logRouteWithArgs(chore: String?, person: String?): String {
+    val params = listOfNotNull(
+        chore?.let { "chore=${android.net.Uri.encode(it)}" },
+        person?.let { "person=${android.net.Uri.encode(it)}" }
+    )
+    return if (params.isEmpty()) {
+        ChoresDestination.ActivityLog.route
+    } else {
+        "${ChoresDestination.ActivityLog.route}?${params.joinToString("&")}"
+    }
+}
+
 private val drawerDestinations = listOf(
     ChoresDestination.Dashboard,
     ChoresDestination.Chores,
@@ -132,8 +148,8 @@ fun ChoresAppContent(
     dashboardContent: @Composable ((assignee: String?, dueWithin: String?) -> Unit) -> Unit = { onNavigateToChores ->
         DashboardScreen(onNavigateToChores = onNavigateToChores)
     },
-    choresContent: @Composable (assignee: String?, dueWithin: String?) -> Unit = { assignee, dueWithin ->
-        ChoreListScreen(initialAssignee = assignee, initialDueWithin = dueWithin)
+    choresContent: @Composable (assignee: String?, dueWithin: String?, onNavigateToHistory: (String) -> Unit) -> Unit = { assignee, dueWithin, onNavigateToHistory ->
+        ChoreListScreen(initialAssignee = assignee, initialDueWithin = dueWithin, onNavigateToHistory = onNavigateToHistory)
     },
     logContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     usersContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
@@ -182,7 +198,7 @@ private fun ChoresAuthenticatedScaffold(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     dashboardContent: @Composable ((assignee: String?, dueWithin: String?) -> Unit) -> Unit,
-    choresContent: @Composable (assignee: String?, dueWithin: String?) -> Unit,
+    choresContent: @Composable (assignee: String?, dueWithin: String?, onNavigateToHistory: (String) -> Unit) -> Unit,
     logContent: @Composable () -> Unit,
     usersContent: @Composable () -> Unit,
     settingsContent: @Composable () -> Unit,
@@ -287,9 +303,17 @@ private fun ChoresAuthenticatedScaffold(
                     choresContent(
                         backStackEntry.arguments?.getString("assignee"),
                         backStackEntry.arguments?.getString("dueWithin")
-                    )
+                    ) { choreName ->
+                        navController.navigate(logRouteWithArgs(chore = choreName, person = null))
+                    }
                 }
-                composable(ChoresDestination.ActivityLog.route) { logContent() }
+                composable(
+                    route = "${ChoresDestination.ActivityLog.route}?chore={chore}&person={person}",
+                    arguments = listOf(
+                        navArgument("chore") { type = NavType.StringType; nullable = true; defaultValue = null },
+                        navArgument("person") { type = NavType.StringType; nullable = true; defaultValue = null }
+                    )
+                ) { logContent() }
                 composable(ChoresDestination.Users.route) { usersContent() }
                 composable(ChoresDestination.Settings.route) { settingsContent() }
                 composable(ChoresDestination.Preferences.route) { preferencesContent() }

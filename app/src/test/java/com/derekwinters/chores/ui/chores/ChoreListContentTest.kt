@@ -1,6 +1,7 @@
 package com.derekwinters.chores.ui.chores
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -158,5 +159,96 @@ class ChoreListContentTest {
         composeTestRule.onNodeWithText("Clear filters").performClick()
 
         assert(cleared)
+    }
+
+    @Test
+    fun choreListContent_expandDueChore_showsSkipAndHistoryNotMarkDue() {
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Dishes").performClick()
+
+        composeTestRule.onNodeWithText("Skip").assertExists()
+        composeTestRule.onNodeWithText("History").assertExists()
+        composeTestRule.onNodeWithText("Mark Due Now").assertDoesNotExist()
+    }
+
+    @Test
+    fun choreListContent_expandNotDueChore_showsMarkDueNotSkip() {
+        val notDueChore = assignedChore.copy(state = "not_due")
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(notDueChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Dishes").performClick()
+
+        composeTestRule.onNodeWithText("Mark Due Now").assertExists()
+        composeTestRule.onNodeWithText("Skip").assertDoesNotExist()
+    }
+
+    @Test
+    fun choreListContent_skipAction_invokesCallback() {
+        var skipped: Chore? = null
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                onSkip = { skipped = it }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Dishes").performClick()
+        composeTestRule.onNodeWithText("Skip").performClick()
+
+        assert(skipped == assignedChore)
+    }
+
+    @Test
+    fun choreListContent_deleteAction_requiresConfirmation() {
+        var deleted: Chore? = null
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                onDelete = { deleted = it }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Dishes").performClick()
+        composeTestRule.onNodeWithText("Delete").performClick()
+        composeTestRule.onNodeWithText("This also removes all points history for this chore and cannot be undone.").assertExists()
+
+        composeTestRule.onAllNodesWithText("Delete")[1].performClick()
+
+        assert(deleted == assignedChore)
+    }
+
+    @Test
+    fun choreListContent_historyAction_invokesCallback() {
+        var history: Chore? = null
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                onHistory = { history = it }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Dishes").performClick()
+        composeTestRule.onNodeWithText("History").performClick()
+
+        assert(history == assignedChore)
     }
 }
