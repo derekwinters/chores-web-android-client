@@ -74,11 +74,22 @@ class ChoreListViewModel @Inject constructor(
         _filters.value = ChoreFilters()
     }
 
-    /** Issue #12: seeds the assignee/due-within filters from a Dashboard deep link. */
+    /**
+     * Issue #12: seeds the assignee/due-within filters from a Dashboard deep link. Matches
+     * [com.derekwinters.chores.ui.dashboard.buildDashboardCards]'s "assigned to them or
+     * unassigned/open" definition of a person's relevant chores — an assignee-only filter would
+     * otherwise silently exclude the open chores the Dashboard's own count included, showing
+     * fewer (sometimes zero) results than the tapped Due Now/Due Soon count promised. A null
+     * [dueWithin] alongside a non-null [assignee] means "Due Now" specifically (as opposed to a
+     * plain Chores-tab navigation, which calls this with both null and is skipped by the caller),
+     * so it also constrains to the due state — otherwise there'd be nothing to distinguish "Due
+     * Now" from "everything relevant to this person, done or not."
+     */
     fun applyInitialFilters(assignee: String?, dueWithin: DueWithinFilter?) {
         _filters.value = _filters.value.copy(
-            assignees = assignee?.let { setOf(it) } ?: _filters.value.assignees,
-            dueWithin = dueWithin ?: _filters.value.dueWithin
+            assignees = assignee?.let { setOf(it, UNASSIGNED_FILTER_VALUE) } ?: _filters.value.assignees,
+            dueWithin = dueWithin ?: _filters.value.dueWithin,
+            state = if (assignee != null && dueWithin == null) ChoreStateFilter.DUE else _filters.value.state
         )
     }
 

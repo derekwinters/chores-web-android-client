@@ -138,8 +138,28 @@ class ChoreListViewModelTest {
 
         viewModel.applyInitialFilters(assignee = "alice", dueWithin = DueWithinFilter.NEXT_7_DAYS)
 
-        assertEquals(setOf("alice"), viewModel.filters.value.assignees)
+        // Includes the synthetic "Unassigned" option alongside the named assignee, matching
+        // buildDashboardCards' "assigned to them or unassigned/open" definition of relevant
+        // chores — an assignee-only filter would silently exclude open chores the Dashboard's
+        // own count included.
+        assertEquals(setOf("alice", UNASSIGNED_FILTER_VALUE), viewModel.filters.value.assignees)
         assertEquals(DueWithinFilter.NEXT_7_DAYS, viewModel.filters.value.dueWithin)
+        assertEquals(ChoreStateFilter.ALL, viewModel.filters.value.state)
+    }
+
+    @Test
+    fun applyInitialFilters_dueNow_alsoConstrainsToDueState() = runTest(mainDispatcherRule.testDispatcher) {
+        val viewModel = ChoreListViewModel(ChoreRepository(FakeChoresApi(choresResult = emptyList())))
+        advanceUntilIdle()
+
+        // A null dueWithin alongside a non-null assignee is the Dashboard's "Due Now" deep link
+        // (as opposed to a plain Chores-tab navigation, which doesn't call this at all) — it must
+        // also filter to the due state, or "Due Now" would show every relevant chore regardless
+        // of completion.
+        viewModel.applyInitialFilters(assignee = "alice", dueWithin = null)
+
+        assertEquals(setOf("alice", UNASSIGNED_FILTER_VALUE), viewModel.filters.value.assignees)
+        assertEquals(ChoreStateFilter.DUE, viewModel.filters.value.state)
     }
 
     @Test
