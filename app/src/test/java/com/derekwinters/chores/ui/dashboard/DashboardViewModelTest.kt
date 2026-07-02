@@ -9,6 +9,8 @@ import com.derekwinters.chores.data.repository.ChoreRepository
 import com.derekwinters.chores.data.repository.ConfigRepository
 import com.derekwinters.chores.data.repository.PeopleRepository
 import com.derekwinters.chores.ui.UiState
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -18,9 +20,11 @@ import org.junit.Test
 
 /**
  * Issue #12 behavior: per-person Dashboard cards from GET /people + points-summary + GET
- * /chores. Uses [runCurrent] (not `advanceUntilIdle`) because the ViewModel's 60s auto-refresh
- * loop never completes, which would make `advanceUntilIdle` hang forever advancing through an
- * endless series of virtual-time delays.
+ * /chores. The ViewModel's 60s auto-refresh loop never completes on its own, and `runTest`
+ * performs an implicit full drain of the scheduler after the test body returns regardless of
+ * using [runCurrent] instead of `advanceUntilIdle` inside the body — so that drain would still
+ * hang forever advancing through the endless series of virtual-time delays unless the loop's
+ * job is cancelled before the test body ends.
  */
 class DashboardViewModelTest {
 
@@ -45,5 +49,7 @@ class DashboardViewModelTest {
         assertEquals(1, cards.size)
         assertEquals("Alice", cards.single().displayName)
         assertEquals(10, cards.single().points7d)
+
+        viewModel.viewModelScope.cancel()
     }
 }

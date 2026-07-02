@@ -42,7 +42,7 @@ class ChoreFormStateTest {
 
     @Test
     fun validate_openAssignment_needsNoAssignee() {
-        val state = ChoreFormState(name = "Dishes", assignmentType = AssignmentType.OPEN)
+        val state = ChoreFormState(name = "Dishes", assignmentType = AssignmentType.OPEN, weeklyDays = setOf(1))
         assertEquals(emptyList<String>(), state.validate())
     }
 

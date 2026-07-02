@@ -70,7 +70,9 @@ class ChoreFormViewModelTest {
             createChoreResult = ChoreDto(id = 1, name = "Dishes", points = 5, state = "due")
         )
         val viewModel = ChoreFormViewModel(ChoreRepository(api), PeopleRepository(api), SavedStateHandle())
-        viewModel.updateForm { it.copy(name = "Dishes", assignmentType = AssignmentType.FIXED, assignee = "alice") }
+        viewModel.updateForm {
+            it.copy(name = "Dishes", assignmentType = AssignmentType.FIXED, assignee = "alice", weeklyDays = setOf(1))
+        }
 
         viewModel.save()
         advanceUntilIdle()
@@ -82,7 +84,17 @@ class ChoreFormViewModelTest {
     @Test
     fun save_validEditForm_callsUpdateChore() = runTest(mainDispatcherRule.testDispatcher) {
         val api = FakeChoresApi(
-            choresResult = listOf(ChoreDto(id = 7, name = "Trash", points = 3, state = "due", current_assignee = "bob")),
+            choresResult = listOf(
+                ChoreDto(
+                    id = 7,
+                    name = "Trash",
+                    points = 3,
+                    state = "due",
+                    current_assignee = "bob",
+                    schedule_type = "weekly",
+                    weekly_days = listOf(1)
+                )
+            ),
             updateChoreResult = ChoreDto(id = 7, name = "Trash", points = 3, state = "due")
         )
         val viewModel = ChoreFormViewModel(ChoreRepository(api), PeopleRepository(api), SavedStateHandle(mapOf("choreId" to 7)))

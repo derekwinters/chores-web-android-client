@@ -98,6 +98,9 @@ tasks.withType<Test>().configureEach {
     timeout.set(Duration.ofMinutes(10))
     testLogging {
         events("started", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStackTraces = true
+        showCauses = true
     }
 }
 

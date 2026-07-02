@@ -1,6 +1,7 @@
 package com.derekwinters.chores.ui.chores
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -38,10 +39,10 @@ class ChoresStatsPanelContentTest {
             ChoresStatsPanelContent(uiState = UiState.Success(stats), initiallyExpanded = true)
         }
 
-        composeTestRule.onNodeWithText("Collapse stats panel").performClick()
+        composeTestRule.onNodeWithContentDescription("Collapse stats panel").performClick()
         composeTestRule.onNodeWithText("27").assertDoesNotExist()
 
-        composeTestRule.onNodeWithText("Expand stats panel").performClick()
+        composeTestRule.onNodeWithContentDescription("Expand stats panel").performClick()
         composeTestRule.onNodeWithText("27").assertExists()
     }
 }
