@@ -37,8 +37,8 @@ import com.derekwinters.chores.data.model.ThemeOption
 import com.derekwinters.chores.ui.UiState
 
 /**
- * Issue #24: household default theme management — 6 built-in themes (protected) plus custom
- * themes (create via copy, edit, rename, delete).
+ * Issue #24: household default theme management — 6 built-in themes (protected server-side; the
+ * real API exposes no `is_builtin` flag) plus custom themes (create via copy, rename, delete).
  *
  * Thin Hilt-wired wrapper around [ThemeAdminContent].
  */
@@ -51,7 +51,7 @@ fun ThemeAdminScreen(modifier: Modifier = Modifier, viewModel: ThemeAdminViewMod
         uiState = uiState,
         onSetDefault = viewModel::setDefaultTheme,
         onCreate = viewModel::createTheme,
-        onUpdate = viewModel::updateTheme,
+        onRename = viewModel::renameTheme,
         onDelete = viewModel::deleteTheme
     )
 }
@@ -59,10 +59,10 @@ fun ThemeAdminScreen(modifier: Modifier = Modifier, viewModel: ThemeAdminViewMod
 @Composable
 fun ThemeAdminContent(
     uiState: UiState<List<ThemeOption>>,
-    onSetDefault: (Int) -> Unit,
-    onCreate: (name: String, sourceThemeId: Int) -> Unit,
-    onUpdate: (ThemeOption) -> Unit,
-    onDelete: (Int) -> Unit,
+    onSetDefault: (String) -> Unit,
+    onCreate: (name: String, sourceTheme: ThemeOption) -> Unit,
+    onRename: (themeId: String, newName: String) -> Unit,
+    onDelete: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -95,10 +95,10 @@ fun ThemeAdminContent(
     }
 
     if (showCreateDialog) {
-        val firstThemeId = (uiState as? UiState.Success)?.data?.firstOrNull()?.id
+        val firstTheme = (uiState as? UiState.Success)?.data?.firstOrNull()
         CreateThemeDialog(
             onCreate = { name ->
-                if (firstThemeId != null) onCreate(name, firstThemeId)
+                if (firstTheme != null) onCreate(name, firstTheme)
                 showCreateDialog = false
             },
             onDismiss = { showCreateDialog = false }
@@ -108,8 +108,8 @@ fun ThemeAdminContent(
     editingTheme?.let { theme ->
         EditThemeDialog(
             theme = theme,
-            onSave = { updated ->
-                onUpdate(updated)
+            onSave = { newName ->
+                onRename(theme.id, newName)
                 editingTheme = null
             },
             onDelete = {
@@ -155,33 +155,32 @@ private fun CreateThemeDialog(onCreate: (String) -> Unit, onDismiss: () -> Unit)
 @Composable
 private fun EditThemeDialog(
     theme: ThemeOption,
-    onSave: (ThemeOption) -> Unit,
+    onSave: (newName: String) -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf(theme.name) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
+    // No `isBuiltin` flag exists in the real API to gate this client-side; rename/delete of a
+    // protected built-in theme is simply expected to fail server-side (surfaced via actionState).
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (theme.isBuiltin) "View Theme" else "Edit Theme") },
+        title = { Text("Edit Theme") },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
-                    enabled = !theme.isBuiltin
+                    label = { Text("Name") }
                 )
-                if (!theme.isBuiltin) {
-                    TextButton(onClick = { showDeleteConfirm = true }) { Text("Delete Theme") }
-                }
+                TextButton(onClick = { showDeleteConfirm = true }) { Text("Delete Theme") }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(theme.copy(name = name)) },
-                enabled = !theme.isBuiltin
+                onClick = { onSave(name) },
+                enabled = name.isNotBlank()
             ) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }

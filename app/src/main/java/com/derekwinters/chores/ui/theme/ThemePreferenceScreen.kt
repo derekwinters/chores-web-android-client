@@ -43,7 +43,7 @@ fun ThemePreferenceScreen(modifier: Modifier = Modifier, viewModel: ThemePrefere
 @Composable
 fun ThemePreferenceContent(
     uiState: UiState<ThemePreferenceData>,
-    onSelectTheme: (Int?) -> Unit,
+    onSelectTheme: (String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -56,12 +56,16 @@ fun ThemePreferenceContent(
             )
             is UiState.Success -> {
                 val data = uiState.data
-                val householdDefault = data.themes.firstOrNull { !data.current.isPersonalOverride && it.id == data.current.theme.id }
-                    ?: data.current.theme
+                // `defaultInfo` (from the non-admin-gated /v1/theme/default-info) is the household
+                // default's true id/name regardless of override state; `current.theme` alone can't
+                // be used for this label since it reflects the *resolved* (possibly overridden)
+                // theme, not necessarily the default. Its colors are looked up from the full
+                // catalog just to draw the swatch.
+                val householdDefault = data.themes.firstOrNull { it.id == data.defaultInfo.id } ?: data.current.theme
                 LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                     item {
                         ThemeOptionRow(
-                            name = "Default (${householdDefault.name})",
+                            name = "Default (${data.defaultInfo.name})",
                             theme = householdDefault,
                             selected = !data.current.isPersonalOverride,
                             onClick = { onSelectTheme(null) }

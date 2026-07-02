@@ -1,10 +1,12 @@
 package com.derekwinters.chores.ui.theme
 
+import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.CurrentTheme
+import com.derekwinters.chores.data.model.ThemeDefaultInfo
 import com.derekwinters.chores.data.model.ThemeOption
 import com.derekwinters.chores.ui.UiState
 import org.junit.Rule
@@ -23,22 +25,23 @@ class ThemePreferenceContentTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private fun theme(id: Int, name: String) = ThemeOption(
-        id = id, name = name, isBuiltin = true, background = "#000000", surface = "#111111",
+    private fun theme(id: String, name: String) = ThemeOption(
+        id = id, name = name, background = "#000000", surface = "#111111",
         surface2 = "#222222", accent = "#333333", primary = "#444444", secondary = "#555555",
         success = "#0F0", warning = "#FF0", error = "#F00"
     )
 
     @Test
     fun themePreferenceContent_tapDefault_clearsOverride() {
-        var selected: Int? = -99
-        val dark = theme(1, "Dark")
+        var selected: String? = "unset"
+        val dark = theme("1", "Dark")
         composeTestRule.setContent {
             ThemePreferenceContent(
                 uiState = UiState.Success(
                     ThemePreferenceData(
-                        themes = listOf(dark, theme(2, "Light")),
-                        current = CurrentTheme(theme = dark, isPersonalOverride = true)
+                        themes = listOf(dark, theme("2", "Light")),
+                        current = CurrentTheme(theme = dark, isPersonalOverride = true),
+                        defaultInfo = ThemeDefaultInfo(id = "1", name = "Dark")
                     )
                 ),
                 onSelectTheme = { selected = it }
@@ -52,13 +55,17 @@ class ThemePreferenceContentTest {
 
     @Test
     fun themePreferenceContent_tapSpecificTheme_selectsItsId() {
-        var selected: Int? = null
-        val dark = theme(1, "Dark")
-        val light = theme(2, "Light")
+        var selected: String? = null
+        val dark = theme("1", "Dark")
+        val light = theme("2", "Light")
         composeTestRule.setContent {
             ThemePreferenceContent(
                 uiState = UiState.Success(
-                    ThemePreferenceData(themes = listOf(dark, light), current = CurrentTheme(theme = dark, isPersonalOverride = false))
+                    ThemePreferenceData(
+                        themes = listOf(dark, light),
+                        current = CurrentTheme(theme = dark, isPersonalOverride = false),
+                        defaultInfo = ThemeDefaultInfo(id = "1", name = "Dark")
+                    )
                 ),
                 onSelectTheme = { selected = it }
             )
@@ -66,6 +73,29 @@ class ThemePreferenceContentTest {
 
         composeTestRule.onNodeWithText("Light").performClick()
 
-        assert(selected == 2)
+        assert(selected == "2")
+    }
+
+    @Test
+    fun themePreferenceContent_defaultLabel_reflectsTrueDefaultEvenWhenOverridden() {
+        // Regression: the "Default (name)" tile must show the real household default's name from
+        // `defaultInfo`, not the currently-overridden theme's name, even while a personal override
+        // (to a *different* theme than the default) is active.
+        val dark = theme("1", "Dark")
+        val pink = theme("3", "Pink")
+        composeTestRule.setContent {
+            ThemePreferenceContent(
+                uiState = UiState.Success(
+                    ThemePreferenceData(
+                        themes = listOf(dark, pink),
+                        current = CurrentTheme(theme = pink, isPersonalOverride = true),
+                        defaultInfo = ThemeDefaultInfo(id = "1", name = "Dark")
+                    )
+                ),
+                onSelectTheme = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Default (Dark)").assertExists()
     }
 }

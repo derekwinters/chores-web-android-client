@@ -7,7 +7,6 @@ import com.derekwinters.chores.data.network.dto.ChoreUpdateRequestDto
 import com.derekwinters.chores.data.network.dto.CompleteChoreRequestDto
 import com.derekwinters.chores.data.network.dto.ConfigDto
 import com.derekwinters.chores.data.network.dto.CreatePersonRequestDto
-import com.derekwinters.chores.data.network.dto.CreateThemeRequestDto
 import com.derekwinters.chores.data.network.dto.CurrentThemeDto
 import com.derekwinters.chores.data.network.dto.DbStatusDto
 import com.derekwinters.chores.data.network.dto.ImportResultDto
@@ -26,11 +25,14 @@ import com.derekwinters.chores.data.network.dto.ResetPasswordRequestDto
 import com.derekwinters.chores.data.network.dto.RetentionSettingsDto
 import com.derekwinters.chores.data.network.dto.SetupRequestDto
 import com.derekwinters.chores.data.network.dto.SetupStatusDto
+import com.derekwinters.chores.data.network.dto.ThemeDefaultInfoDto
 import com.derekwinters.chores.data.network.dto.ThemeDto
+import com.derekwinters.chores.data.network.dto.ThemeRenameRequestDto
+import com.derekwinters.chores.data.network.dto.ThemeSaveRequestDto
+import com.derekwinters.chores.data.network.dto.ThemeUpdateRequestDto
 import com.derekwinters.chores.data.network.dto.UpdateCheckStatusDto
 import com.derekwinters.chores.data.network.dto.UpdatePersonRequestDto
 import com.derekwinters.chores.data.network.dto.UpdatePointsLogRequestDto
-import com.derekwinters.chores.data.network.dto.UpdateThemeRequestDto
 import com.derekwinters.chores.data.network.dto.UserInfoDto
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
@@ -259,34 +261,64 @@ interface ChoresApi {
 
     // --- Theming (issues #24, #25) ---
 
-    @GET("v1/theme")
+    /** Issue #24: full theme catalog (6 built-ins + custom) for admin management and issue #25's picker. */
+    @GET("v1/theme/list")
     suspend fun getThemes(): List<ThemeDto>
 
-    /** Issue #24: create-via-copy of an existing theme. */
-    @POST("v1/theme")
-    suspend fun createTheme(@Body request: CreateThemeRequestDto): ThemeDto
+    /**
+     * Issue #24: create a new custom theme. The real backend has no "copy an existing theme by
+     * id" endpoint — [request] must already carry the full 9-color palette, which
+     * [com.derekwinters.chores.data.repository.ThemeRepository.createTheme] fills in client-side
+     * from whichever existing theme the admin picked as a starting point.
+     */
+    @POST("v1/theme/save")
+    suspend fun saveTheme(@Body request: ThemeSaveRequestDto): ThemeDto
 
-    @PUT("v1/theme/{id}")
-    suspend fun updateTheme(@Path("id") themeId: Int, @Body request: UpdateThemeRequestDto): ThemeDto
+    /**
+     * Issue #24: partial update (name and/or a full replacement color set). Modeled here to match
+     * the real API but not currently called by any screen — the admin edit dialog only renames,
+     * via [renameTheme] — ready for if in-app color editing is added later.
+     */
+    @PATCH("v1/theme/update/{theme_id}")
+    suspend fun updateTheme(@Path("theme_id") themeId: String, @Body request: ThemeUpdateRequestDto): ThemeDto
 
-    /** Issue #24: non-built-in themes only; enforced server-side too. */
-    @DELETE("v1/theme/{id}")
-    suspend fun deleteTheme(@Path("id") themeId: Int)
+    /**
+     * Issue #24: rename-only endpoint used by the admin edit dialog, whose only editable field is
+     * the theme name.
+     */
+    @PATCH("v1/theme/rename/{theme_id}")
+    suspend fun renameTheme(@Path("theme_id") themeId: String, @Body request: ThemeRenameRequestDto): ThemeDto
 
-    /** Issue #24: sets the household default theme. */
-    @PUT("v1/theme/default/{id}")
-    suspend fun setDefaultTheme(@Path("id") themeId: Int): ThemeDto
+    /** Issue #24: non-built-in themes only; enforced server-side (the real API exposes no `is_builtin` flag to gate on client-side). */
+    @DELETE("v1/theme/delete/{theme_id}")
+    suspend fun deleteTheme(@Path("theme_id") themeId: String)
 
-    /** Issue #25: resolved theme (personal override, else household default). */
+    /** Issue #24: the current site-wide default theme (admin only). Not currently wired to any screen. */
+    @GET("v1/theme/default")
+    suspend fun getDefaultTheme(): ThemeDto
+
+    /** Issue #24: sets the household default theme (admin only). */
+    @PUT("v1/theme/default/{theme_id}")
+    suspend fun setDefaultTheme(@Path("theme_id") themeId: String): ThemeDto
+
+    /** Issue #25: resolved theme (personal override, else household default), plus whether it's an override. */
     @GET("v1/theme/current")
     suspend fun getCurrentTheme(): CurrentThemeDto
 
     /**
-     * Issue #25: sets the caller's personal theme override to [themeId]. The "Default (household
-     * theme name)" tile clears the override instead; see
-     * [com.derekwinters.chores.data.repository.ThemeRepository.CLEAR_PERSONAL_THEME_ID] for the
-     * sentinel id it sends for that case.
+     * Issue #25: the household default's id/name only (no colors) — accessible to all
+     * authenticated users, unlike [getDefaultTheme] which is admin-only. Lets the Preferences
+     * screen correctly label the "Default (name)" tile even while a *different* theme is active
+     * as the caller's own personal override.
      */
-    @POST("v1/theme/set/{themeId}")
-    suspend fun setPersonalTheme(@Path("themeId") themeId: Int)
+    @GET("v1/theme/default-info")
+    suspend fun getDefaultThemeInfo(): ThemeDefaultInfoDto
+
+    /** Issue #25: clears the caller's personal theme override, reverting them to the household default. */
+    @DELETE("v1/theme/personal")
+    suspend fun clearPersonalTheme()
+
+    /** Issue #25: sets the caller's personal theme override to [themeId]. */
+    @POST("v1/theme/set/{theme_id}")
+    suspend fun setPersonalTheme(@Path("theme_id") themeId: String): ThemeDto
 }

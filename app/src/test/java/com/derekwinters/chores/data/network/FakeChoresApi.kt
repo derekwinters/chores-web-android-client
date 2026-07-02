@@ -7,7 +7,6 @@ import com.derekwinters.chores.data.network.dto.ChoreUpdateRequestDto
 import com.derekwinters.chores.data.network.dto.CompleteChoreRequestDto
 import com.derekwinters.chores.data.network.dto.ConfigDto
 import com.derekwinters.chores.data.network.dto.CreatePersonRequestDto
-import com.derekwinters.chores.data.network.dto.CreateThemeRequestDto
 import com.derekwinters.chores.data.network.dto.CurrentThemeDto
 import com.derekwinters.chores.data.network.dto.DbStatusDto
 import com.derekwinters.chores.data.network.dto.ImportResultDto
@@ -26,11 +25,14 @@ import com.derekwinters.chores.data.network.dto.ResetPasswordRequestDto
 import com.derekwinters.chores.data.network.dto.RetentionSettingsDto
 import com.derekwinters.chores.data.network.dto.SetupRequestDto
 import com.derekwinters.chores.data.network.dto.SetupStatusDto
+import com.derekwinters.chores.data.network.dto.ThemeDefaultInfoDto
 import com.derekwinters.chores.data.network.dto.ThemeDto
+import com.derekwinters.chores.data.network.dto.ThemeRenameRequestDto
+import com.derekwinters.chores.data.network.dto.ThemeSaveRequestDto
+import com.derekwinters.chores.data.network.dto.ThemeUpdateRequestDto
 import com.derekwinters.chores.data.network.dto.UpdateCheckStatusDto
 import com.derekwinters.chores.data.network.dto.UpdatePersonRequestDto
 import com.derekwinters.chores.data.network.dto.UpdatePointsLogRequestDto
-import com.derekwinters.chores.data.network.dto.UpdateThemeRequestDto
 import com.derekwinters.chores.data.network.dto.UserInfoDto
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
@@ -82,10 +84,14 @@ class FakeChoresApi(
     private val personPointsHistoryResult: List<PointsLogEntryDto> = emptyList(),
     private val updatePointsLogResult: PointsLogEntryDto? = null,
     private val themesResult: List<ThemeDto> = emptyList(),
-    private val createThemeResult: ThemeDto? = null,
+    private val saveThemeResult: ThemeDto? = null,
     private val updateThemeResult: ThemeDto? = null,
+    private val renameThemeResult: ThemeDto? = null,
+    private val defaultThemeResult: ThemeDto? = null,
     private val setDefaultThemeResult: ThemeDto? = null,
-    private val currentThemeResult: CurrentThemeDto? = null
+    private val currentThemeResult: CurrentThemeDto? = null,
+    private val defaultThemeInfoResult: ThemeDefaultInfoDto? = null,
+    private val setPersonalThemeResult: ThemeDto? = null
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -278,34 +284,52 @@ class FakeChoresApi(
     override suspend fun getPersonPointsHistory(username: String): List<PointsLogEntryDto> =
         personPointsHistoryResult
 
-    var lastCreateThemeRequest: CreateThemeRequestDto? = null
+    var lastSaveThemeRequest: ThemeSaveRequestDto? = null
         private set
-    var lastUpdateThemeId: Int? = null
+    var lastUpdateThemeId: String? = null
         private set
-    var lastDeleteThemeId: Int? = null
+    var lastUpdateThemeRequest: ThemeUpdateRequestDto? = null
         private set
-    var lastSetDefaultThemeId: Int? = null
+    var lastRenameThemeId: String? = null
         private set
-    var lastSetPersonalThemeId: Int? = null
+    var lastRenameThemeRequest: ThemeRenameRequestDto? = null
+        private set
+    var lastDeleteThemeId: String? = null
+        private set
+    var lastSetDefaultThemeId: String? = null
+        private set
+    var lastSetPersonalThemeId: String? = null
+        private set
+    var lastClearPersonalThemeCalled: Boolean = false
         private set
 
     override suspend fun getThemes(): List<ThemeDto> = themesResult
 
-    override suspend fun createTheme(request: CreateThemeRequestDto): ThemeDto {
-        lastCreateThemeRequest = request
-        return createThemeResult ?: error("FakeChoresApi.createThemeResult not configured")
+    override suspend fun saveTheme(request: ThemeSaveRequestDto): ThemeDto {
+        lastSaveThemeRequest = request
+        return saveThemeResult ?: error("FakeChoresApi.saveThemeResult not configured")
     }
 
-    override suspend fun updateTheme(themeId: Int, request: UpdateThemeRequestDto): ThemeDto {
+    override suspend fun updateTheme(themeId: String, request: ThemeUpdateRequestDto): ThemeDto {
         lastUpdateThemeId = themeId
+        lastUpdateThemeRequest = request
         return updateThemeResult ?: error("FakeChoresApi.updateThemeResult not configured")
     }
 
-    override suspend fun deleteTheme(themeId: Int) {
+    override suspend fun renameTheme(themeId: String, request: ThemeRenameRequestDto): ThemeDto {
+        lastRenameThemeId = themeId
+        lastRenameThemeRequest = request
+        return renameThemeResult ?: error("FakeChoresApi.renameThemeResult not configured")
+    }
+
+    override suspend fun deleteTheme(themeId: String) {
         lastDeleteThemeId = themeId
     }
 
-    override suspend fun setDefaultTheme(themeId: Int): ThemeDto {
+    override suspend fun getDefaultTheme(): ThemeDto =
+        defaultThemeResult ?: error("FakeChoresApi.defaultThemeResult not configured")
+
+    override suspend fun setDefaultTheme(themeId: String): ThemeDto {
         lastSetDefaultThemeId = themeId
         return setDefaultThemeResult ?: error("FakeChoresApi.setDefaultThemeResult not configured")
     }
@@ -313,7 +337,15 @@ class FakeChoresApi(
     override suspend fun getCurrentTheme(): CurrentThemeDto =
         currentThemeResult ?: error("FakeChoresApi.currentThemeResult not configured")
 
-    override suspend fun setPersonalTheme(themeId: Int) {
+    override suspend fun getDefaultThemeInfo(): ThemeDefaultInfoDto =
+        defaultThemeInfoResult ?: error("FakeChoresApi.defaultThemeInfoResult not configured")
+
+    override suspend fun clearPersonalTheme() {
+        lastClearPersonalThemeCalled = true
+    }
+
+    override suspend fun setPersonalTheme(themeId: String): ThemeDto {
         lastSetPersonalThemeId = themeId
+        return setPersonalThemeResult ?: error("FakeChoresApi.setPersonalThemeResult not configured")
     }
 }

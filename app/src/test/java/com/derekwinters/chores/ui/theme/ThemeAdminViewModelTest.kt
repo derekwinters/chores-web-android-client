@@ -2,7 +2,9 @@ package com.derekwinters.chores.ui.theme
 
 import com.derekwinters.chores.MainDispatcherRule
 import com.derekwinters.chores.data.network.FakeChoresApi
+import com.derekwinters.chores.data.network.dto.ThemeColorsDto
 import com.derekwinters.chores.data.network.dto.ThemeDto
+import com.derekwinters.chores.data.model.toDomain
 import com.derekwinters.chores.data.repository.ThemeRepository
 import com.derekwinters.chores.ui.UiState
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -12,10 +14,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-private fun themeDto(id: Int, name: String, builtin: Boolean = false) = ThemeDto(
-    id = id,
-    name = name,
-    is_builtin = builtin,
+private fun themeColorsDto() = ThemeColorsDto(
     bg = "#000000",
     surface = "#111111",
     surface2 = "#222222",
@@ -27,7 +26,9 @@ private fun themeDto(id: Int, name: String, builtin: Boolean = false) = ThemeDto
     error = "#FF0000"
 )
 
-/** Issue #24 behaviors: theme list, create-via-copy, update, delete, set-default. */
+private fun themeDto(id: String, name: String) = ThemeDto(id = id, name = name, colors = themeColorsDto())
+
+/** Issue #24 behaviors: theme list, create-via-copy, rename, delete, set-default. */
 class ThemeAdminViewModelTest {
 
     @get:Rule
@@ -35,7 +36,7 @@ class ThemeAdminViewModelTest {
 
     @Test
     fun load_populatesThemes() = runTest(mainDispatcherRule.testDispatcher) {
-        val api = FakeChoresApi(themesResult = listOf(themeDto(1, "Dark", builtin = true)))
+        val api = FakeChoresApi(themesResult = listOf(themeDto("1", "Dark")))
         val viewModel = ThemeAdminViewModel(ThemeRepository(api))
         advanceUntilIdle()
 
@@ -46,27 +47,43 @@ class ThemeAdminViewModelTest {
 
     @Test
     fun createTheme_success_reloadsList() = runTest(mainDispatcherRule.testDispatcher) {
-        val api = FakeChoresApi(createThemeResult = themeDto(2, "My Theme"))
+        val sourceTheme = themeDto("1", "Dark").toDomain()
+        val api = FakeChoresApi(saveThemeResult = themeDto("2", "My Theme"))
         val viewModel = ThemeAdminViewModel(ThemeRepository(api))
         advanceUntilIdle()
 
-        viewModel.createTheme("My Theme", sourceThemeId = 1)
+        viewModel.createTheme("My Theme", sourceTheme)
         advanceUntilIdle()
 
         assertEquals(UiState.Success(Unit), viewModel.actionState.value)
-        assertEquals(1, api.lastCreateThemeRequest?.source_theme_id)
+        assertEquals("My Theme", api.lastSaveThemeRequest?.name)
+        assertEquals(sourceTheme.primary, api.lastSaveThemeRequest?.colors?.primary)
+    }
+
+    @Test
+    fun renameTheme_success_reloadsList() = runTest(mainDispatcherRule.testDispatcher) {
+        val api = FakeChoresApi(renameThemeResult = themeDto("2", "Renamed"))
+        val viewModel = ThemeAdminViewModel(ThemeRepository(api))
+        advanceUntilIdle()
+
+        viewModel.renameTheme("2", "Renamed")
+        advanceUntilIdle()
+
+        assertEquals(UiState.Success(Unit), viewModel.actionState.value)
+        assertEquals("2", api.lastRenameThemeId)
+        assertEquals("Renamed", api.lastRenameThemeRequest?.name)
     }
 
     @Test
     fun setDefaultTheme_callsRepository() = runTest(mainDispatcherRule.testDispatcher) {
-        val api = FakeChoresApi(setDefaultThemeResult = themeDto(1, "Dark", builtin = true))
+        val api = FakeChoresApi(setDefaultThemeResult = themeDto("1", "Dark"))
         val viewModel = ThemeAdminViewModel(ThemeRepository(api))
         advanceUntilIdle()
 
-        viewModel.setDefaultTheme(1)
+        viewModel.setDefaultTheme("1")
         advanceUntilIdle()
 
-        assertEquals(1, api.lastSetDefaultThemeId)
+        assertEquals("1", api.lastSetDefaultThemeId)
     }
 
     @Test
@@ -75,10 +92,10 @@ class ThemeAdminViewModelTest {
         val viewModel = ThemeAdminViewModel(ThemeRepository(api))
         advanceUntilIdle()
 
-        viewModel.deleteTheme(2)
+        viewModel.deleteTheme("2")
         advanceUntilIdle()
 
         assertEquals(UiState.Success(Unit), viewModel.actionState.value)
-        assertEquals(2, api.lastDeleteThemeId)
+        assertEquals("2", api.lastDeleteThemeId)
     }
 }

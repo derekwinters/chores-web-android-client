@@ -16,8 +16,10 @@ import kotlinx.coroutines.launch
 
 /**
  * Issue #24 behaviors: household default theme management — 6 built-in themes (protected:
- * can't rename/delete, only copy) plus custom themes (create via copy, edit 9 colors + name,
- * rename, delete non-built-ins), and setting the household default.
+ * can't rename/delete, only copy) plus custom themes (create via copy, rename, delete
+ * non-built-ins), and setting the household default. The real API exposes no `is_builtin` flag,
+ * so "protected" isn't pre-checked here; a rename/delete of a built-in theme is expected to fail
+ * server-side and surfaces through [actionState] like any other error.
  */
 @HiltViewModel
 class ThemeAdminViewModel @Inject constructor(
@@ -43,16 +45,17 @@ class ThemeAdminViewModel @Inject constructor(
         }
     }
 
-    fun setDefaultTheme(themeId: Int) {
+    fun setDefaultTheme(themeId: String) {
         viewModelScope.launch {
             themeRepository.setDefaultTheme(themeId).onSuccess { load() }
         }
     }
 
-    fun createTheme(name: String, sourceThemeId: Int) {
+    /** Creates a new custom theme named [name] by copying [sourceTheme]'s colors. */
+    fun createTheme(name: String, sourceTheme: ThemeOption) {
         _actionState.value = UiState.Loading
         viewModelScope.launch {
-            themeRepository.createTheme(name, sourceThemeId)
+            themeRepository.createTheme(name, sourceTheme)
                 .onSuccess {
                     _actionState.value = UiState.Success(Unit)
                     load()
@@ -61,30 +64,21 @@ class ThemeAdminViewModel @Inject constructor(
         }
     }
 
-    fun updateTheme(theme: ThemeOption) {
+    /** Renames [themeId] to [newName]; the server rejects renaming a built-in theme. */
+    fun renameTheme(themeId: String, newName: String) {
         _actionState.value = UiState.Loading
         viewModelScope.launch {
-            themeRepository.updateTheme(
-                themeId = theme.id,
-                name = theme.name,
-                background = theme.background,
-                surface = theme.surface,
-                surface2 = theme.surface2,
-                accent = theme.accent,
-                primary = theme.primary,
-                secondary = theme.secondary,
-                success = theme.success,
-                warning = theme.warning,
-                error = theme.error
-            ).onSuccess {
-                _actionState.value = UiState.Success(Unit)
-                load()
-            }.onFailure { error -> _actionState.value = UiState.Error(errorMessage(error)) }
+            themeRepository.renameTheme(themeId, newName)
+                .onSuccess {
+                    _actionState.value = UiState.Success(Unit)
+                    load()
+                }
+                .onFailure { error -> _actionState.value = UiState.Error(errorMessage(error)) }
         }
     }
 
     /** Non-built-in themes only; enforced server-side too. */
-    fun deleteTheme(themeId: Int) {
+    fun deleteTheme(themeId: String) {
         _actionState.value = UiState.Loading
         viewModelScope.launch {
             themeRepository.deleteTheme(themeId)
