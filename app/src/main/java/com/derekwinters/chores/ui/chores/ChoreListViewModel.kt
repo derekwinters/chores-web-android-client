@@ -6,6 +6,7 @@ import com.derekwinters.chores.data.model.Chore
 import com.derekwinters.chores.data.network.ApiException
 import com.derekwinters.chores.data.network.HttpErrorMessages
 import com.derekwinters.chores.data.repository.ChoreRepository
+import com.derekwinters.chores.data.repository.PeopleRepository
 import com.derekwinters.chores.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -24,11 +25,21 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class ChoreListViewModel @Inject constructor(
-    private val choreRepository: ChoreRepository
+    private val choreRepository: ChoreRepository,
+    private val peopleRepository: PeopleRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<List<Chore>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<Chore>>> = _uiState.asStateFlow()
+
+    /**
+     * Every household member's username. An "open" chore's `eligiblePeople` is an optional
+     * restriction (see ChoreFormScreen's "Eligible people (optional)" section) — empty means
+     * anyone can complete it, not that no one can — so the Completer-picker dialog falls back to
+     * this full list when [Chore.eligiblePeople] is empty.
+     */
+    private val _availablePeople = MutableStateFlow<List<String>>(emptyList())
+    val availablePeople: StateFlow<List<String>> = _availablePeople.asStateFlow()
 
     /** Tracks which chore is mid-completion so its row can show a progress indicator. */
     private val _completingChoreId = MutableStateFlow<Int?>(null)
@@ -51,6 +62,13 @@ class ChoreListViewModel @Inject constructor(
 
     init {
         loadChores()
+        loadAvailablePeople()
+    }
+
+    private fun loadAvailablePeople() {
+        viewModelScope.launch {
+            peopleRepository.getPeople().onSuccess { people -> _availablePeople.value = people.map { it.username } }
+        }
     }
 
     fun loadChores() {

@@ -65,6 +65,7 @@ fun ChoreListScreen(
     val filters by viewModel.filters.collectAsState()
     val completingChoreId by viewModel.completingChoreId.collectAsState()
     val pendingActionChoreId by viewModel.pendingActionChoreId.collectAsState()
+    val availablePeople by viewModel.availablePeople.collectAsState()
 
     LaunchedEffect(initialAssignee, initialDueWithin) {
         if (initialAssignee != null || initialDueWithin != null) {
@@ -84,6 +85,7 @@ fun ChoreListScreen(
         availableAssignees = allChores.availableAssigneeOptions(),
         availableScheduleTypes = allChores.availableScheduleTypes(),
         availableAssignmentTypes = allChores.availableAssignmentTypes(),
+        availablePeople = availablePeople,
         completingChoreId = completingChoreId,
         pendingActionChoreId = pendingActionChoreId,
         onComplete = viewModel::completeChore,
@@ -109,6 +111,7 @@ fun ChoreListContent(
     availableAssignees: List<String> = emptyList(),
     availableScheduleTypes: List<String> = emptyList(),
     availableAssignmentTypes: List<String> = emptyList(),
+    availablePeople: List<String> = emptyList(),
     pendingActionChoreId: Int? = null,
     onSkip: (Chore) -> Unit = {},
     onMarkDue: (Chore) -> Unit = {},
@@ -233,8 +236,11 @@ fun ChoreListContent(
     }
 
     choreAwaitingCompleter?.let { chore ->
+        // An "open" chore's eligiblePeople is an optional restriction (see ChoreFormScreen's
+        // "Eligible people (optional)" section) -- empty means anyone can complete it, not that
+        // no one can -- so fall back to every household member when it's unset.
         CompleterPickerDialog(
-            people = chore.eligiblePeople,
+            people = chore.eligiblePeople.ifEmpty { availablePeople },
             onConfirm = { completedBy ->
                 onComplete(chore, completedBy)
                 choreAwaitingCompleter = null

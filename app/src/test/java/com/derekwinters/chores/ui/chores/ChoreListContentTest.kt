@@ -112,6 +112,29 @@ class ChoreListContentTest {
     }
 
     @Test
+    fun choreListContent_completingUnassignedChoreWithNoEligiblePeople_fallsBackToAvailablePeople() {
+        // An "open" chore's eligiblePeople is an optional restriction (empty means anyone can
+        // complete it, not that no one can), so the Completer picker must fall back to every
+        // household member rather than showing no options at all.
+        val openChoreWithNoRestriction = unassignedChore.copy(eligiblePeople = emptyList())
+        var completed: Pair<Chore, String?>? = null
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(openChoreWithNoRestriction)),
+                completingChoreId = null,
+                availablePeople = listOf("alice", "bob"),
+                onComplete = { chore, completedBy -> completed = chore to completedBy }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Complete").performClick()
+        composeTestRule.onNodeWithText("bob").performClick()
+        composeTestRule.onNodeWithText("Confirm").performClick()
+
+        assert(completed == (openChoreWithNoRestriction to "bob"))
+    }
+
+    @Test
     fun choreListContent_errorState_showsErrorMessage() {
         composeTestRule.setContent {
             ChoreListContent(

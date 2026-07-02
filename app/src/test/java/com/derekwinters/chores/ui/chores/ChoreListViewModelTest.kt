@@ -6,6 +6,7 @@ import com.derekwinters.chores.data.network.FakeChoresApi
 import com.derekwinters.chores.data.network.HttpErrorMessages
 import com.derekwinters.chores.data.network.dto.ChoreDto
 import com.derekwinters.chores.data.repository.ChoreRepository
+import com.derekwinters.chores.data.repository.PeopleRepository
 import com.derekwinters.chores.ui.UiState
 import java.io.IOException
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -48,15 +49,15 @@ class ChoreListViewModelTest {
 
     @Test
     fun init_loadsChores_andStartsInLoadingState() {
-        val viewModel = ChoreListViewModel(ChoreRepository(FakeChoresApi(choresResult = listOf(assignedChoreDto))))
+        val api = FakeChoresApi(choresResult = listOf(assignedChoreDto))
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         assertEquals(UiState.Loading, viewModel.uiState.value)
     }
 
     @Test
     fun loadChores_success_mapsDtosToDomainChores() = runTest(mainDispatcherRule.testDispatcher) {
-        val viewModel = ChoreListViewModel(
-            ChoreRepository(FakeChoresApi(choresResult = listOf(assignedChoreDto, unassignedChoreDto)))
-        )
+        val api = FakeChoresApi(choresResult = listOf(assignedChoreDto, unassignedChoreDto))
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -70,7 +71,8 @@ class ChoreListViewModelTest {
 
     @Test
     fun loadChores_failure_updatesStateToError() = runTest(mainDispatcherRule.testDispatcher) {
-        val viewModel = ChoreListViewModel(ChoreRepository(FakeChoresApi(choresError = IOException("boom"))))
+        val api = FakeChoresApi(choresError = IOException("boom"))
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -84,7 +86,7 @@ class ChoreListViewModelTest {
             choresResult = listOf(assignedChoreDto),
             completeResult = assignedChoreDto.copy(state = "done")
         )
-        val viewModel = ChoreListViewModel(ChoreRepository(api))
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         advanceUntilIdle()
 
         val chore = Chore(1, "Dishes", 5, "due", "2026-07-05", "alice", listOf("alice", "bob"))
@@ -102,7 +104,7 @@ class ChoreListViewModelTest {
             choresResult = listOf(unassignedChoreDto),
             completeResult = unassignedChoreDto.copy(state = "done", current_assignee = "bob")
         )
-        val viewModel = ChoreListViewModel(ChoreRepository(api))
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         advanceUntilIdle()
 
         val chore = Chore(2, "Trash", 3, "due", null, null, listOf("alice", "bob"))
@@ -116,9 +118,8 @@ class ChoreListViewModelTest {
 
     @Test
     fun visibleChores_appliesQueryFilter_andSortsIndependentlyOfUiState() = runTest(mainDispatcherRule.testDispatcher) {
-        val viewModel = ChoreListViewModel(
-            ChoreRepository(FakeChoresApi(choresResult = listOf(unassignedChoreDto, assignedChoreDto)))
-        )
+        val api = FakeChoresApi(choresResult = listOf(unassignedChoreDto, assignedChoreDto))
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         advanceUntilIdle()
 
         // Raw uiState keeps API order; visibleChores is sorted (due-before-complete, then name).
@@ -133,7 +134,8 @@ class ChoreListViewModelTest {
 
     @Test
     fun applyInitialFilters_seedsAssigneeAndDueWithin_forDashboardDeepLinks() = runTest(mainDispatcherRule.testDispatcher) {
-        val viewModel = ChoreListViewModel(ChoreRepository(FakeChoresApi(choresResult = emptyList())))
+        val api = FakeChoresApi(choresResult = emptyList())
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         advanceUntilIdle()
 
         viewModel.applyInitialFilters(assignee = "alice", dueWithin = DueWithinFilter.NEXT_7_DAYS)
@@ -149,7 +151,8 @@ class ChoreListViewModelTest {
 
     @Test
     fun applyInitialFilters_dueNow_alsoConstrainsToDueState() = runTest(mainDispatcherRule.testDispatcher) {
-        val viewModel = ChoreListViewModel(ChoreRepository(FakeChoresApi(choresResult = emptyList())))
+        val api = FakeChoresApi(choresResult = emptyList())
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         advanceUntilIdle()
 
         // A null dueWithin alongside a non-null assignee is the Dashboard's "Due Now" deep link
@@ -164,7 +167,8 @@ class ChoreListViewModelTest {
 
     @Test
     fun clearFilters_resetsToDefault() = runTest(mainDispatcherRule.testDispatcher) {
-        val viewModel = ChoreListViewModel(ChoreRepository(FakeChoresApi(choresResult = emptyList())))
+        val api = FakeChoresApi(choresResult = emptyList())
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         viewModel.updateQuery("dish")
 
         viewModel.clearFilters()
@@ -175,7 +179,7 @@ class ChoreListViewModelTest {
     @Test
     fun skipChore_reloadsListOnSuccess_andClearsPendingAction() = runTest(mainDispatcherRule.testDispatcher) {
         val api = FakeChoresApi(choresResult = listOf(assignedChoreDto), skipResult = assignedChoreDto.copy(state = "not_due"))
-        val viewModel = ChoreListViewModel(ChoreRepository(api))
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         advanceUntilIdle()
 
         viewModel.skipChore(Chore(1, "Dishes", 5, "due", "2026-07-05", "alice", listOf("alice", "bob")))
@@ -188,7 +192,7 @@ class ChoreListViewModelTest {
     @Test
     fun markChoreDue_callsRepositoryAndReloads() = runTest(mainDispatcherRule.testDispatcher) {
         val api = FakeChoresApi(choresResult = listOf(assignedChoreDto), markDueResult = assignedChoreDto.copy(state = "due"))
-        val viewModel = ChoreListViewModel(ChoreRepository(api))
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         advanceUntilIdle()
 
         viewModel.markChoreDue(Chore(1, "Dishes", 5, "due", "2026-07-05", "alice", listOf("alice", "bob")))
@@ -200,7 +204,7 @@ class ChoreListViewModelTest {
     @Test
     fun deleteChore_callsRepositoryAndReloads() = runTest(mainDispatcherRule.testDispatcher) {
         val api = FakeChoresApi(choresResult = listOf(assignedChoreDto))
-        val viewModel = ChoreListViewModel(ChoreRepository(api))
+        val viewModel = ChoreListViewModel(ChoreRepository(api), PeopleRepository(api))
         advanceUntilIdle()
 
         viewModel.deleteChore(Chore(1, "Dishes", 5, "due", "2026-07-05", "alice", listOf("alice", "bob")))
