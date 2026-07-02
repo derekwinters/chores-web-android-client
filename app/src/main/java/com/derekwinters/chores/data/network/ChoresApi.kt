@@ -1,6 +1,6 @@
 package com.derekwinters.chores.data.network
 
-import com.derekwinters.chores.data.network.dto.AuthLogPageDto
+import com.derekwinters.chores.data.network.dto.AuthLogEntryDto
 import com.derekwinters.chores.data.network.dto.ChoreCreateRequestDto
 import com.derekwinters.chores.data.network.dto.ChoreDto
 import com.derekwinters.chores.data.network.dto.ChoreUpdateRequestDto
@@ -202,10 +202,9 @@ interface ChoresApi {
     suspend fun getAuthLog(
         @Query("username") username: String? = null,
         @Query("action") action: String? = null,
-        @Query("start") start: String? = null,
-        @Query("end") end: String? = null,
-        @Query("page") page: Int = 1
-    ): AuthLogPageDto
+        @Query("start_date") startDate: String? = null,
+        @Query("end_date") endDate: String? = null
+    ): List<AuthLogEntryDto>
 
     // --- Config / Settings (issues #12, #20, #22) ---
 

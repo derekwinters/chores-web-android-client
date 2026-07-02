@@ -1,6 +1,6 @@
 package com.derekwinters.chores.data.network
 
-import com.derekwinters.chores.data.network.dto.AuthLogPageDto
+import com.derekwinters.chores.data.network.dto.AuthLogEntryDto
 import com.derekwinters.chores.data.network.dto.ChoreCreateRequestDto
 import com.derekwinters.chores.data.network.dto.ChoreDto
 import com.derekwinters.chores.data.network.dto.ChoreUpdateRequestDto
@@ -78,7 +78,7 @@ class FakeChoresApi(
     private val createPersonResult: PersonDto? = null,
     private val updatePersonResult: PersonDto? = null,
     private val updatePersonError: Throwable? = null,
-    private val authLogResult: AuthLogPageDto = AuthLogPageDto(),
+    private val authLogResult: List<AuthLogEntryDto> = emptyList(),
     private val importConfigResult: ImportResultDto? = null,
     private val pointsLogResult: PointsLogPageDto = PointsLogPageDto(),
     private val personPointsHistoryResult: List<PointsLogEntryDto> = emptyList(),
@@ -232,10 +232,9 @@ class FakeChoresApi(
     override suspend fun getAuthLog(
         username: String?,
         action: String?,
-        start: String?,
-        end: String?,
-        page: Int
-    ): AuthLogPageDto = authLogResult
+        startDate: String?,
+        endDate: String?
+    ): List<AuthLogEntryDto> = authLogResult
 
     override suspend fun getConfig(): ConfigDto = configResult
 

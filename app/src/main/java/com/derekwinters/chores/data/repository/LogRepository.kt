@@ -45,10 +45,11 @@ class LogRepository @Inject constructor(
         safeApiCall { api.setRetention(RetentionSettingsDto(retention_days = days)) }.map { it.retention_days }
 }
 
-/** A page of Auth Event Log results plus the total row count (issue #21). */
-data class AuthLogPage(val entries: List<AuthLogEntry>, val total: Int)
-
-/** Issue #21: separate admin-only audit log for auth-related events. */
+/**
+ * Issue #21: separate admin-only audit log for auth-related events. The backend has no
+ * server-side pagination for this endpoint either (`GET /v1/auth/log` responds with a bare
+ * array), matching [LogRepository.getLog]'s client-side-paging pattern.
+ */
 @Singleton
 class AuthLogRepository @Inject constructor(
     private val api: ChoresApi
@@ -56,9 +57,8 @@ class AuthLogRepository @Inject constructor(
     suspend fun getAuthLog(
         username: String? = null,
         action: String? = null,
-        start: String? = null,
-        end: String? = null,
-        page: Int = 1
-    ): Result<AuthLogPage> = safeApiCall { api.getAuthLog(username, action, start, end, page) }
-        .map { AuthLogPage(it.items.map { entry -> entry.toDomain() }, it.total) }
+        startDate: String? = null,
+        endDate: String? = null
+    ): Result<List<AuthLogEntry>> = safeApiCall { api.getAuthLog(username, action, startDate, endDate) }
+        .map { entries -> entries.map { it.toDomain() } }
 }

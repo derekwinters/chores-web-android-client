@@ -35,7 +35,10 @@ data class RetentionSettingsDto(
     val retention_days: Int
 )
 
-/** Response element for `GET /v1/auth/log`, issue #21's separate admin auth audit trail. */
+/**
+ * Response element for `GET /v1/auth/log`, issue #21's separate admin auth audit trail. The real
+ * endpoint returns a bare array (no `{items, total}` wrapper), matching `AuthLogOut` exactly.
+ */
 @Serializable
 data class AuthLogEntryDto(
     val id: Int,
@@ -43,11 +46,4 @@ data class AuthLogEntryDto(
     val username: String,
     val action: String,
     val changed_by: String? = null
-)
-
-/** Paginated response shape for `GET /v1/auth/log`. */
-@Serializable
-data class AuthLogPageDto(
-    val items: List<AuthLogEntryDto> = emptyList(),
-    val total: Int = 0
 )

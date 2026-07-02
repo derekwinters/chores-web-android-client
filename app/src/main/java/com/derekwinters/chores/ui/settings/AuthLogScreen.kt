@@ -88,7 +88,7 @@ fun AuthLogContent(
             Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(onClick = onPreviousPage, enabled = uiState.data.page > 1) { Text("Previous") }
                 Text("Page ${uiState.data.page} (${uiState.data.total} total)")
-                TextButton(onClick = onNextPage) { Text("Next") }
+                TextButton(onClick = onNextPage, enabled = uiState.data.page < uiState.data.totalPages) { Text("Next") }
             }
         }
     }

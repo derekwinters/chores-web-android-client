@@ -3,7 +3,6 @@ package com.derekwinters.chores.ui.settings
 import com.derekwinters.chores.MainDispatcherRule
 import com.derekwinters.chores.data.network.FakeChoresApi
 import com.derekwinters.chores.data.network.dto.AuthLogEntryDto
-import com.derekwinters.chores.data.network.dto.AuthLogPageDto
 import com.derekwinters.chores.data.repository.AuthLogRepository
 import com.derekwinters.chores.ui.UiState
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -22,10 +21,7 @@ class AuthLogViewModelTest {
     @Test
     fun load_populatesEntries() = runTest(mainDispatcherRule.testDispatcher) {
         val api = FakeChoresApi(
-            authLogResult = AuthLogPageDto(
-                items = listOf(AuthLogEntryDto(id = 1, timestamp = "t", username = "alice", action = "login_succeeded")),
-                total = 1
-            )
+            authLogResult = listOf(AuthLogEntryDto(id = 1, timestamp = "t", username = "alice", action = "login_succeeded"))
         )
         val viewModel = AuthLogViewModel(AuthLogRepository(api))
         advanceUntilIdle()
@@ -37,7 +33,10 @@ class AuthLogViewModelTest {
 
     @Test
     fun updateFilters_resetsPageAndAppliesUsernameFilter() = runTest(mainDispatcherRule.testDispatcher) {
-        val api = FakeChoresApi(authLogResult = AuthLogPageDto())
+        // 25 entries at PAGE_SIZE 20 spans two pages, so nextPage() below actually advances.
+        val api = FakeChoresApi(
+            authLogResult = (1..25).map { AuthLogEntryDto(id = it, timestamp = "t", username = "alice", action = "login_succeeded") }
+        )
         val viewModel = AuthLogViewModel(AuthLogRepository(api))
         advanceUntilIdle()
         viewModel.nextPage()
