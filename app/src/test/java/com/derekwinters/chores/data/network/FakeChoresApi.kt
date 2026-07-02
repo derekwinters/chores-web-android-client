@@ -70,7 +70,8 @@ class FakeChoresApi(
     private val logResult: LogPageDto = LogPageDto(),
     private val createPersonResult: PersonDto? = null,
     private val updatePersonResult: PersonDto? = null,
-    private val updatePersonError: Throwable? = null
+    private val updatePersonError: Throwable? = null,
+    private val authLogResult: AuthLogPageDto = AuthLogPageDto()
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -198,7 +199,7 @@ class FakeChoresApi(
         start: String?,
         end: String?,
         page: Int
-    ): AuthLogPageDto = AuthLogPageDto()
+    ): AuthLogPageDto = authLogResult
 
     override suspend fun getConfig(): ConfigDto = configResult
 

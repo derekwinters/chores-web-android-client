@@ -55,6 +55,7 @@ import com.derekwinters.chores.ui.common.PlaceholderScreen
 import com.derekwinters.chores.ui.dashboard.DashboardNavActions
 import com.derekwinters.chores.ui.dashboard.DashboardScreen
 import com.derekwinters.chores.ui.log.ActivityLogScreen
+import com.derekwinters.chores.ui.settings.AuthLogScreen
 import com.derekwinters.chores.ui.settings.SettingsNavActions
 import com.derekwinters.chores.ui.settings.SettingsScreen
 import com.derekwinters.chores.ui.users.UserDetailScreen
@@ -174,7 +175,7 @@ fun ChoresAppContent(
         UserManagementScreen(onHistoryClick = onHistoryClick)
     },
     settingsContent: @Composable (SettingsNavActions) -> Unit = { navActions -> SettingsScreen(navActions = navActions) },
-    authLogContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
+    authLogContent: @Composable () -> Unit = { AuthLogScreen() },
     dataSettingsContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     preferencesContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     currentUserProvider: @Composable () -> UiState<CurrentUser> = {
