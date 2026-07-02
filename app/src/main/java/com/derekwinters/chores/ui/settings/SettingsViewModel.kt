@@ -18,9 +18,9 @@ import kotlinx.coroutines.launch
 /**
  * Issue #20 behaviors: General/Auth/Chores/About settings forms. General/Auth/Chores read/write
  * the shared `GET/PUT /v1/config` endpoint (`AppConfig`); About's version info comes from the
- * separate `/v1/config/updates/*` endpoints (`UpdateCheckStatus` isn't part of the config
- * resource on the backend). Issue #21/#22 add nav entries (Auth Event Log, Data settings) from
- * within the Auth/Chores sections respectively.
+ * separate `/v1/config/updates/status` and `/v1/config/updates/check` endpoints
+ * (`UpdateCheckStatus` isn't part of the config resource on the backend). Issue #21/#22 add nav
+ * entries (Auth Event Log, Data settings) from within the Auth/Chores sections respectively.
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
