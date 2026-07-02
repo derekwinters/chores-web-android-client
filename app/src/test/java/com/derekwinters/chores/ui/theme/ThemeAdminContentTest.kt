@@ -68,9 +68,9 @@ class ThemeAdminContentTest {
 
         composeTestRule.onNodeWithText("Edit").performClick()
         // The edit dialog's pre-filled name field and the underlying theme row both display
-        // "Dark" simultaneously, so onNodeWithText alone is ambiguous — the field is the last
+        // "Dark" simultaneously, so onNodeWithText alone is ambiguous — the field is the second
         // ("Dark") node composed, since the dialog opens on top of the row.
-        composeTestRule.onAllNodesWithText("Dark").onLast().performTextReplacement("Midnight")
+        composeTestRule.onAllNodesWithText("Dark")[1].performTextReplacement("Midnight")
         composeTestRule.onNodeWithText("Save").performClick()
 
         assert(renamedId == "1")
