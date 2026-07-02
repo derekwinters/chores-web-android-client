@@ -58,6 +58,7 @@ import com.derekwinters.chores.ui.log.ActivityLogScreen
 import com.derekwinters.chores.ui.settings.AuthLogScreen
 import com.derekwinters.chores.ui.settings.DataSettingsNavActions
 import com.derekwinters.chores.ui.settings.DataSettingsScreen
+import com.derekwinters.chores.ui.settings.PointsLogScreen
 import com.derekwinters.chores.ui.settings.SettingsNavActions
 import com.derekwinters.chores.ui.settings.SettingsScreen
 import com.derekwinters.chores.ui.users.UserDetailScreen
@@ -181,7 +182,7 @@ fun ChoresAppContent(
     dataSettingsContent: @Composable (DataSettingsNavActions) -> Unit = { navActions ->
         DataSettingsScreen(navActions = navActions)
     },
-    pointsLogContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
+    pointsLogContent: @Composable () -> Unit = { PointsLogScreen() },
     preferencesContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     currentUserProvider: @Composable () -> UiState<CurrentUser> = {
         val viewModel: CurrentUserViewModel = hiltViewModel()

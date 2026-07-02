@@ -72,7 +72,9 @@ class FakeChoresApi(
     private val updatePersonResult: PersonDto? = null,
     private val updatePersonError: Throwable? = null,
     private val authLogResult: AuthLogPageDto = AuthLogPageDto(),
-    private val importConfigResult: ImportResultDto? = null
+    private val importConfigResult: ImportResultDto? = null,
+    private val pointsLogResult: PointsLogPageDto = PointsLogPageDto(),
+    private val updatePointsLogResult: PointsLogEntryDto? = null
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -213,14 +215,24 @@ class FakeChoresApi(
     override suspend fun importConfig(body: RequestBody): ImportResultDto =
         importConfigResult ?: error("FakeChoresApi.importConfigResult not configured")
 
-    override suspend fun getPointsLog(page: Int): PointsLogPageDto = PointsLogPageDto()
+    override suspend fun getPointsLog(page: Int): PointsLogPageDto = pointsLogResult
+
+    var lastUpdatePointsLogEntryId: Int? = null
+        private set
+    var lastDeletePointsLogEntryId: Int? = null
+        private set
 
     override suspend fun updatePointsLogEntry(
         entryId: Int,
         request: UpdatePointsLogRequestDto
-    ): PointsLogEntryDto = error("not configured")
+    ): PointsLogEntryDto {
+        lastUpdatePointsLogEntryId = entryId
+        return updatePointsLogResult ?: error("FakeChoresApi.updatePointsLogResult not configured")
+    }
 
-    override suspend fun deletePointsLogEntry(entryId: Int) = Unit
+    override suspend fun deletePointsLogEntry(entryId: Int) {
+        lastDeletePointsLogEntryId = entryId
+    }
 
     override suspend fun getThemes(): List<ThemeDto> = emptyList()
 
