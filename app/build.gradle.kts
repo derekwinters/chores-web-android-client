@@ -89,6 +89,16 @@ androidComponents {
     }
 }
 
+// Bounds the unit test task so a hung test fails CI within minutes instead of running until the
+// job's own multi-hour timeout, and logs each test's start so the offending test name shows up
+// in the console right before the freeze rather than only in the (never-written) HTML report.
+tasks.withType<Test>().configureEach {
+    timeout.set(java.time.Duration.ofMinutes(10))
+    testLogging {
+        events("started", "failed")
+    }
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.0")
