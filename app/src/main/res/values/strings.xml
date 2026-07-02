@@ -85,4 +85,11 @@
     <string name="stat_completed_7_days">Completed Last 7 Days</string>
     <string name="stat_due_7_days">Due Next 7 Days</string>
     <string name="loading">Loading…</string>
+
+    <!-- Dashboard screen (issue #12) -->
+    <string name="dashboard_empty">No people added yet…</string>
+    <string name="dashboard_7_day_progress">7-day: %1$d / %2$d pts</string>
+    <string name="dashboard_30_day_progress">30-day: %1$d / %2$d pts</string>
+    <string name="dashboard_due_now_format">Due Now: %1$d</string>
+    <string name="dashboard_due_soon_format">Due Soon: %1$d</string>
 </resources>

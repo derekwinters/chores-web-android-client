@@ -57,7 +57,9 @@ class FakeChoresApi(
     private val currentUserError: Throwable? = null,
     private val setupStatusResult: SetupStatusDto = SetupStatusDto(setup_needed = false),
     private val dbStatusResult: DbStatusDto = DbStatusDto(ready = true),
-    private val pointsSummaryResult: List<PointsSummaryDto> = emptyList()
+    private val pointsSummaryResult: List<PointsSummaryDto> = emptyList(),
+    private val peopleResult: List<PersonDto> = emptyList(),
+    private val configResult: ConfigDto = ConfigDto()
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -112,7 +114,7 @@ class FakeChoresApi(
     override suspend fun reassignChore(choreId: Int, request: ReassignRequestDto): ChoreDto =
         error("not configured")
 
-    override suspend fun getPeople(): List<PersonDto> = emptyList()
+    override suspend fun getPeople(): List<PersonDto> = peopleResult
 
     override suspend fun getPointsSummary(): List<PointsSummaryDto> = pointsSummaryResult
 
@@ -148,7 +150,7 @@ class FakeChoresApi(
         page: Int
     ): AuthLogPageDto = AuthLogPageDto()
 
-    override suspend fun getConfig(): ConfigDto = ConfigDto()
+    override suspend fun getConfig(): ConfigDto = configResult
 
     override suspend fun updateConfig(request: ConfigDto): ConfigDto = request
 

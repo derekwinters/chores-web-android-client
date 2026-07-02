@@ -37,7 +37,7 @@ class ChoresAppTest {
                 onLogout = onLogout,
                 loginContent = { Text("Fake Login") },
                 dashboardContent = { Text("Fake Dashboard") },
-                choresContent = { Text("Fake Chores") },
+                choresContent = { _, _ -> Text("Fake Chores") },
                 logContent = { Text("Fake Log") },
                 usersContent = { Text("Fake Users") },
                 settingsContent = { Text("Fake Settings") },

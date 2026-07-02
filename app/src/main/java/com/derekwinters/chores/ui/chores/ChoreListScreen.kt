@@ -22,6 +22,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,7 +41,8 @@ import com.derekwinters.chores.ui.UiState
  * Issue #5 behaviors: "Chore list screen: GET /chores, render name/assignee-or-Completer/
  * points/state/next_due" and "Complete-chore action ... with Completer-picker dialog when
  * current_assignee == null". Issue #13 adds live search, filters, and sorting; issue #14 adds
- * the stats panel above this (see ChoresStatsPanel).
+ * the stats panel above this (see ChoresStatsPanel); issue #12 adds [initialAssignee]/
+ * [initialDueWithin] so Dashboard's Due Now/Due Soon links land here pre-filtered.
  *
  * Thin Hilt-wired wrapper around [ChoreListContent]; see ChoreListContentTest for behavior
  * coverage that doesn't require a Hilt test component.
@@ -48,12 +50,21 @@ import com.derekwinters.chores.ui.UiState
 @Composable
 fun ChoreListScreen(
     modifier: Modifier = Modifier,
+    initialAssignee: String? = null,
+    initialDueWithin: String? = null,
     viewModel: ChoreListViewModel = hiltViewModel()
 ) {
     val visibleState by viewModel.visibleChores.collectAsState()
     val allChoresState by viewModel.uiState.collectAsState()
     val filters by viewModel.filters.collectAsState()
     val completingChoreId by viewModel.completingChoreId.collectAsState()
+
+    LaunchedEffect(initialAssignee, initialDueWithin) {
+        if (initialAssignee != null || initialDueWithin != null) {
+            val dueWithin = initialDueWithin?.let { name -> runCatching { DueWithinFilter.valueOf(name) }.getOrNull() }
+            viewModel.applyInitialFilters(initialAssignee, dueWithin)
+        }
+    }
 
     val allChores = (allChoresState as? UiState.Success)?.data ?: emptyList()
 

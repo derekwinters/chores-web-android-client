@@ -38,16 +38,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.derekwinters.chores.R
 import com.derekwinters.chores.data.model.CurrentUser
 import com.derekwinters.chores.ui.auth.AuthGateScreen
 import com.derekwinters.chores.ui.chores.ChoreListScreen
 import com.derekwinters.chores.ui.common.DbReadinessGate
 import com.derekwinters.chores.ui.common.PlaceholderScreen
+import com.derekwinters.chores.ui.dashboard.DashboardScreen
 import kotlinx.coroutines.launch
 
 /**
@@ -71,6 +74,15 @@ sealed class ChoresDestination(
     data object Settings : ChoresDestination("settings", R.string.nav_settings, Icons.Filled.Settings, adminOnly = true)
     data object Preferences : ChoresDestination("preferences", R.string.nav_preferences, Icons.Filled.Palette)
     data object Notification : ChoresDestination("notification", R.string.nav_notification, Icons.Filled.Notifications)
+}
+
+/** Issue #12: builds the Chores route + query args for a Dashboard Due Now/Due Soon deep link. */
+private fun choresRouteWithArgs(assignee: String?, dueWithin: String?): String {
+    val params = listOfNotNull(
+        assignee?.let { "assignee=${android.net.Uri.encode(it)}" },
+        dueWithin?.let { "dueWithin=${android.net.Uri.encode(it)}" }
+    )
+    return if (params.isEmpty()) ChoresDestination.Chores.route else "${ChoresDestination.Chores.route}?${params.joinToString("&")}"
 }
 
 private val drawerDestinations = listOf(
@@ -117,8 +129,12 @@ fun ChoresAppContent(
     onLogout: () -> Unit = {},
     modifier: Modifier = Modifier,
     loginContent: @Composable () -> Unit = { AuthGateScreen() },
-    dashboardContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
-    choresContent: @Composable () -> Unit = { ChoreListScreen() },
+    dashboardContent: @Composable ((assignee: String?, dueWithin: String?) -> Unit) -> Unit = { onNavigateToChores ->
+        DashboardScreen(onNavigateToChores = onNavigateToChores)
+    },
+    choresContent: @Composable (assignee: String?, dueWithin: String?) -> Unit = { assignee, dueWithin ->
+        ChoreListScreen(initialAssignee = assignee, initialDueWithin = dueWithin)
+    },
     logContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     usersContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     settingsContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
@@ -165,8 +181,8 @@ private fun ChoresAuthenticatedScaffold(
     isAdmin: Boolean,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
-    dashboardContent: @Composable () -> Unit,
-    choresContent: @Composable () -> Unit,
+    dashboardContent: @Composable ((assignee: String?, dueWithin: String?) -> Unit) -> Unit,
+    choresContent: @Composable (assignee: String?, dueWithin: String?) -> Unit,
     logContent: @Composable () -> Unit,
     usersContent: @Composable () -> Unit,
     settingsContent: @Composable () -> Unit,
@@ -181,8 +197,12 @@ private fun ChoresAuthenticatedScaffold(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val visibleDestinations = drawerDestinations.filter { !it.adminOnly || isAdmin }
+    // Chores' actual registered route carries query-arg placeholders ("chores?assignee=...");
+    // matching by prefix keeps drawer highlighting/title working whether or not args are present.
+    fun isCurrent(dest: ChoresDestination) =
+        currentDestination?.hierarchy?.any { it.route?.startsWith(dest.route) == true } == true
     val currentLabel = visibleDestinations
-        .firstOrNull { dest -> currentDestination?.hierarchy?.any { it.route == dest.route } == true }
+        .firstOrNull(::isCurrent)
         ?.labelRes
         ?.let { stringResource(it) }
         ?: stringResource(R.string.app_name)
@@ -192,7 +212,7 @@ private fun ChoresAuthenticatedScaffold(
         drawerContent = {
             ModalDrawerSheet {
                 visibleDestinations.forEach { destination ->
-                    val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
+                    val selected = isCurrent(destination)
                     NavigationDrawerItem(
                         label = { Text(stringResource(destination.labelRes)) },
                         icon = { Icon(destination.icon, contentDescription = null) },
@@ -244,8 +264,31 @@ private fun ChoresAuthenticatedScaffold(
                 startDestination = ChoresDestination.Dashboard.route,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable(ChoresDestination.Dashboard.route) { dashboardContent() }
-                composable(ChoresDestination.Chores.route) { choresContent() }
+                composable(ChoresDestination.Dashboard.route) {
+                    dashboardContent { assignee, dueWithin ->
+                        navController.navigate(choresRouteWithArgs(assignee, dueWithin))
+                    }
+                }
+                composable(
+                    route = "${ChoresDestination.Chores.route}?assignee={assignee}&dueWithin={dueWithin}",
+                    arguments = listOf(
+                        navArgument("assignee") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        },
+                        navArgument("dueWithin") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        }
+                    )
+                ) { backStackEntry ->
+                    choresContent(
+                        backStackEntry.arguments?.getString("assignee"),
+                        backStackEntry.arguments?.getString("dueWithin")
+                    )
+                }
                 composable(ChoresDestination.ActivityLog.route) { logContent() }
                 composable(ChoresDestination.Users.route) { usersContent() }
                 composable(ChoresDestination.Settings.route) { settingsContent() }
