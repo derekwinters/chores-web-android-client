@@ -55,6 +55,8 @@ import com.derekwinters.chores.ui.common.PlaceholderScreen
 import com.derekwinters.chores.ui.dashboard.DashboardNavActions
 import com.derekwinters.chores.ui.dashboard.DashboardScreen
 import com.derekwinters.chores.ui.log.ActivityLogScreen
+import com.derekwinters.chores.ui.settings.SettingsNavActions
+import com.derekwinters.chores.ui.settings.SettingsScreen
 import com.derekwinters.chores.ui.users.UserDetailScreen
 import com.derekwinters.chores.ui.users.UserManagementScreen
 import kotlinx.coroutines.launch
@@ -171,7 +173,9 @@ fun ChoresAppContent(
     usersContent: @Composable (onHistoryClick: (String) -> Unit) -> Unit = { onHistoryClick ->
         UserManagementScreen(onHistoryClick = onHistoryClick)
     },
-    settingsContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
+    settingsContent: @Composable (SettingsNavActions) -> Unit = { navActions -> SettingsScreen(navActions = navActions) },
+    authLogContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
+    dataSettingsContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     preferencesContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     currentUserProvider: @Composable () -> UiState<CurrentUser> = {
         val viewModel: CurrentUserViewModel = hiltViewModel()
@@ -205,6 +209,8 @@ fun ChoresAppContent(
             logContent = logContent,
             usersContent = usersContent,
             settingsContent = settingsContent,
+            authLogContent = authLogContent,
+            dataSettingsContent = dataSettingsContent,
             preferencesContent = preferencesContent,
             notificationContent = { NotificationScreen(onSendTestNotification = onSendTestNotification) }
         )
@@ -223,7 +229,9 @@ private fun ChoresAuthenticatedScaffold(
     userDetailContent: @Composable (onNavigateToHistory: () -> Unit) -> Unit,
     logContent: @Composable () -> Unit,
     usersContent: @Composable (onHistoryClick: (String) -> Unit) -> Unit,
-    settingsContent: @Composable () -> Unit,
+    settingsContent: @Composable (SettingsNavActions) -> Unit,
+    authLogContent: @Composable () -> Unit,
+    dataSettingsContent: @Composable () -> Unit,
     preferencesContent: @Composable () -> Unit,
     notificationContent: @Composable () -> Unit
 ) {
@@ -372,7 +380,16 @@ private fun ChoresAuthenticatedScaffold(
                 composable(ChoresDestination.Users.route) {
                     usersContent { username -> navController.navigate(logRouteWithArgs(chore = null, person = username)) }
                 }
-                composable(ChoresDestination.Settings.route) { settingsContent() }
+                composable(ChoresDestination.Settings.route) {
+                    settingsContent(
+                        SettingsNavActions(
+                            onNavigateToAuthLog = { navController.navigate("settings/authLog") },
+                            onNavigateToData = { navController.navigate("settings/data") }
+                        )
+                    )
+                }
+                composable("settings/authLog") { authLogContent() }
+                composable("settings/data") { dataSettingsContent() }
                 composable(ChoresDestination.Preferences.route) { preferencesContent() }
                 composable(ChoresDestination.Notification.route) { notificationContent() }
             }
