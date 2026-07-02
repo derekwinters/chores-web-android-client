@@ -28,13 +28,26 @@ class PeopleRepository @Inject constructor(
     suspend fun getPointsSummary(): Result<List<PointsSummary>> =
         safeApiCall { api.getPointsSummary() }.map { summaries -> summaries.map { it.toDomain() } }
 
-    /** Issue #17. */
-    suspend fun getPersonStats(personId: Int): Result<PersonStats> =
-        safeApiCall { api.getPersonStats(personId) }.map { it.toDomain() }
+    /** Issue #17: chores-web keys this endpoint by username, not the numeric person id. */
+    suspend fun getPersonStats(username: String): Result<PersonStats> =
+        safeApiCall { api.getPersonStats(username) }.map { it.toDomain() }
 
-    /** Issue #18: username is auto-derived server-side from [displayName]. */
+    /**
+     * Issue #18. chores-web's `PersonCreate` requires an explicit `username`; since the Create
+     * User dialog only collects a display name (matching the previous, incorrect assumption that
+     * the backend auto-derived it), a simple slug is derived from [displayName] here rather than
+     * growing the dialog with a redundant field.
+     */
     suspend fun createPerson(displayName: String, password: String): Result<Person> =
-        safeApiCall { api.createPerson(CreatePersonRequestDto(displayName, password)) }.map { it.toDomain() }
+        safeApiCall {
+            api.createPerson(
+                CreatePersonRequestDto(
+                    name = displayName,
+                    username = deriveUsername(displayName),
+                    password = password
+                )
+            )
+        }.map { it.toDomain() }
 
     /** Issue #18. [password] blank/null means "unchanged". */
     suspend fun updatePerson(
@@ -49,7 +62,7 @@ class PeopleRepository @Inject constructor(
         api.updatePerson(
             personId,
             UpdatePersonRequestDto(
-                display_name = displayName,
+                name = displayName,
                 username = username,
                 goal_7d = goal7d,
                 goal_30d = goal30d,
@@ -62,11 +75,20 @@ class PeopleRepository @Inject constructor(
     /** Issue #18: does not cascade-delete history/points/log entries. */
     suspend fun deletePerson(personId: Int): Result<Unit> = safeApiCall { api.deletePerson(personId) }
 
-    /** Issue #17. */
-    suspend fun redeemPoints(personId: Int, amount: Int): Result<PersonStats> =
+    /**
+     * Issue #17. The redeem endpoint returns the updated `PersonOut`, not a stats payload;
+     * callers should re-fetch [getPersonStats] afterward for the display balance rather than
+     * relying on this result's shape.
+     */
+    suspend fun redeemPoints(personId: Int, amount: Int): Result<Person> =
         safeApiCall { api.redeemPoints(personId, RedeemRequestDto(amount)) }.map { it.toDomain() }
 
     /** Issue #17. */
     suspend fun getRedemptions(personId: Int): Result<List<Redemption>> =
         safeApiCall { api.getRedemptions(personId) }.map { redemptions -> redemptions.map { it.toDomain() } }
+
+    private companion object {
+        fun deriveUsername(displayName: String): String =
+            displayName.trim().lowercase().replace(Regex("[^a-z0-9]+"), "").ifEmpty { "user" }
+    }
 }

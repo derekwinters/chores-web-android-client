@@ -44,8 +44,8 @@ class ChoresStatsViewModelTest {
                 chore(3, points = 13, enabled = false, nextDue = today.plusDays(1).toString()) // disabled, excluded
             ),
             pointsSummaryResult = listOf(
-                PointsSummaryDto(person_id = 1, points_7d = 10),
-                PointsSummaryDto(person_id = 2, points_7d = 4)
+                PointsSummaryDto(person = "alice", points_7d = 10),
+                PointsSummaryDto(person = "bob", points_7d = 4)
             )
         )
 

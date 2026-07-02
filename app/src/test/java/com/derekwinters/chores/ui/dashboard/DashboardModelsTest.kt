@@ -57,7 +57,7 @@ class DashboardModelsTest {
 
         val cards = buildDashboardCards(
             people = listOf(alice),
-            pointsSummaries = listOf(PointsSummary(personId = 1, points7d = 10, points30d = 40)),
+            pointsSummaries = listOf(PointsSummary(username = "alice", points7d = 10, points30d = 40)),
             chores = chores,
             dueSoonDays = 3,
             today = today

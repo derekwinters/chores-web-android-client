@@ -37,8 +37,8 @@ class DashboardViewModelTest {
             choresResult = listOf(
                 ChoreDto(id = 1, name = "Dishes", points = 5, state = "due", current_assignee = "alice")
             ),
-            pointsSummaryResult = listOf(PointsSummaryDto(person_id = 1, points_7d = 10, points_30d = 40)),
-            peopleResult = listOf(PersonDto(id = 1, username = "alice", display_name = "Alice", goal_7d = 12, goal_30d = 50))
+            pointsSummaryResult = listOf(PointsSummaryDto(person = "alice", points_7d = 10, points_30d = 40)),
+            peopleResult = listOf(PersonDto(id = 1, username = "alice", name = "Alice", goal_7d = 12, goal_30d = 50))
         )
         val viewModel = DashboardViewModel(PeopleRepository(api), ChoreRepository(api), ConfigRepository(api))
         runCurrent()

@@ -37,7 +37,15 @@ class UserDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     val personId: Int = checkNotNull(savedStateHandle.get<Int>("personId")) { "UserDetailScreen requires a personId nav arg" }
-    val username: String? = savedStateHandle.get<String>("username")
+
+    /**
+     * chores-web's points-stats/history endpoints (`GET /v1/points/stats/{person}`, `GET
+     * /v1/points/{person}`) are keyed by username, not the numeric person id used everywhere
+     * else on this screen (redeem, redemption history, person CRUD). Every caller that navigates
+     * here (Dashboard card tap) already supplies both nav args, so this is required rather than
+     * optional like [personId]'s sibling.
+     */
+    val username: String = checkNotNull(savedStateHandle.get<String>("username")) { "UserDetailScreen requires a username nav arg" }
 
     private val _uiState = MutableStateFlow<UiState<UserDetailData>>(UiState.Loading)
     val uiState: StateFlow<UiState<UserDetailData>> = _uiState.asStateFlow()
@@ -52,16 +60,14 @@ class UserDetailViewModel @Inject constructor(
     fun load() {
         _uiState.value = UiState.Loading
         viewModelScope.launch {
-            val statsResult = peopleRepository.getPersonStats(personId)
+            val statsResult = peopleRepository.getPersonStats(username)
             val stats = statsResult.getOrElse { error ->
                 _uiState.value = UiState.Error(errorMessage(error))
                 return@launch
             }
             val redemptions = peopleRepository.getRedemptions(personId).getOrDefault(emptyList())
-            val activity = username?.let { name ->
-                logRepository.getLog(person = name).getOrNull()?.entries?.filter {
-                    it.action in ACTIVITY_ACTIONS
-                }
+            val activity = logRepository.getLog(person = username).getOrNull()?.entries?.filter {
+                it.action in ACTIVITY_ACTIONS
             } ?: emptyList()
 
             _uiState.value = UiState.Success(UserDetailData(stats, redemptions, activity))

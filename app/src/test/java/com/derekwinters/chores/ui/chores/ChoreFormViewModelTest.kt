@@ -66,7 +66,7 @@ class ChoreFormViewModelTest {
     @Test
     fun save_validCreateForm_callsCreateChore() = runTest(mainDispatcherRule.testDispatcher) {
         val api = FakeChoresApi(
-            peopleResult = listOf(PersonDto(1, "alice", "Alice")),
+            peopleResult = listOf(PersonDto(id = 1, name = "Alice", username = "alice")),
             createChoreResult = ChoreDto(id = 1, name = "Dishes", points = 5, state = "due")
         )
         val viewModel = ChoreFormViewModel(ChoreRepository(api), PeopleRepository(api), SavedStateHandle())

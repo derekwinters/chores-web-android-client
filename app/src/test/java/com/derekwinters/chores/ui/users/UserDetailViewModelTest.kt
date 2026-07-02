@@ -5,7 +5,8 @@ import com.derekwinters.chores.MainDispatcherRule
 import com.derekwinters.chores.data.network.FakeChoresApi
 import com.derekwinters.chores.data.network.dto.LogEntryDto
 import com.derekwinters.chores.data.network.dto.LogPageDto
-import com.derekwinters.chores.data.network.dto.PersonStatsDto
+import com.derekwinters.chores.data.network.dto.PersonDto
+import com.derekwinters.chores.data.network.dto.UserStatsDto
 import com.derekwinters.chores.data.network.dto.RedemptionDto
 import com.derekwinters.chores.data.repository.LogRepository
 import com.derekwinters.chores.data.repository.PeopleRepository
@@ -27,7 +28,7 @@ class UserDetailViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private fun buildViewModel(api: FakeChoresApi, personId: Int = 1, username: String? = "alice") =
+    private fun buildViewModel(api: FakeChoresApi, personId: Int = 1, username: String = "alice") =
         UserDetailViewModel(
             PeopleRepository(api),
             LogRepository(api),
@@ -37,8 +38,8 @@ class UserDetailViewModelTest {
     @Test
     fun load_combinesStatsRedemptionsAndFilteredActivity() = runTest(mainDispatcherRule.testDispatcher) {
         val api = FakeChoresApi(
-            personStatsResult = PersonStatsDto(available_points = 20, points_7d = 10, points_30d = 40, redeemed_total = 5, completed_count = 8),
-            redemptionsResult = listOf(RedemptionDto(id = 1, amount = 5, redeemed_by = "admin", timestamp = "2026-07-01")),
+            personStatsResult = UserStatsDto(display_points = 20, points_7d = 10, points_30d = 40, total_points = 45, completed_count = 8),
+            redemptionsResult = listOf(RedemptionDto(id = 1, person_id = 1, amount = 5, redeemed_by = "admin", timestamp = "2026-07-01")),
             logResult = LogPageDto(
                 items = listOf(
                     LogEntryDto(id = 1, timestamp = "t", target_type = "chore", action = "completed", actor = "alice", target_name = "Dishes"),
@@ -73,7 +74,7 @@ class UserDetailViewModelTest {
 
     @Test
     fun validateRedeemAmount_exceedsAvailable_isError() = runTest(mainDispatcherRule.testDispatcher) {
-        val api = FakeChoresApi(personStatsResult = PersonStatsDto(available_points = 10))
+        val api = FakeChoresApi(personStatsResult = UserStatsDto(display_points = 10))
         val viewModel = buildViewModel(api)
         advanceUntilIdle()
 
@@ -84,11 +85,12 @@ class UserDetailViewModelTest {
     @Test
     fun redeem_success_reloadsStats() = runTest(mainDispatcherRule.testDispatcher) {
         // redeem() reloads stats from getPersonStats() after a successful redeem rather than
-        // trusting redeemPoints()'s response body, so FakeChoresApi's static personStatsResult
-        // (not redeemResult) is what the post-redeem assertion below observes.
+        // trusting redeemPoints()'s response body (which is now a PersonOut, not a stats
+        // payload), so FakeChoresApi's static personStatsResult (not redeemResult) is what the
+        // post-redeem assertion below observes.
         val api = FakeChoresApi(
-            personStatsResult = PersonStatsDto(available_points = 10),
-            redeemResult = PersonStatsDto(available_points = 10)
+            personStatsResult = UserStatsDto(display_points = 10),
+            redeemResult = PersonDto(id = 1, name = "Alice", username = "alice")
         )
         val viewModel = buildViewModel(api)
         advanceUntilIdle()

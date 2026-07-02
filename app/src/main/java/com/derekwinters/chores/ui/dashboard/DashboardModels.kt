@@ -49,9 +49,9 @@ fun buildDashboardCards(
     dueSoonDays: Int,
     today: LocalDate = LocalDate.now()
 ): List<DashboardCard> {
-    val summaryByPersonId = pointsSummaries.associateBy { it.personId }
+    val summaryByUsername = pointsSummaries.associateBy { it.username }
     return people.map { person ->
-        val summary = summaryByPersonId[person.id]
+        val summary = summaryByUsername[person.username]
         val relevantChores = chores.filter { it.currentAssignee == person.username || it.currentAssignee == null }
         DashboardCard(
             personId = person.id,

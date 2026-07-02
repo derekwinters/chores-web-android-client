@@ -21,7 +21,7 @@ class UserManagementViewModelTest {
 
     @Test
     fun load_success_populatesPeopleList() = runTest(mainDispatcherRule.testDispatcher) {
-        val api = FakeChoresApi(peopleResult = listOf(PersonDto(1, "alice", "Alice", is_admin = true)))
+        val api = FakeChoresApi(peopleResult = listOf(PersonDto(id = 1, name = "Alice", username = "alice", is_admin = true)))
         val viewModel = UserManagementViewModel(PeopleRepository(api))
         advanceUntilIdle()
 
@@ -32,7 +32,7 @@ class UserManagementViewModelTest {
 
     @Test
     fun createUser_success_reloadsList() = runTest(mainDispatcherRule.testDispatcher) {
-        val api = FakeChoresApi(createPersonResult = PersonDto(2, "bob", "Bob"))
+        val api = FakeChoresApi(createPersonResult = PersonDto(id = 2, name = "Bob", username = "bob"))
         val viewModel = UserManagementViewModel(PeopleRepository(api))
         advanceUntilIdle()
 
@@ -40,12 +40,12 @@ class UserManagementViewModelTest {
         advanceUntilIdle()
 
         assertEquals(UiState.Success(Unit), viewModel.actionState.value)
-        assertEquals("Bob", api.lastCreatePersonRequest?.display_name)
+        assertEquals("Bob", api.lastCreatePersonRequest?.name)
     }
 
     @Test
     fun deleteUser_success_reloadsList() = runTest(mainDispatcherRule.testDispatcher) {
-        val api = FakeChoresApi(peopleResult = listOf(PersonDto(1, "alice", "Alice")))
+        val api = FakeChoresApi(peopleResult = listOf(PersonDto(id = 1, name = "Alice", username = "alice")))
         val viewModel = UserManagementViewModel(PeopleRepository(api))
         advanceUntilIdle()
 

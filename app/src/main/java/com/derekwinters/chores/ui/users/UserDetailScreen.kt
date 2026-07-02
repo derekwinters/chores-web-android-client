@@ -93,8 +93,9 @@ fun UserDetailContent(
                                 StatLine("Available points", data.stats.availablePoints)
                                 StatLine("7-day total", data.stats.points7d)
                                 StatLine("30-day total", data.stats.points30d)
-                                StatLine("Redeemed total", data.stats.redeemedTotal)
+                                StatLine("Total points earned", data.stats.totalPoints)
                                 StatLine("Completed count", data.stats.completedCount)
+                                StatLine("Skipped count", data.stats.skippedCount)
 
                                 if (isAdmin) {
                                     Button(

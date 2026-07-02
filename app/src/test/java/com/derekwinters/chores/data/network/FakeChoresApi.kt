@@ -14,7 +14,7 @@ import com.derekwinters.chores.data.network.dto.LoginRequestDto
 import com.derekwinters.chores.data.network.dto.LoginResponseDto
 import com.derekwinters.chores.data.network.dto.LogPageDto
 import com.derekwinters.chores.data.network.dto.PersonDto
-import com.derekwinters.chores.data.network.dto.PersonStatsDto
+import com.derekwinters.chores.data.network.dto.UserStatsDto
 import com.derekwinters.chores.data.network.dto.PointsLogEntryDto
 import com.derekwinters.chores.data.network.dto.PointsLogPageDto
 import com.derekwinters.chores.data.network.dto.PointsSummaryDto
@@ -66,9 +66,9 @@ class FakeChoresApi(
     private val markDueResult: ChoreDto? = null,
     private val createChoreResult: ChoreDto? = null,
     private val updateChoreResult: ChoreDto? = null,
-    private val personStatsResult: PersonStatsDto = PersonStatsDto(),
+    private val personStatsResult: UserStatsDto = UserStatsDto(),
     private val redemptionsResult: List<RedemptionDto> = emptyList(),
-    private val redeemResult: PersonStatsDto? = null,
+    private val redeemResult: PersonDto? = null,
     private val logResult: LogPageDto = LogPageDto(),
     private val createPersonResult: PersonDto? = null,
     private val updatePersonResult: PersonDto? = null,
@@ -172,7 +172,7 @@ class FakeChoresApi(
 
     override suspend fun getPointsSummary(): List<PointsSummaryDto> = pointsSummaryResult
 
-    override suspend fun getPersonStats(personId: Int): PersonStatsDto = personStatsResult
+    override suspend fun getPersonStats(username: String): UserStatsDto = personStatsResult
 
     override suspend fun createPerson(request: CreatePersonRequestDto): PersonDto {
         lastCreatePersonRequest = request
@@ -189,7 +189,7 @@ class FakeChoresApi(
         lastDeletePersonId = personId
     }
 
-    override suspend fun redeemPoints(personId: Int, request: RedeemRequestDto): PersonStatsDto =
+    override suspend fun redeemPoints(personId: Int, request: RedeemRequestDto): PersonDto =
         redeemResult ?: error("FakeChoresApi.redeemResult not configured")
 
     override suspend fun getRedemptions(personId: Int): List<RedemptionDto> = redemptionsResult

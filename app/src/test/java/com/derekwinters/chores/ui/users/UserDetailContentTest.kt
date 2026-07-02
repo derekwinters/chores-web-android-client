@@ -24,7 +24,7 @@ class UserDetailContentTest {
     val composeTestRule = createComposeRule()
 
     private val data = UserDetailData(
-        stats = PersonStats(availablePoints = 20, points7d = 10, points30d = 40, redeemedTotal = 5, completedCount = 8),
+        stats = PersonStats(availablePoints = 20, points7d = 10, points30d = 40, totalPoints = 45, completedCount = 8),
         redemptions = emptyList(),
         activity = emptyList()
     )

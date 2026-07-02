@@ -14,7 +14,7 @@ import com.derekwinters.chores.data.network.dto.LoginRequestDto
 import com.derekwinters.chores.data.network.dto.LoginResponseDto
 import com.derekwinters.chores.data.network.dto.LogPageDto
 import com.derekwinters.chores.data.network.dto.PersonDto
-import com.derekwinters.chores.data.network.dto.PersonStatsDto
+import com.derekwinters.chores.data.network.dto.UserStatsDto
 import com.derekwinters.chores.data.network.dto.PointsLogEntryDto
 import com.derekwinters.chores.data.network.dto.PointsLogPageDto
 import com.derekwinters.chores.data.network.dto.PointsSummaryDto
@@ -128,33 +128,42 @@ interface ChoresApi {
     @GET("v1/people")
     suspend fun getPeople(): List<PersonDto>
 
-    /** Issue #12: per-person rolling point totals for the Dashboard progress bars. */
-    @GET("v1/points-summary")
+    /**
+     * Issue #12: per-person rolling point totals for the Dashboard progress bars. Each entry is
+     * keyed by `person` (username string), not a person id — see [PointsSummaryDto].
+     */
+    @GET("v1/points/summary")
     suspend fun getPointsSummary(): List<PointsSummaryDto>
 
-    /** Issue #17. */
-    @GET("v1/people/{id}/stats")
-    suspend fun getPersonStats(@Path("id") personId: Int): PersonStatsDto
+    /**
+     * Issue #17. Keyed by the person's **username** (a string path segment), not their numeric
+     * person id — matches chores-web's `GET /v1/points/stats/{person}`.
+     */
+    @GET("v1/points/stats/{person}")
+    suspend fun getPersonStats(@Path("person") username: String): UserStatsDto
 
     /** Issue #18. */
     @POST("v1/people")
     suspend fun createPerson(@Body request: CreatePersonRequestDto): PersonDto
 
-    /** Issue #18. */
-    @PATCH("v1/people/{id}")
-    suspend fun updatePerson(@Path("id") personId: Int, @Body request: UpdatePersonRequestDto): PersonDto
+    /** Issue #18: chores-web's `PersonUpdate` route is a PUT (partial update), not a PATCH. */
+    @PUT("v1/people/{person_id}")
+    suspend fun updatePerson(@Path("person_id") personId: Int, @Body request: UpdatePersonRequestDto): PersonDto
 
     /** Issue #18. */
-    @DELETE("v1/people/{id}")
-    suspend fun deletePerson(@Path("id") personId: Int)
+    @DELETE("v1/people/{person_id}")
+    suspend fun deletePerson(@Path("person_id") personId: Int)
+
+    /**
+     * Issue #17. Returns the updated `PersonOut`, not a stats payload — callers should re-fetch
+     * [getPersonStats] for the display balance rather than trusting this response body.
+     */
+    @POST("v1/people/{person_id}/redeem")
+    suspend fun redeemPoints(@Path("person_id") personId: Int, @Body request: RedeemRequestDto): PersonDto
 
     /** Issue #17. */
-    @POST("v1/people/{id}/redeem")
-    suspend fun redeemPoints(@Path("id") personId: Int, @Body request: RedeemRequestDto): PersonStatsDto
-
-    /** Issue #17. */
-    @GET("v1/people/{id}/redemptions")
-    suspend fun getRedemptions(@Path("id") personId: Int): List<RedemptionDto>
+    @GET("v1/people/{person_id}/redemptions")
+    suspend fun getRedemptions(@Path("person_id") personId: Int): List<RedemptionDto>
 
     // --- Activity Log (issues #15, #17, #19) ---
 
