@@ -75,4 +75,14 @@
     <string name="filter_disabled">Disabled</string>
     <string name="filter_schedule_type">Schedule type</string>
     <string name="filter_assignment_type">Assignment type</string>
+
+    <!-- Chores screen: stats panel (issue #14) -->
+    <string name="stats_panel_title">Stats</string>
+    <string name="expand_stats_panel">Expand stats panel</string>
+    <string name="collapse_stats_panel">Collapse stats panel</string>
+    <string name="stat_total_chores">Total Chores</string>
+    <string name="stat_total_points">Total Points</string>
+    <string name="stat_completed_7_days">Completed Last 7 Days</string>
+    <string name="stat_due_7_days">Due Next 7 Days</string>
+    <string name="loading">Loading…</string>
 </resources>

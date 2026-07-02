@@ -59,6 +59,7 @@ fun ChoreListScreen(
 
     ChoreListContent(
         modifier = modifier,
+        statsPanel = { ChoresStatsPanel() },
         uiState = visibleState,
         totalCount = allChores.size,
         filters = filters,
@@ -84,12 +85,15 @@ fun ChoreListContent(
     availableScheduleTypes: List<String> = emptyList(),
     availableAssignmentTypes: List<String> = emptyList(),
     onQueryChange: (String) -> Unit = {},
-    onFiltersChange: (ChoreFilters) -> Unit = {}
+    onFiltersChange: (ChoreFilters) -> Unit = {},
+    statsPanel: @Composable () -> Unit = {}
 ) {
     var choreAwaitingCompleter by remember { mutableStateOf<Chore?>(null) }
     var showFiltersDialog by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize()) {
+        statsPanel()
+
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically

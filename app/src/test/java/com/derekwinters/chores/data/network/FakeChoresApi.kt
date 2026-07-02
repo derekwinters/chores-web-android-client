@@ -56,7 +56,8 @@ class FakeChoresApi(
     private val currentUserResult: UserInfoDto = UserInfoDto("", false),
     private val currentUserError: Throwable? = null,
     private val setupStatusResult: SetupStatusDto = SetupStatusDto(setup_needed = false),
-    private val dbStatusResult: DbStatusDto = DbStatusDto(ready = true)
+    private val dbStatusResult: DbStatusDto = DbStatusDto(ready = true),
+    private val pointsSummaryResult: List<PointsSummaryDto> = emptyList()
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -113,7 +114,7 @@ class FakeChoresApi(
 
     override suspend fun getPeople(): List<PersonDto> = emptyList()
 
-    override suspend fun getPointsSummary(): List<PointsSummaryDto> = emptyList()
+    override suspend fun getPointsSummary(): List<PointsSummaryDto> = pointsSummaryResult
 
     override suspend fun getPersonStats(personId: Int): PersonStatsDto = PersonStatsDto()
 
