@@ -30,12 +30,12 @@ class DbReadinessViewModelTest {
 
     @Test
     fun init_startsNotReady() {
-        assertTrue(!buildViewModel(DbStatusDto(ready = true)).isReady.value)
+        assertTrue(!buildViewModel(DbStatusDto(status = "ready")).isReady.value)
     }
 
     @Test
     fun init_dbAlreadyReady_becomesReadyAfterFirstPoll() = runTest(mainDispatcherRule.testDispatcher) {
-        val viewModel = buildViewModel(DbStatusDto(ready = true))
+        val viewModel = buildViewModel(DbStatusDto(status = "ready"))
         advanceUntilIdle()
 
         assertTrue(viewModel.isReady.value)

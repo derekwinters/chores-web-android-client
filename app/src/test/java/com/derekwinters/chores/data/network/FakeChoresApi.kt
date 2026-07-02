@@ -57,7 +57,7 @@ class FakeChoresApi(
     private val currentUserResult: UserInfoDto = UserInfoDto("", false),
     private val currentUserError: Throwable? = null,
     private val setupStatusResult: SetupStatusDto = SetupStatusDto(setup_needed = false),
-    private val dbStatusResult: DbStatusDto = DbStatusDto(ready = true),
+    private val dbStatusResult: DbStatusDto = DbStatusDto(status = "ready"),
     private val pointsSummaryResult: List<PointsSummaryDto> = emptyList(),
     private val peopleResult: List<PersonDto> = emptyList(),
     private val configResult: ConfigDto = ConfigDto(),

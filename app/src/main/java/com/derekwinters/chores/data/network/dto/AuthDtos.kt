@@ -74,8 +74,12 @@ data class LoginResetRequiredDto(
     val reset_token: String? = null
 )
 
-/** Response for `GET /status/db-status` (not under the `v1/` prefix), issue #11's readiness gate. */
+/**
+ * Response for `GET /status/db-status` (not under the `v1/` prefix), issue #11's readiness gate.
+ * `status` is one of "initializing"/"ready"/"error" per the backend's OpenAPI description.
+ */
 @Serializable
 data class DbStatusDto(
-    val ready: Boolean = false
+    val status: String = "initializing",
+    val migrations_in_progress: Boolean = false
 )

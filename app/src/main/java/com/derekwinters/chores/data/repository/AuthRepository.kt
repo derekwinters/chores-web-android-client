@@ -137,7 +137,7 @@ class AuthRepository @Inject constructor(
     }
 
     /** Issue #11: polled before rendering the authenticated app shell. */
-    suspend fun isDatabaseReady(): Result<Boolean> = safeApiCall { api.getDbStatus() }.map { it.ready }
+    suspend fun isDatabaseReady(): Result<Boolean> = safeApiCall { api.getDbStatus() }.map { it.status == "ready" }
 
     /** Issue #10: current user's identity, driving admin-only nav visibility. */
     suspend fun getCurrentUser(): Result<CurrentUser> = safeApiCall { api.getCurrentUser() }.map { it.toDomain() }
