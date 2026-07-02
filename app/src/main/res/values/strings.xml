@@ -20,6 +20,21 @@
     <string name="logout">Logout</string>
     <string name="coming_soon">Coming soon</string>
 
+    <!-- Auth parity: first-run setup, forced password reset, DB-readiness gate (issue #11) -->
+    <string name="continue_button">Continue</string>
+    <string name="retry">Retry</string>
+    <string name="database_initializing">Database initializing…</string>
+    <string name="setup_title">Create Admin Account</string>
+    <string name="setup_submit">Create Account</string>
+    <string name="require_authentication_label">Require Authentication</string>
+    <string name="confirm_password_label">Confirm Password</string>
+    <string name="passwords_do_not_match">Passwords do not match</string>
+    <string name="password_reset_title">Password Reset Required</string>
+    <string name="password_reset_description">Your password must be reset before you can log in.</string>
+    <string name="new_password_label">New Password</string>
+    <string name="password_too_short">Password must be at least 8 characters</string>
+    <string name="password_reset_submit">Set New Password</string>
+
     <!-- Login screen (issue #5) -->
     <string name="login_screen_title">Log in to Chores</string>
     <string name="server_url_label">Server URL</string>

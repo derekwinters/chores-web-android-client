@@ -42,7 +42,8 @@ class ChoresAppTest {
                 usersContent = { Text("Fake Users") },
                 settingsContent = { Text("Fake Settings") },
                 preferencesContent = { Text("Fake Preferences") },
-                currentUserProvider = { UiState.Success(CurrentUser("alice", isAdmin)) }
+                currentUserProvider = { UiState.Success(CurrentUser("alice", isAdmin)) },
+                isDatabaseReadyProvider = { true }
             )
         }
     }

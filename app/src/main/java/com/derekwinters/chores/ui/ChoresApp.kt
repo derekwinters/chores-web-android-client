@@ -44,9 +44,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.derekwinters.chores.R
 import com.derekwinters.chores.data.model.CurrentUser
+import com.derekwinters.chores.ui.auth.AuthGateScreen
 import com.derekwinters.chores.ui.chores.ChoreListScreen
+import com.derekwinters.chores.ui.common.DbReadinessGate
 import com.derekwinters.chores.ui.common.PlaceholderScreen
-import com.derekwinters.chores.ui.login.LoginScreen
 import kotlinx.coroutines.launch
 
 /**
@@ -105,7 +106,7 @@ fun ChoresApp(
 
 /**
  * @param loginContent slot rendered while signed out; defaults to the real (Hilt-wired)
- *   [LoginScreen] but is overridable in tests to avoid needing a Hilt test component.
+ *   [AuthGateScreen] but is overridable in tests to avoid needing a Hilt test component.
  * @param currentUserProvider supplies the signed-in user's admin status for nav gating;
  *   overridable in tests. Defaults to the real (Hilt-wired) [CurrentUserViewModel].
  */
@@ -115,7 +116,7 @@ fun ChoresAppContent(
     onSendTestNotification: () -> Unit,
     onLogout: () -> Unit = {},
     modifier: Modifier = Modifier,
-    loginContent: @Composable () -> Unit = { LoginScreen() },
+    loginContent: @Composable () -> Unit = { AuthGateScreen() },
     dashboardContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
     choresContent: @Composable () -> Unit = { ChoreListScreen() },
     logContent: @Composable () -> Unit = { PlaceholderScreen(stringResource(R.string.coming_soon)) },
@@ -126,6 +127,11 @@ fun ChoresAppContent(
         val viewModel: CurrentUserViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsState()
         state
+    },
+    isDatabaseReadyProvider: @Composable () -> Boolean = {
+        val viewModel: DbReadinessViewModel = hiltViewModel()
+        val ready by viewModel.isReady.collectAsState()
+        ready
     }
 ) {
     if (!isAuthenticated) {
@@ -133,21 +139,24 @@ fun ChoresAppContent(
         return
     }
 
-    val currentUserState = currentUserProvider()
-    val isAdmin = (currentUserState as? UiState.Success)?.data?.isAdmin == true
+    val isDatabaseReady = isDatabaseReadyProvider()
 
-    ChoresAuthenticatedScaffold(
-        isAdmin = isAdmin,
-        onLogout = onLogout,
-        modifier = modifier,
-        dashboardContent = dashboardContent,
-        choresContent = choresContent,
-        logContent = logContent,
-        usersContent = usersContent,
-        settingsContent = settingsContent,
-        preferencesContent = preferencesContent,
-        notificationContent = { NotificationScreen(onSendTestNotification = onSendTestNotification) }
-    )
+    DbReadinessGate(isReady = isDatabaseReady, modifier = modifier) {
+        val currentUserState = currentUserProvider()
+        val isAdmin = (currentUserState as? UiState.Success)?.data?.isAdmin == true
+
+        ChoresAuthenticatedScaffold(
+            isAdmin = isAdmin,
+            onLogout = onLogout,
+            dashboardContent = dashboardContent,
+            choresContent = choresContent,
+            logContent = logContent,
+            usersContent = usersContent,
+            settingsContent = settingsContent,
+            preferencesContent = preferencesContent,
+            notificationContent = { NotificationScreen(onSendTestNotification = onSendTestNotification) }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

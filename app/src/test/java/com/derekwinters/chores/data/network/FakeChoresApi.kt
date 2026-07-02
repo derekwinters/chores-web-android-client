@@ -54,7 +54,9 @@ class FakeChoresApi(
     private val completeResult: ChoreDto? = null,
     private val completeError: Throwable? = null,
     private val currentUserResult: UserInfoDto = UserInfoDto("", false),
-    private val currentUserError: Throwable? = null
+    private val currentUserError: Throwable? = null,
+    private val setupStatusResult: SetupStatusDto = SetupStatusDto(setup_needed = false),
+    private val dbStatusResult: DbStatusDto = DbStatusDto(ready = true)
 ) : ChoresApi {
 
     var lastCompleteChoreId: Int? = null
@@ -74,14 +76,14 @@ class FakeChoresApi(
 
     override suspend fun logout() = Unit
 
-    override suspend fun getSetupStatus(): SetupStatusDto = SetupStatusDto(setup_needed = false)
+    override suspend fun getSetupStatus(): SetupStatusDto = setupStatusResult
 
     override suspend fun setup(request: SetupRequestDto): LoginResponseDto =
         loginResult ?: error("FakeChoresApi.loginResult not configured")
 
     override suspend fun resetPassword(authorization: String, request: ResetPasswordRequestDto) = Unit
 
-    override suspend fun getDbStatus(): DbStatusDto = DbStatusDto(ready = true)
+    override suspend fun getDbStatus(): DbStatusDto = dbStatusResult
 
     override suspend fun getChores(): List<ChoreDto> {
         choresError?.let { throw it }
