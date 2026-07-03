@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.chores
 
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -44,5 +45,17 @@ class ChoresStatsPanelContentTest {
 
         composeTestRule.onNodeWithContentDescription("Expand stats panel").performClick()
         composeTestRule.onNodeWithText("27").assertExists()
+    }
+
+    @Test
+    fun statsPanel_valueText_isVisuallyLargerThanLabelText() {
+        composeTestRule.setContent {
+            ChoresStatsPanelContent(uiState = UiState.Success(stats), initiallyExpanded = true)
+        }
+
+        val labelHeight = composeTestRule.onNodeWithText("Total Chores").getUnclippedBoundsInRoot().height
+        val valueHeight = composeTestRule.onNodeWithText("5").getUnclippedBoundsInRoot().height
+
+        assert(valueHeight > labelHeight)
     }
 }
