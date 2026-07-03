@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.data.model.ThemeOption
@@ -47,10 +48,12 @@ import com.derekwinters.chores.ui.UiState
 @Composable
 fun ThemeAdminScreen(modifier: Modifier = Modifier, viewModel: ThemeAdminViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
+    val defaultThemeId by viewModel.defaultThemeId.collectAsState()
 
     ThemeAdminContent(
         modifier = modifier,
         uiState = uiState,
+        defaultThemeId = defaultThemeId,
         onSetDefault = viewModel::setDefaultTheme,
         onCreate = viewModel::createTheme,
         onRename = viewModel::renameTheme,
@@ -65,6 +68,7 @@ fun ThemeAdminContent(
     onCreate: (name: String, sourceTheme: ThemeOption) -> Unit,
     onRename: (themeId: String, newName: String) -> Unit,
     onDelete: (String) -> Unit,
+    defaultThemeId: String? = null,
     modifier: Modifier = Modifier
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -83,6 +87,7 @@ fun ThemeAdminContent(
                     items(uiState.data, key = { it.id }) { theme ->
                         ThemeRow(
                             theme = theme,
+                            isActive = defaultThemeId == theme.id,
                             onSetDefault = { onSetDefault(theme.id) },
                             onEdit = { editingTheme = theme }
                         )
@@ -124,8 +129,25 @@ fun ThemeAdminContent(
 }
 
 @Composable
-private fun ThemeRow(theme: ThemeOption, onSetDefault: () -> Unit, onEdit: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(onClick = onSetDefault)) {
+private fun ThemeRow(
+    theme: ThemeOption,
+    isActive: Boolean = false,
+    onSetDefault: () -> Unit,
+    onEdit: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onSetDefault)
+            .then(
+                if (isActive) {
+                    Modifier.shadow(elevation = 12.dp, shape = RoundedCornerShape(12.dp))
+                } else {
+                    Modifier
+                }
+            )
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
