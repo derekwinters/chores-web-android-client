@@ -74,10 +74,8 @@ class ChoreListContentTest {
 
         composeTestRule.onNodeWithText("Dishes").performClick()
 
-        composeTestRule.onNodeWithText("POINTS").assertExists()
-        composeTestRule.onNodeWithText("5").assertExists()
-        composeTestRule.onNodeWithText("STATUS").assertExists()
-        composeTestRule.onNodeWithText("Due").assertExists()
+        composeTestRule.onNodeWithText("Points: 5").assertExists()
+        composeTestRule.onNodeWithText("Status: due").assertExists()
     }
 
     @Test
@@ -105,8 +103,7 @@ class ChoreListContentTest {
 
         composeTestRule.onNodeWithText("Trash").performClick()
 
-        composeTestRule.onNodeWithText("ASSIGNEE").assertExists()
-        composeTestRule.onNodeWithText("Completer").assertExists()
+        composeTestRule.onNodeWithText("Assignee: Completer").assertExists()
     }
 
     @Test

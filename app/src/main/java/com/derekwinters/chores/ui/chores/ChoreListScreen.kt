@@ -18,7 +18,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,11 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.R
@@ -259,25 +254,6 @@ fun ChoreListContent(
     }
 }
 
-/**
- * Mirrors chores-web's `ChoreCard.jsx` `ageSeverity()`: the color used for both the card's left
- * accent bar and its due-date text -- error-red while due, muted once complete, none otherwise.
- */
-@Composable
-private fun statusAccentColor(chore: Chore): Color? = when {
-    chore.isDue -> MaterialTheme.colorScheme.error
-    chore.state == "complete" -> MaterialTheme.colorScheme.onSurfaceVariant
-    else -> null
-}
-
-/** Mirrors chores-web's `ChoreList.jsx` `STATE_LABELS` (`due` -> "Due", `complete` -> "Done"). */
-@Composable
-private fun stateLabel(state: String): String = when (state) {
-    "due" -> stringResource(R.string.chore_state_due_label)
-    "complete" -> stringResource(R.string.chore_state_complete_label)
-    else -> state
-}
-
 @Composable
 private fun ChoreRow(
     chore: Chore,
@@ -292,7 +268,6 @@ private fun ChoreRow(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    val accentColor = statusAccentColor(chore)
 
     Card(
         modifier = Modifier
@@ -300,17 +275,7 @@ private fun ChoreRow(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { expanded = !expanded }
     ) {
-        // A left accent bar matching chores-web's `.accent-bar`, painted with drawBehind (using
-        // the Column's actual post-layout size) rather than a fillMaxHeight() sibling -- the
-        // latter needs Modifier.height(IntrinsicSize.Min) on a shared parent Row, which throws at
-        // runtime once a weight()-based descendant (the action button row below) enters the tree.
-        Column(
-            modifier = Modifier
-                .drawBehind {
-                    accentColor?.let { color -> drawRect(color = color, size = Size(4.dp.toPx(), size.height)) }
-                }
-                .padding(start = 20.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(text = chore.name, style = MaterialTheme.typography.titleMedium)
 
             chore.currentAssignee?.let {
@@ -320,19 +285,13 @@ private fun ChoreRow(
             chore.nextDue?.let {
                 Text(
                     text = stringResource(R.string.chore_next_due_format, formatNextDue(it)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = accentColor ?: Color.Unspecified
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
 
             if (expanded) {
                 ChoreDetailSection(chore = chore)
 
-                // Reverted to the original plain Row/TextButton implementation after repeated CI
-                // failures on choreListContent_deleteAction_requiresConfirmation with every
-                // OutlinedButton/weight(1f)-based variant tried (see PR history) -- root cause
-                // unresolved, but this exact shape is proven working. The overflow/clipping this
-                // was meant to fix on narrow screens is a known follow-up, tracked separately.
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Start) {
                     if (isCompleting || isPendingAction) {
                         CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
@@ -383,51 +342,26 @@ private fun formatNextDue(raw: String): String {
     }
 }
 
-/** Mirrors chores-web's `.expanded-meta` -- a 2-column label/value grid framed by dividers. */
 @Composable
 private fun ChoreDetailSection(chore: Chore) {
     Column(modifier = Modifier.padding(top = 8.dp)) {
-        HorizontalDivider()
-        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            ChoreMetaItem(
-                modifier = Modifier.weight(1f),
-                label = stringResource(R.string.chore_detail_status_label),
-                value = stateLabel(chore.state)
-            )
-            ChoreMetaItem(
-                modifier = Modifier.weight(1f),
-                label = stringResource(R.string.chore_detail_frequency_label),
-                value = chore.scheduleSummary.orEmpty()
-            )
-        }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            ChoreMetaItem(
-                modifier = Modifier.weight(1f),
-                label = stringResource(R.string.chore_detail_points_label),
-                value = chore.points.toString()
-            )
-            ChoreMetaItem(
-                modifier = Modifier.weight(1f),
-                label = stringResource(R.string.chore_detail_assignee_label),
-                value = chore.currentAssignee ?: stringResource(R.string.chore_completer_label)
-            )
-        }
-        HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
-    }
-}
-
-@Composable
-private fun ChoreMetaItem(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
         Text(
-            text = label.uppercase(Locale.getDefault()),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            text = stringResource(R.string.chore_detail_status_format, chore.state),
+            style = MaterialTheme.typography.bodySmall
+        )
+        chore.scheduleSummary?.let {
+            Text(text = stringResource(R.string.chore_detail_frequency_format, it), style = MaterialTheme.typography.bodySmall)
+        }
+        Text(
+            text = stringResource(R.string.chore_detail_points_format, chore.points),
+            style = MaterialTheme.typography.bodySmall
         )
         Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
+            text = stringResource(
+                R.string.chore_detail_assignee_format,
+                chore.currentAssignee ?: stringResource(R.string.chore_completer_label)
+            ),
+            style = MaterialTheme.typography.bodySmall
         )
     }
 }
