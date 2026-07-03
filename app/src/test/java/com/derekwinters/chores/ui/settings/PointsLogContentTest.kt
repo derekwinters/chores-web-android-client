@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.settings
 
+import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -24,6 +25,21 @@ class PointsLogContentTest {
     val composeTestRule = createComposeRule()
 
     private val entry = PointsLogEntry(id = 1, person = "alice", points = 5, choreId = 4, completedAt = "2026-07-01")
+
+    @Test
+    fun pointsLogContent_rendersPageHeading() {
+        composeTestRule.setContent {
+            PointsLogContent(
+                uiState = UiState.Success(PointsLogPage(listOf(entry), total = 1, offset = 0, limit = 20)),
+                onUpdate = { _, _, _ -> },
+                onDelete = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Points Log").assertExists()
+    }
 
     @Test
     fun pointsLogContent_editEntry_savesUpdatedValues() {
