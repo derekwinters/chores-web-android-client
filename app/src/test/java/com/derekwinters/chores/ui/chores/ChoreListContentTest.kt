@@ -75,8 +75,10 @@ class ChoreListContentTest {
 
         composeTestRule.onNodeWithText("Dishes").performClick()
 
-        composeTestRule.onNodeWithText("Points: 5").assertExists()
-        composeTestRule.onNodeWithText("Status: due").assertExists()
+        composeTestRule.onNodeWithText("POINTS").assertExists()
+        composeTestRule.onNodeWithText("5").assertExists()
+        composeTestRule.onNodeWithText("STATUS").assertExists()
+        composeTestRule.onNodeWithText("Due").assertExists()
     }
 
     @Test
@@ -104,7 +106,8 @@ class ChoreListContentTest {
 
         composeTestRule.onNodeWithText("Trash").performClick()
 
-        composeTestRule.onNodeWithText("Assignee: Completer").assertExists()
+        composeTestRule.onNodeWithText("ASSIGNEE").assertExists()
+        composeTestRule.onNodeWithText("Completer").assertExists()
     }
 
     @Test
@@ -294,10 +297,11 @@ class ChoreListContentTest {
 
     @Test
     @Config(sdk = [33], qualifiers = "w360dp-h640dp")
-    fun choreListContent_expandChore_allFourActionsRemainReachableOnNarrowScreen() {
-        // A due, assigned chore expands to 4 actions (Complete, Skip, Edit, History, Delete is a
-        // 5th) in a single Row -- on a common ~360dp-wide phone that combined width overflows the
-        // screen, clipping the trailing actions instead of wrapping them onto a second line.
+    fun choreListContent_expandChore_allFiveActionsRemainReachableOnNarrowScreen() {
+        // A due, assigned chore expands to 5 actions (Complete, Skip, Edit, History, Delete) in a
+        // single Row -- each action button is weight(1f) so they always share the full row width
+        // (matching chores-web's `.action-btn { flex: 1 }`) instead of overflowing/clipping at
+        // their natural size on a common ~360dp-wide phone.
         composeTestRule.setContent {
             ChoreListContent(
                 uiState = UiState.Success(listOf(assignedChore)),
