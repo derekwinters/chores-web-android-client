@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.users
 
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -89,5 +90,25 @@ class UserManagementContentTest {
         composeTestRule.onNodeWithText("History").performClick()
 
         assert(historyUsername == "admin")
+    }
+
+    @Test
+    fun userManagementContent_displayName_isVisuallyLargerThanUsername() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        val nameHeight = composeTestRule.onNodeWithText("Admin").getUnclippedBoundsInRoot().height
+        val usernameHeight = composeTestRule.onNodeWithText("admin").getUnclippedBoundsInRoot().height
+
+        assert(nameHeight > usernameHeight)
     }
 }
