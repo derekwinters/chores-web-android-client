@@ -1,6 +1,5 @@
 package com.derekwinters.chores.ui.theme
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,12 +15,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.draw.shadow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -101,12 +99,21 @@ private fun ThemeOptionCard(name: String, theme: ThemeOption, selected: Boolean,
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        border = if (selected) {
-            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-        } else {
-            null
-        }
+            .clickable(onClick = onClick)
+            .then(
+                if (selected) {
+                    Modifier.shadow(
+                        elevation = 16.dp,
+                        shape = RoundedCornerShape(12.dp),
+                        clip = false
+                    )
+                } else {
+                    Modifier
+                }
+            ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (selected) 12.dp else 4.dp
+        )
     ) {
         Column(
             modifier = Modifier
@@ -131,13 +138,6 @@ private fun ThemeOptionCard(name: String, theme: ThemeOption, selected: Boolean,
                 ColorSwatch(color = theme.secondary, contentDescription = "Secondary color")
                 ColorSwatch(color = theme.accent, contentDescription = "Accent color")
                 ColorSwatch(color = theme.background, contentDescription = "Background color")
-            }
-            if (selected) {
-                Icon(
-                    Icons.Filled.Check,
-                    contentDescription = "Selected",
-                    tint = MaterialTheme.colorScheme.primary
-                )
             }
         }
     }
