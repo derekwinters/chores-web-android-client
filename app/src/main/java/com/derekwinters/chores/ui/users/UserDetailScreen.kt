@@ -118,7 +118,7 @@ fun UserDetailContent(
                     if (data.redemptions.isEmpty()) {
                         item { Text("No redemptions yet") }
                     } else {
-                        items(data.redemptions, key = { it.id }) { redemption ->
+                        items(data.redemptions, key = { "redemption-${it.id}" }) { redemption ->
                             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -144,7 +144,7 @@ fun UserDetailContent(
                     if (data.activity.isEmpty()) {
                         item { Text("No activity yet") }
                     } else {
-                        items(data.activity, key = { it.id }) { entry ->
+                        items(data.activity, key = { "activity-${it.id}" }) { entry ->
                             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(12.dp),
