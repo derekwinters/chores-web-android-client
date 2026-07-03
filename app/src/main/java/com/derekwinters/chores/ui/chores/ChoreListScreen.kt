@@ -370,12 +370,16 @@ private fun ChoreRow(
                             onClick = onHistory,
                             modifier = Modifier.weight(1f)
                         )
-                        ChoreActionButton(
-                            text = stringResource(R.string.chore_delete_action),
+                        // Deliberately a plain TextButton (not ChoreActionButton/OutlinedButton)
+                        // wired directly to ChoreRow's own showDeleteConfirm, matching this app's
+                        // one other proven working "click -> local state -> dialog" trigger.
+                        TextButton(
                             onClick = { showDeleteConfirm = true },
-                            contentColor = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.weight(1f)
-                        )
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text(stringResource(R.string.chore_delete_action), style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                        }
                     }
                 }
             }
