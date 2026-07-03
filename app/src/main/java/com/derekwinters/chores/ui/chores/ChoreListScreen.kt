@@ -1,19 +1,14 @@
 package com.derekwinters.chores.ui.chores
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -309,78 +306,76 @@ private fun ChoreRow(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { expanded = !expanded }
     ) {
-        // A left accent bar sized to the card's own height (not the screen's), matching
-        // chores-web's `.accent-bar` -- IntrinsicSize.Min lets the bar's fillMaxHeight() resolve
-        // against the Column's measured height instead of needing an explicit height up front.
-        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .fillMaxHeight()
-                    .background(accentColor ?: Color.Transparent)
-            )
-
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = chore.name, style = MaterialTheme.typography.titleMedium)
-
-                chore.currentAssignee?.let {
-                    Text(text = it, style = MaterialTheme.typography.bodyMedium)
+        // A left accent bar matching chores-web's `.accent-bar`, painted with drawBehind (using
+        // the Column's actual post-layout size) rather than a fillMaxHeight() sibling -- the
+        // latter needs Modifier.height(IntrinsicSize.Min) on a shared parent Row, which throws at
+        // runtime once a weight()-based descendant (the action button row below) enters the tree.
+        Column(
+            modifier = Modifier
+                .drawBehind {
+                    accentColor?.let { color -> drawRect(color = color, size = Size(4.dp.toPx(), size.height)) }
                 }
+                .padding(start = 20.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
+        ) {
+            Text(text = chore.name, style = MaterialTheme.typography.titleMedium)
 
-                chore.nextDue?.let {
-                    Text(
-                        text = stringResource(R.string.chore_next_due_format, formatNextDue(it)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = accentColor ?: Color.Unspecified
-                    )
-                }
+            chore.currentAssignee?.let {
+                Text(text = it, style = MaterialTheme.typography.bodyMedium)
+            }
 
-                if (expanded) {
-                    ChoreDetailSection(chore = chore)
+            chore.nextDue?.let {
+                Text(
+                    text = stringResource(R.string.chore_next_due_format, formatNextDue(it)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = accentColor ?: Color.Unspecified
+                )
+            }
 
-                    // Equal-width (weight(1f)) buttons mirror chores-web's `.action-btn { flex: 1 }`
-                    // -- the up-to-5 actions always share the full row width instead of overflowing
-                    // off-screen at their natural size on narrower phones.
-                    Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (isCompleting || isPendingAction) {
-                            CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
+            if (expanded) {
+                ChoreDetailSection(chore = chore)
+
+                // Equal-width (weight(1f)) buttons mirror chores-web's `.action-btn { flex: 1 }`
+                // -- the up-to-5 actions always share the full row width instead of overflowing
+                // off-screen at their natural size on narrower phones.
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (isCompleting || isPendingAction) {
+                        CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
+                    } else {
+                        if (chore.isDue) {
+                            ChoreActionButton(
+                                text = stringResource(R.string.complete_chore_button),
+                                onClick = onCompleteClick,
+                                contentColor = ChoreSuccessColor,
+                                modifier = Modifier.weight(1f)
+                            )
+                            ChoreActionButton(
+                                text = stringResource(R.string.chore_skip_action),
+                                onClick = onSkip,
+                                modifier = Modifier.weight(1f)
+                            )
                         } else {
-                            if (chore.isDue) {
-                                ChoreActionButton(
-                                    text = stringResource(R.string.complete_chore_button),
-                                    onClick = onCompleteClick,
-                                    contentColor = ChoreSuccessColor,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                ChoreActionButton(
-                                    text = stringResource(R.string.chore_skip_action),
-                                    onClick = onSkip,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            } else {
-                                ChoreActionButton(
-                                    text = stringResource(R.string.chore_mark_due_action),
-                                    onClick = onMarkDue,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
                             ChoreActionButton(
-                                text = stringResource(R.string.chore_edit_action),
-                                onClick = onEdit,
-                                modifier = Modifier.weight(1f)
-                            )
-                            ChoreActionButton(
-                                text = stringResource(R.string.chore_history_action),
-                                onClick = onHistory,
-                                modifier = Modifier.weight(1f)
-                            )
-                            ChoreActionButton(
-                                text = stringResource(R.string.chore_delete_action),
-                                onClick = { showDeleteConfirm = true },
-                                contentColor = MaterialTheme.colorScheme.error,
+                                text = stringResource(R.string.chore_mark_due_action),
+                                onClick = onMarkDue,
                                 modifier = Modifier.weight(1f)
                             )
                         }
+                        ChoreActionButton(
+                            text = stringResource(R.string.chore_edit_action),
+                            onClick = onEdit,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ChoreActionButton(
+                            text = stringResource(R.string.chore_history_action),
+                            onClick = onHistory,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ChoreActionButton(
+                            text = stringResource(R.string.chore_delete_action),
+                            onClick = { showDeleteConfirm = true },
+                            contentColor = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
