@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.chores
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -289,6 +290,29 @@ class ChoreListContentTest {
         composeTestRule.onAllNodesWithText("Delete")[1].performClick()
 
         assert(deleted == assignedChore)
+    }
+
+    @Test
+    @Config(sdk = [33], qualifiers = "w360dp-h640dp")
+    fun choreListContent_expandChore_allFourActionsRemainReachableOnNarrowScreen() {
+        // A due, assigned chore expands to 4 actions (Complete, Skip, Edit, History, Delete is a
+        // 5th) in a single Row -- on a common ~360dp-wide phone that combined width overflows the
+        // screen, clipping the trailing actions instead of wrapping them onto a second line.
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Dishes").performClick()
+
+        composeTestRule.onNodeWithText("Complete").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Skip").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Edit").assertIsDisplayed()
+        composeTestRule.onNodeWithText("History").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Delete").assertIsDisplayed()
     }
 
     @Test

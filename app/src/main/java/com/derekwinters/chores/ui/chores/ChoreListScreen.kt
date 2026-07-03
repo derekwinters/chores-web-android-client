@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -254,6 +256,7 @@ fun ChoreListContent(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ChoreRow(
     chore: Chore,
@@ -292,7 +295,12 @@ private fun ChoreRow(
             if (expanded) {
                 ChoreDetailSection(chore = chore)
 
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Start) {
+                // FlowRow (not Row) so the up-to-5 actions wrap onto a second line instead of
+                // overflowing/clipping off-screen on narrower phones.
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.Start
+                ) {
                     if (isCompleting || isPendingAction) {
                         CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                     } else {
