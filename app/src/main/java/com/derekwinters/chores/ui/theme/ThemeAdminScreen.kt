@@ -1,6 +1,7 @@
 package com.derekwinters.chores.ui.theme
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -131,7 +133,13 @@ private fun ThemeRow(theme: ThemeOption, onSetDefault: () -> Unit, onEdit: () ->
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 listOf(theme.primary, theme.secondary, theme.accent, theme.background).forEach { hex ->
-                    Box(modifier = Modifier.size(16.dp).padding(1.dp).background(parseHexColor(hex)))
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .padding(4.dp)
+                            .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                            .background(parseHexColor(hex), RoundedCornerShape(8.dp))
+                    )
                 }
                 Text(theme.name, modifier = Modifier.padding(start = 8.dp))
             }
