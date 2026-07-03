@@ -121,8 +121,8 @@ class UserManagementContentTest {
             )
         }
 
-        val nameFontSize = composeTestRule.onNodeWithText("Admin").textFontSizeSp()
-        val usernameFontSize = composeTestRule.onNodeWithText("admin").textFontSizeSp()
+        val nameFontSize = composeTestRule.onNodeWithText("Admin", useUnmergedTree = true).textFontSizeSp()
+        val usernameFontSize = composeTestRule.onNodeWithText("admin", useUnmergedTree = true).textFontSizeSp()
 
         assert(nameFontSize > usernameFontSize)
     }
