@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -114,17 +115,23 @@ private fun ThemeOptionCard(name: String, theme: ThemeOption, selected: Boolean,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(parseHexColor(theme.primary), CircleShape)
-            )
             Text(
                 name,
                 modifier = Modifier.padding(horizontal = 4.dp),
                 style = MaterialTheme.typography.labelSmall,
                 textAlign = TextAlign.Center
             )
+            // Display all 4 preview colors (matching web: primary, secondary, accent, background)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ColorSwatch(color = theme.primary, contentDescription = "Primary color")
+                ColorSwatch(color = theme.secondary, contentDescription = "Secondary color")
+                ColorSwatch(color = theme.accent, contentDescription = "Accent color")
+                ColorSwatch(color = theme.background, contentDescription = "Background color")
+            }
             if (selected) {
                 Icon(
                     Icons.Filled.Check,
@@ -133,5 +140,16 @@ private fun ThemeOptionCard(name: String, theme: ThemeOption, selected: Boolean,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ColorSwatch(color: String, contentDescription: String) {
+    Box(
+        modifier = Modifier
+            .size(30.dp)
+            .background(parseHexColor(color), RoundedCornerShape(4.dp))
+    ) {
+        // Empty box for color display
     }
 }
