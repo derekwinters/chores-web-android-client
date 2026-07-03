@@ -1,6 +1,5 @@
 package com.derekwinters.chores.ui.chores
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,12 +10,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
@@ -24,7 +22,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -262,9 +259,6 @@ fun ChoreListContent(
     }
 }
 
-/** Web's chores-web `ChoreCard.css` `--success` value, kept literal like Dashboard's trend-warning color since this app's per-household theme doesn't plumb a `success` color to arbitrary screens. */
-private val ChoreSuccessColor = Color(0xFF3DB87A)
-
 /**
  * Mirrors chores-web's `ChoreCard.jsx` `ageSeverity()`: the color used for both the card's left
  * accent bar and its due-date text -- error-red while due, muted once complete, none otherwise.
@@ -334,52 +328,24 @@ private fun ChoreRow(
             if (expanded) {
                 ChoreDetailSection(chore = chore)
 
-                // Equal-width (weight(1f)) buttons mirror chores-web's `.action-btn { flex: 1 }`
-                // -- the up-to-5 actions always share the full row width instead of overflowing
-                // off-screen at their natural size on narrower phones.
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Reverted to the original plain Row/TextButton implementation after repeated CI
+                // failures on choreListContent_deleteAction_requiresConfirmation with every
+                // OutlinedButton/weight(1f)-based variant tried (see PR history) -- root cause
+                // unresolved, but this exact shape is proven working. The overflow/clipping this
+                // was meant to fix on narrow screens is a known follow-up, tracked separately.
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Start) {
                     if (isCompleting || isPendingAction) {
                         CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                     } else {
                         if (chore.isDue) {
-                            ChoreActionButton(
-                                text = stringResource(R.string.complete_chore_button),
-                                onClick = onCompleteClick,
-                                contentColor = ChoreSuccessColor,
-                                modifier = Modifier.weight(1f)
-                            )
-                            ChoreActionButton(
-                                text = stringResource(R.string.chore_skip_action),
-                                onClick = onSkip,
-                                modifier = Modifier.weight(1f)
-                            )
+                            Button(onClick = onCompleteClick) { Text(stringResource(R.string.complete_chore_button)) }
+                            TextButton(onClick = onSkip) { Text(stringResource(R.string.chore_skip_action)) }
                         } else {
-                            ChoreActionButton(
-                                text = stringResource(R.string.chore_mark_due_action),
-                                onClick = onMarkDue,
-                                modifier = Modifier.weight(1f)
-                            )
+                            TextButton(onClick = onMarkDue) { Text(stringResource(R.string.chore_mark_due_action)) }
                         }
-                        ChoreActionButton(
-                            text = stringResource(R.string.chore_edit_action),
-                            onClick = onEdit,
-                            modifier = Modifier.weight(1f)
-                        )
-                        ChoreActionButton(
-                            text = stringResource(R.string.chore_history_action),
-                            onClick = onHistory,
-                            modifier = Modifier.weight(1f)
-                        )
-                        // Deliberately a plain TextButton (not ChoreActionButton/OutlinedButton)
-                        // wired directly to ChoreRow's own showDeleteConfirm, matching this app's
-                        // one other proven working "click -> local state -> dialog" trigger.
-                        TextButton(
-                            onClick = { showDeleteConfirm = true },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text(stringResource(R.string.chore_delete_action), style = MaterialTheme.typography.labelMedium, maxLines = 1)
-                        }
+                        TextButton(onClick = onEdit) { Text(stringResource(R.string.chore_edit_action)) }
+                        TextButton(onClick = onHistory) { Text(stringResource(R.string.chore_history_action)) }
+                        TextButton(onClick = { showDeleteConfirm = true }) { Text(stringResource(R.string.chore_delete_action)) }
                     }
                 }
             }
@@ -401,26 +367,6 @@ private fun ChoreRow(
                 TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
-    }
-}
-
-/** Mirrors chores-web's `.action-btn` -- outlined, neutral-bordered, rounded, default-weight text. */
-@Composable
-private fun ChoreActionButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface
-) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = contentColor),
-        contentPadding = ButtonDefaults.TextButtonContentPadding
-    ) {
-        Text(text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
     }
 }
 
