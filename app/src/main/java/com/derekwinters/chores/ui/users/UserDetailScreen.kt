@@ -30,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.data.model.CurrentUser
 import com.derekwinters.chores.ui.CurrentUserViewModel
 import com.derekwinters.chores.ui.UiState
+import com.derekwinters.chores.ui.common.formatDate
 
 /**
  * Issue #17: per-person detail screen — stats, redeem-points flow, redemption history, and a
@@ -118,7 +119,16 @@ fun UserDetailContent(
                         item { Text("No redemptions yet") }
                     } else {
                         items(data.redemptions, key = { it.id }) { redemption ->
-                            Text("${redemption.amount} pts by ${redemption.redeemedBy} at ${redemption.timestamp}")
+                            Card(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("${redemption.amount} pts", style = MaterialTheme.typography.bodyMedium)
+                                    Text("by ${redemption.redeemedBy}", style = MaterialTheme.typography.bodyMedium)
+                                    Text(formatDate(redemption.timestamp), style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
                         }
                     }
 
@@ -135,7 +145,19 @@ fun UserDetailContent(
                         item { Text("No activity yet") }
                     } else {
                         items(data.activity, key = { it.id }) { entry ->
-                            Text("${entry.action}: ${entry.choreName} (${entry.timestamp})")
+                            Card(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(entry.choreName, style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        entry.action.replaceFirstChar { it.uppercase() },
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(formatDate(entry.timestamp), style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
                         }
                     }
                 }
