@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -134,6 +135,9 @@ fun LoginContent(
                     label = { Text(stringResource(R.string.server_url_label)) },
                     placeholder = { Text(stringResource(R.string.server_url_placeholder)) },
                     singleLine = true,
+                    // Issue #66: flat rectangular corners, matching web (default M3 shape is
+                    // more rounded).
+                    shape = LoginFieldShape,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                     enabled = !isLoading
                 )
@@ -146,6 +150,7 @@ fun LoginContent(
                     onValueChange = { username = it },
                     label = { Text(stringResource(R.string.username_label)) },
                     singleLine = true,
+                    shape = LoginFieldShape,
                     enabled = !isLoading
                 )
 
@@ -158,6 +163,7 @@ fun LoginContent(
                     label = { Text(stringResource(R.string.password_label)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
+                    shape = LoginFieldShape,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     enabled = !isLoading
                 )
@@ -182,9 +188,19 @@ fun LoginContent(
                 }
 
                 Button(
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.padding(top = 16.dp).fillMaxWidth(),
                     onClick = { onLogin(serverUrl, username, password) },
-                    enabled = !isLoading && serverUrl.isNotBlank() && username.isNotBlank() && password.isNotBlank()
+                    enabled = !isLoading && serverUrl.isNotBlank() && username.isNotBlank() && password.isNotBlank(),
+                    // Issue #66: flat rectangular shape + flat (no-elevation) blue button,
+                    // matching web (default M3 Button is a fully-rounded "stadium" shape with
+                    // elevation).
+                    shape = LoginFieldShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp,
+                        disabledElevation = 0.dp
+                    )
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 8.dp))
@@ -195,6 +211,9 @@ fun LoginContent(
         }
     }
 }
+
+/** Issue #66: shared flat rectangular shape for Login's input fields and submit button. */
+private val LoginFieldShape = RoundedCornerShape(4.dp)
 
 /**
  * Issue #11: shown instead of the normal login form when the backend returns a 403 with a
