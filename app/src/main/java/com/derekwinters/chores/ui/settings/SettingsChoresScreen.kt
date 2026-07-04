@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +11,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -22,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -71,6 +75,12 @@ fun SettingsChoresContent(
                 var draft by remember(uiState.data) { mutableStateOf(uiState.data) }
                 val isSaving = saveState is UiState.Loading
                 val isDirty = draft != uiState.data
+                var dueHourMenuExpanded by remember { mutableStateOf(false) }
+                val availableHours = remember { DueHourUtils.getAvailableHours() }
+                val currentHourOption = remember(draft.dueTimeHour) {
+                    DueHourUtils.findHourOption(draft.dueTimeHour)
+                        ?: HourOption(draft.dueTimeHour, DueHourUtils.formatHourLabel(draft.dueTimeHour))
+                }
 
                 Column(
                     modifier = Modifier
@@ -80,24 +90,53 @@ fun SettingsChoresContent(
                 ) {
                     Divider(modifier = Modifier.padding(bottom = 16.dp))
                     Text("Chores Settings", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Configure when chores are marked as due soon and when the due time resets each day.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
 
                     OutlinedTextField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(top = 16.dp),
                         value = draft.dueSoonDays.toString(),
                         onValueChange = { value -> value.toIntOrNull()?.let { draft = draft.copy(dueSoonDays = it) } },
                         label = { Text("Due Soon Days") }
                     )
 
-                    OutlinedTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        value = draft.dueTimeHour.toString(),
-                        onValueChange = { value -> value.toIntOrNull()?.let { draft = draft.copy(dueTimeHour = it) } },
-                        label = { Text("Due Time Hour") }
+                    Text(
+                        "Due Time Hour",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 16.dp)
                     )
+
+                    Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        OutlinedTextField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { dueHourMenuExpanded = true }
+                                .testTag("DueHourField"),
+                            value = currentHourOption.displayLabel,
+                            onValueChange = {},
+                            label = { Text("Due Time Hour") },
+                            readOnly = true
+                        )
+                        DropdownMenu(
+                            expanded = dueHourMenuExpanded,
+                            onDismissRequest = { dueHourMenuExpanded = false }
+                        ) {
+                            availableHours.forEach { hour ->
+                                DropdownMenuItem(
+                                    text = { Text(hour.displayLabel) },
+                                    onClick = {
+                                        draft = draft.copy(dueTimeHour = hour.hour)
+                                        dueHourMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
 
                     TextButton(onClick = onNavigateToData) { Text("Data (Export/Import, Points Log)") }
 
