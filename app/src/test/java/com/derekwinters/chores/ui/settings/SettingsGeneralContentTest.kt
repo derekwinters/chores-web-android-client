@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.AppConfig
 import com.derekwinters.chores.data.network.dto.ConfigDto
@@ -38,8 +39,8 @@ class SettingsGeneralContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("App Title").performTextClearance()
-        composeTestRule.onNodeWithText("App Title").performTextInput("My House")
+        composeTestRule.onNodeWithTag("AppTitleField").performTextClearance()
+        composeTestRule.onNodeWithTag("AppTitleField").performTextInput("My House")
         composeTestRule.onNodeWithText("Save").performClick()
 
         assert(saved?.appTitle == "My House")
@@ -59,10 +60,9 @@ class SettingsGeneralContentTest {
         // Click the Timezone field to open the dropdown
         composeTestRule.onNodeWithTag("TimezoneField").performClick()
 
-        // Find and click the America/New_York option
-        // The display label contains the timezone name and UTC offset
-        // Use substring matching to find "America/New_York"
-        composeTestRule.onNodeWithText("America/New_York", substring = true)
+        // Find and click the New_York option (displayed as "New_York (UTC-X:XX)")
+        // The displayLabel format is "regionName (UTC±HH:MM)" where regionName is the last part of the timezone ID
+        composeTestRule.onNodeWithText("New_York", substring = true)
             .performClick()
 
         composeTestRule.onNodeWithText("Save").performClick()
@@ -124,8 +124,8 @@ class SettingsGeneralContentTest {
         }
 
         // Make a change to trigger dirty state
-        composeTestRule.onNodeWithText("App Title").performTextClearance()
-        composeTestRule.onNodeWithText("App Title").performTextInput("My House")
+        composeTestRule.onNodeWithTag("AppTitleField").performTextClearance()
+        composeTestRule.onNodeWithTag("AppTitleField").performTextInput("My House")
 
         // After edit, Save button should now be enabled and clicking it should work
         composeTestRule.onNodeWithText("Save").performClick()

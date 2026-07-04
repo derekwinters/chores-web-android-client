@@ -91,7 +91,8 @@ fun SettingsGeneralContent(
                     OutlinedTextField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(top = 8.dp)
+                            .testTag("AppTitleField"),
                         value = draft.appTitle,
                         onValueChange = { draft = draft.copy(appTitle = it) },
                         label = { Text("App Title") }
