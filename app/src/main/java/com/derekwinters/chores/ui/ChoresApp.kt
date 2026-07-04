@@ -1,15 +1,20 @@
 package com.derekwinters.chores.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.People
@@ -34,7 +39,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -133,13 +140,16 @@ private fun logRouteWithArgs(chore: String?, person: String?): String {
 private fun userDetailRoute(personId: Int, username: String): String =
     "users/$personId?username=${android.net.Uri.encode(username)}"
 
+/**
+ * Issue #59: matches web's `PAGES` list (`App.jsx` lines 30-35), which deliberately excludes
+ * Settings and Preferences from the primary nav — those live only in the avatar dropdown
+ * ([ChoresAuthenticatedScaffold]'s `TopAppBar` actions) alongside Logout.
+ */
 private val drawerDestinations = listOf(
     ChoresDestination.Dashboard,
     ChoresDestination.Chores,
     ChoresDestination.ActivityLog,
     ChoresDestination.Users,
-    ChoresDestination.Settings,
-    ChoresDestination.Preferences,
     ChoresDestination.Notification
 )
 
@@ -237,12 +247,14 @@ fun ChoresAppContent(
     DbReadinessGate(isReady = isDatabaseReady, modifier = modifier) {
         val currentUserState = currentUserProvider()
         val isAdmin = (currentUserState as? UiState.Success)?.data?.isAdmin == true
+        val username = (currentUserState as? UiState.Success)?.data?.username
         val currentTheme = currentThemeProvider()
         val appTitle = currentTitleProvider()
 
         ChoresTheme(themeOption = currentTheme) {
             ChoresAuthenticatedScaffold(
                 isAdmin = isAdmin,
+                username = username,
                 onLogout = onLogout,
                 appTitle = appTitle,
                 dashboardContent = dashboardContent,
@@ -267,6 +279,8 @@ fun ChoresAppContent(
 @Composable
 private fun ChoresAuthenticatedScaffold(
     isAdmin: Boolean,
+    /** Issue #59: shown as the avatar initial + name in the top bar's user menu. */
+    username: String?,
     onLogout: () -> Unit,
     /** Issue #58: household/app title branding; null falls back to `R.string.app_name`. */
     appTitle: String?,
@@ -297,7 +311,11 @@ private fun ChoresAuthenticatedScaffold(
     // matching by prefix keeps drawer highlighting/title working whether or not args are present.
     fun isCurrent(dest: ChoresDestination) =
         currentDestination?.hierarchy?.any { it.route?.startsWith(dest.route) == true } == true
-    val currentLabel = visibleDestinations
+    // Issue #59: Settings/Preferences label lookup uses every destination (not just the drawer's
+    // visibleDestinations, which they were removed from) so the TopAppBar subtitle still reads
+    // "Settings"/"Preferences" rather than falling back to the app title when navigated there via
+    // the avatar dropdown.
+    val currentLabel = (visibleDestinations + ChoresDestination.Settings + ChoresDestination.Preferences)
         .firstOrNull(::isCurrent)
         ?.labelRes
         ?.let { stringResource(it) }
@@ -352,10 +370,56 @@ private fun ChoresAuthenticatedScaffold(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { userMenuExpanded = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.user_menu))
+                        // Issue #59: restores web's user identity treatment (`UserAvatarMenu.jsx`
+                        // lines 45-51) — a colored circle with the user's initial plus their name —
+                        // in place of the generic MoreVert icon.
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .testTag("userMenuTrigger")
+                                .clickable { userMenuExpanded = true }
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.tertiary)
+                            ) {
+                                Text(
+                                    text = username?.take(1)?.uppercase().orEmpty(),
+                                    color = MaterialTheme.colorScheme.onTertiary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            if (username != null) {
+                                Text(
+                                    text = username,
+                                    modifier = Modifier.padding(start = 8.dp),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
                         DropdownMenu(expanded = userMenuExpanded, onDismissRequest = { userMenuExpanded = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.nav_preferences)) },
+                                leadingIcon = { Icon(Icons.Filled.Palette, contentDescription = null) },
+                                onClick = {
+                                    userMenuExpanded = false
+                                    navController.navigate(ChoresDestination.Preferences.route)
+                                }
+                            )
+                            if (isAdmin) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.nav_settings)) },
+                                    leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                                    onClick = {
+                                        userMenuExpanded = false
+                                        navController.navigate(ChoresDestination.Settings.route)
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.logout)) },
                                 leadingIcon = { Icon(Icons.Filled.Logout, contentDescription = null) },

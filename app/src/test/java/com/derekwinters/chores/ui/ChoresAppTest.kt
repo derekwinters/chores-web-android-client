@@ -16,11 +16,12 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * Behaviors: drawer nav wiring the 7 destinations, admin-only Users/Settings visibility, the
- * Logout action (issue #10, area: ui), and the TopAppBar's household/app title branding
- * (issue #58, area: ui). Uses [ChoresAppContent]'s injectable slots so this doesn't require a
- * Hilt test component — see LoginContentTest and ChoreListContentTest for the real screens' own
- * behavior coverage.
+ * Behaviors: drawer nav wiring the 5 primary destinations, admin-only Users visibility, the
+ * Logout action (issue #10, area: ui), the TopAppBar's household/app title branding (issue #58,
+ * area: ui), and the avatar/name identity + Preferences/Settings/Logout dropdown that replaces
+ * Settings/Preferences as drawer destinations (issue #59, area: ui). Uses [ChoresAppContent]'s
+ * injectable slots so this doesn't require a Hilt test component — see LoginContentTest and
+ * ChoreListContentTest for the real screens' own behavior coverage.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
@@ -32,6 +33,7 @@ class ChoresAppTest {
     private fun setContent(
         isAuthenticated: Boolean = true,
         isAdmin: Boolean = false,
+        username: String = "alice",
         onLogout: () -> Unit = {},
         currentTitleProvider: @Composable () -> String? = { "Test Household" }
     ) {
@@ -48,7 +50,7 @@ class ChoresAppTest {
                 usersContent = { Text("Fake Users") },
                 settingsContent = { Text("Fake Settings") },
                 preferencesContent = { Text("Fake Preferences") },
-                currentUserProvider = { UiState.Success(CurrentUser("alice", isAdmin)) },
+                currentUserProvider = { UiState.Success(CurrentUser(username, isAdmin)) },
                 isDatabaseReadyProvider = { true },
                 currentThemeProvider = { null },
                 currentTitleProvider = currentTitleProvider
@@ -95,7 +97,6 @@ class ChoresAppTest {
 
         composeTestRule.onNodeWithContentDescription("Open navigation menu").performClick()
         composeTestRule.onNodeWithText("Users").assertDoesNotExist()
-        composeTestRule.onNodeWithText("Settings").assertDoesNotExist()
     }
 
     @Test
@@ -104,7 +105,52 @@ class ChoresAppTest {
 
         composeTestRule.onNodeWithContentDescription("Open navigation menu").performClick()
         composeTestRule.onNodeWithText("Users").assertExists()
+    }
+
+    @Test
+    fun choresApp_drawer_noLongerListsSettingsOrPreferences() {
+        // Issue #59: matches web's PAGES list, which keeps Settings/Preferences out of primary
+        // nav — they're reachable only via the avatar dropdown now.
+        setContent(isAdmin = true)
+
+        composeTestRule.onNodeWithContentDescription("Open navigation menu").performClick()
+        composeTestRule.onNodeWithText("Settings").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Preferences").assertDoesNotExist()
+    }
+
+    @Test
+    fun choresApp_topBar_showsAvatarInitialAndUserName() {
+        setContent(username = "alice")
+
+        composeTestRule.onNodeWithText("A").assertExists()
+        composeTestRule.onNodeWithText("alice").assertExists()
+    }
+
+    @Test
+    fun choresApp_userMenu_nonAdmin_offersPreferencesAndLogoutButNotSettings() {
+        setContent(isAdmin = false)
+
+        composeTestRule.onNodeWithTag("userMenuTrigger").performClick()
+        composeTestRule.onNodeWithText("Preferences").assertExists()
+        composeTestRule.onNodeWithText("Logout").assertExists()
+        composeTestRule.onNodeWithText("Settings").assertDoesNotExist()
+    }
+
+    @Test
+    fun choresApp_userMenu_admin_offersSettings() {
+        setContent(isAdmin = true)
+
+        composeTestRule.onNodeWithTag("userMenuTrigger").performClick()
         composeTestRule.onNodeWithText("Settings").assertExists()
+    }
+
+    @Test
+    fun choresApp_userMenu_preferencesNavigatesToPreferencesScreen() {
+        setContent()
+
+        composeTestRule.onNodeWithTag("userMenuTrigger").performClick()
+        composeTestRule.onNodeWithText("Preferences").performClick()
+        composeTestRule.onNodeWithText("Fake Preferences").assertExists()
     }
 
     @Test
@@ -112,7 +158,7 @@ class ChoresAppTest {
         var loggedOut = false
         setContent(onLogout = { loggedOut = true })
 
-        composeTestRule.onNodeWithContentDescription("User menu").performClick()
+        composeTestRule.onNodeWithTag("userMenuTrigger").performClick()
         composeTestRule.onNodeWithText("Logout").performClick()
 
         assert(loggedOut)
