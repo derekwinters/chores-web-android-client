@@ -37,8 +37,9 @@ class SettingsGeneralContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("App Title").performTextClearance()
-        composeTestRule.onNodeWithText("App Title").performTextInput("My House")
+        // Issue #102/#106: App Title is now a separate section heading, so find the editable field with the current value
+        composeTestRule.onNodeWithText("Chores").performTextClearance()
+        composeTestRule.onNodeWithText("Chores").performTextInput("My House")
         composeTestRule.onNodeWithText("Save").performClick()
 
         assert(saved?.appTitle == "My House")

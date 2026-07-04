@@ -2,6 +2,7 @@ package com.derekwinters.chores.ui.settings
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.AppConfig
@@ -38,6 +39,7 @@ class SettingsAboutContentTest {
             )
         }
 
+        // Find and toggle the Switch component by interacting with the entire Row/container
         composeTestRule.onNodeWithText("Check for updates automatically").performClick()
         composeTestRule.onNodeWithText("Save").performClick()
 

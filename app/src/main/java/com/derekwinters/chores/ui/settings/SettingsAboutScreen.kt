@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -100,7 +101,8 @@ fun SettingsAboutContent(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(top = 8.dp)
+                            .clickable { draft = draft.copy(updateCheckEnabled = !draft.updateCheckEnabled) },
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Check for updates automatically")
