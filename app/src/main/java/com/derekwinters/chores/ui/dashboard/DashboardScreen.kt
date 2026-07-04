@@ -33,6 +33,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.R
 import com.derekwinters.chores.ui.UiState
 import com.derekwinters.chores.ui.chores.DueWithinFilter
+import com.derekwinters.chores.ui.theme.LocalThemeOption
+import com.derekwinters.chores.ui.theme.parseHexColor
 
 /**
  * Issue #12: chores-web's default screen (Board) — a grid (here, a column on phone-width
@@ -212,10 +214,17 @@ private fun ProgressRow(
 }
 
 @Composable
-private fun trendColor(trend: TrendStatus): Color = when (trend) {
-    TrendStatus.SUCCESS -> MaterialTheme.colorScheme.primary
-    TrendStatus.WARNING -> Color(0xFFF9A825)
-    TrendStatus.ERROR -> MaterialTheme.colorScheme.error
+private fun trendColor(trend: TrendStatus): Color {
+    // Issue #120: success/warning have no first-class Material3 ColorScheme slot (see
+    // ChoresTheme's doc), so read them from the raw ThemeOption via LocalThemeOption instead of
+    // colorScheme.primary (wrong hue) / a hardcoded gold (ignores custom themes). Falls back to
+    // the old hardcoded values if no theme has resolved yet.
+    val themeOption = LocalThemeOption.current
+    return when (trend) {
+        TrendStatus.SUCCESS -> themeOption?.success?.let(::parseHexColor) ?: MaterialTheme.colorScheme.primary
+        TrendStatus.WARNING -> themeOption?.warning?.let(::parseHexColor) ?: Color(0xFFF9A825)
+        TrendStatus.ERROR -> MaterialTheme.colorScheme.error
+    }
 }
 
 private fun progressFraction(current: Int, goal: Int): Float =

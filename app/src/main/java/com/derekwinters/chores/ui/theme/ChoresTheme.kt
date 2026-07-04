@@ -4,8 +4,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.luminance
 import com.derekwinters.chores.data.model.ThemeOption
+
+/**
+ * Issue #120: exposes the raw [ThemeOption] currently applied by [ChoresTheme] to descendants
+ * that need one of its colors with no first-class Material3 [ColorScheme] slot (e.g. `success`/
+ * `warning`, used by Dashboard's trend coloring) — see [ChoresTheme]'s doc for why those two
+ * colors aren't mapped onto the ColorScheme itself. Null means "no theme resolved yet / hardcoded
+ * fallback", same as [ChoresTheme]'s own `themeOption` parameter.
+ */
+val LocalThemeOption = staticCompositionLocalOf<ThemeOption?> { null }
 
 /**
  * Issue #24: this app's own theming mechanism (equivalent to chores-web's CSS-custom-property
@@ -13,7 +24,7 @@ import com.derekwinters.chores.data.model.ThemeOption
  * `background`/`surface`/`surface2` map to Material3's background/surface/surfaceVariant since
  * M3 doesn't have a third neutral surface tier; `success`/`warning` don't have first-class M3
  * slots either, so callers needing them (e.g. Dashboard's trend coloring) read the [ThemeOption]
- * directly rather than through `MaterialTheme.colorScheme`.
+ * directly via [LocalThemeOption] rather than through `MaterialTheme.colorScheme`.
  */
 @Composable
 fun ChoresTheme(themeOption: ThemeOption?, content: @Composable () -> Unit) {
@@ -55,5 +66,7 @@ fun ChoresTheme(themeOption: ThemeOption?, content: @Composable () -> Unit) {
         }
     }
 
-    MaterialTheme(colorScheme = colorScheme, content = content)
+    CompositionLocalProvider(LocalThemeOption provides themeOption) {
+        MaterialTheme(colorScheme = colorScheme, content = content)
+    }
 }
