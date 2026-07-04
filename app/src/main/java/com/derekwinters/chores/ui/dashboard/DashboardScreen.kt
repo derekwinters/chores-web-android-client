@@ -105,10 +105,12 @@ private fun DashboardUserCard(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .background(color = MaterialTheme.colorScheme.primary, shape = CircleShape),
+                        // Issue #115: web's avatar circle uses --accent, not the primary color;
+                        // ChoresTheme maps accent -> tertiary in the Material3 ColorScheme.
+                        .background(color = MaterialTheme.colorScheme.tertiary, shape = CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = card.initial, color = MaterialTheme.colorScheme.onPrimary)
+                    Text(text = card.initial, color = MaterialTheme.colorScheme.onTertiary)
                 }
                 Text(
                     text = card.displayName,
