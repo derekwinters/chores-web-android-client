@@ -107,12 +107,13 @@ fun SettingsAboutContent(
                     ) {
                         Text(
                             "Check for updates automatically",
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { draft = draft.copy(updateCheckEnabled = !draft.updateCheckEnabled) }
                         )
                         Switch(
                             checked = draft.updateCheckEnabled,
-                            onCheckedChange = { draft = draft.copy(updateCheckEnabled = it) },
-                            modifier = Modifier.clickable(enabled = true) { draft = draft.copy(updateCheckEnabled = !draft.updateCheckEnabled) }
+                            onCheckedChange = { draft = draft.copy(updateCheckEnabled = it) }
                         )
                     }
 
