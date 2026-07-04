@@ -41,7 +41,7 @@ class SettingsAboutContentTest {
         composeTestRule.onNodeWithText("Check for updates automatically").performClick()
         composeTestRule.onNodeWithText("Save").performClick()
 
-        assert(saved?.updateCheckEnabled == true)
+        assert(saved != null && saved.updateCheckEnabled == true) { "Expected updateCheckEnabled to be true but was ${saved?.updateCheckEnabled}" }
     }
 
     @Test
