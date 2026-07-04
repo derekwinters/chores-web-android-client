@@ -96,13 +96,17 @@ class ChoresAppTest {
     fun choresApp_drawer_showsAllPrimaryDestinationsWithWebLabels() {
         // Issue #60: web's PAGES order is Board -> Chores -> Users(admin) -> Log; verifies the
         // renamed "Board"/"Log" labels are present (order itself is covered by drawerDestinations'
-        // declaration order, which drives ModalDrawerSheet's forEach rendering).
+        // declaration order, which drives ModalDrawerSheet's forEach rendering). Scoped by the
+        // navItem_<route> testTag (added alongside this test) rather than plain text, since the
+        // TopAppBar subtitle can legitimately show the same label text as the current drawer item
+        // (e.g. both read "Board" when Dashboard/Board is the start destination).
         setContent(isAdmin = true)
 
         composeTestRule.onNodeWithContentDescription("Open navigation menu").performClick()
-        listOf("Board", "Chores", "Users", "Log").forEach { label ->
-            composeTestRule.onNodeWithText(label).assertExists()
-        }
+        composeTestRule.onNodeWithTag("navItem_dashboard").assertTextEquals("Board")
+        composeTestRule.onNodeWithTag("navItem_chores").assertTextEquals("Chores")
+        composeTestRule.onNodeWithTag("navItem_users").assertTextEquals("Users")
+        composeTestRule.onNodeWithTag("navItem_log").assertTextEquals("Log")
     }
 
     @Test

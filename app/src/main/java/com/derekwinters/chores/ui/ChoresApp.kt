@@ -341,7 +341,12 @@ private fun ChoresAuthenticatedScaffold(
                                 restoreState = true
                             }
                         },
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        // Issue #60 test fix: disambiguates drawer items from the TopAppBar
+                        // subtitle, which can show the same label text (e.g. both "Board" when
+                        // Dashboard is current) since drawer labels now match web's PAGES copy.
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                            .testTag("navItem_${destination.route}")
                     )
                 }
             }
