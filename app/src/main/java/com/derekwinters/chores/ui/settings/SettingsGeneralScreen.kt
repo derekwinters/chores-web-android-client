@@ -171,7 +171,7 @@ private fun TimezonePicker(
 
     OutlinedButton(
         onClick = { expanded = true },
-        modifier = modifier
+        modifier = modifier.testTag("timezonePickerButton")
     ) {
         Text(selectedLabel)
     }
@@ -186,7 +186,8 @@ private fun TimezonePicker(
                 onClick = {
                     onTimezoneSelected(value)
                     expanded = false
-                }
+                },
+                modifier = Modifier.testTag("timezone_$value")
             )
         }
     }

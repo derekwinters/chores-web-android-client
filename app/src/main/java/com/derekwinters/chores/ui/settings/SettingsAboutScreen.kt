@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -98,18 +99,24 @@ fun SettingsAboutContent(
                     }
                     Text("Last checked: ${updateStatus?.lastCheckedAt?.let(::formatDateTime) ?: "never"}")
 
-                    Row(
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
-                            .clickable { draft = draft.copy(updateCheckEnabled = !draft.updateCheckEnabled) },
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .clickable { draft = draft.copy(updateCheckEnabled = !draft.updateCheckEnabled) }
                     ) {
-                        Text("Check for updates automatically")
-                        Switch(
-                            checked = draft.updateCheckEnabled,
-                            onCheckedChange = {}
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Check for updates automatically")
+                            Switch(
+                                checked = draft.updateCheckEnabled,
+                                onCheckedChange = { draft = draft.copy(updateCheckEnabled = it) }
+                            )
+                        }
                     }
 
                     TextButton(onClick = onCheckForUpdates) { Text("Check Now") }

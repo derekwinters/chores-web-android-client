@@ -39,7 +39,7 @@ class SettingsAboutContentTest {
             )
         }
 
-        // Find and toggle the Switch component by interacting with the entire Row/container
+        // Click the entire row containing the toggle text and switch
         composeTestRule.onNodeWithText("Check for updates automatically").performClick()
         composeTestRule.onNodeWithText("Save").performClick()
 

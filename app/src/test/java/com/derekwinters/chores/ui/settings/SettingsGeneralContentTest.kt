@@ -58,9 +58,9 @@ class SettingsGeneralContentTest {
         }
 
         // Issue #106: Timezone is now selected via dropdown with UTC offset labels
-        // Default is UTC, so we need to click the button to open dropdown, then select a different timezone
-        composeTestRule.onNodeWithText("UTC").performClick()  // Open dropdown with default UTC
-        composeTestRule.onNodeWithText("UTC+01").performClick()  // Select a different timezone
+        // Use test tag to open dropdown, then select a different timezone
+        composeTestRule.onNodeWithTag("timezonePickerButton").performClick()  // Open dropdown with default UTC
+        composeTestRule.onNodeWithTag("timezone_Etc/GMT-1").performClick()  // Select UTC+01 (maps to Etc/GMT-1)
         composeTestRule.onNodeWithText("Save").performClick()
 
         // Verify that timezone was set to the selected UTC offset timezone
