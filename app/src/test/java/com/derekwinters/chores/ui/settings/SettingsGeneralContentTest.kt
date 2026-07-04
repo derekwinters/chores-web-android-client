@@ -72,7 +72,7 @@ class SettingsGeneralContentTest {
         composeTestRule.onNodeWithText("Save").performClick()
 
         // Verify that save was called with a valid timezone change
-        assert(saved != null && saved.timezone != "UTC")
+        assert(saved?.timezone != null && saved?.timezone != "UTC")
     }
 
     @Test
