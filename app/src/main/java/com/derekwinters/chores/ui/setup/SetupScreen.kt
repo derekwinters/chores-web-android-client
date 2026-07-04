@@ -29,6 +29,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -98,7 +100,20 @@ fun SetupContent(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = stringResource(R.string.setup_title), style = MaterialTheme.typography.headlineMedium)
+                // Issue #79: app-branding heading above the title, mirroring Login's treatment
+                // (issue #64).
+                Text(
+                    text = stringResource(R.string.login_app_branding),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = stringResource(R.string.setup_title),
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
 
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth().padding(top = 24.dp),

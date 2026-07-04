@@ -30,6 +30,8 @@ class SetupContentTest {
             SetupContent(uiState = UiState.Idle, onCreateAccount = { _, _, _ -> })
         }
 
+        // Issue #79: "Family Chores" app-branding heading above the "Create Admin Account" title.
+        composeTestRule.onNodeWithText("Family Chores").assertExists()
         composeTestRule.onNodeWithText("Username").performTextInput("admin")
         composeTestRule.onNodeWithText("Password").performTextInput("secret123")
         composeTestRule.onNodeWithText("Confirm Password").performTextInput("different")
