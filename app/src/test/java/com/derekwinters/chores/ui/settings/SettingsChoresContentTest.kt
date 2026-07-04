@@ -1,6 +1,7 @@
 package com.derekwinters.chores.ui.settings
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
@@ -38,8 +39,8 @@ class SettingsChoresContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Notify when due in — N days").performTextClearance()
-        composeTestRule.onNodeWithText("Notify when due in — N days").performTextInput("5")
+        composeTestRule.onNodeWithTag("dueSoonDaysField").performTextClearance()
+        composeTestRule.onNodeWithTag("dueSoonDaysField").performTextInput("5")
         composeTestRule.onNodeWithText("Save").performClick()
 
         assert(saved?.dueSoonDays == 5)
@@ -57,8 +58,8 @@ class SettingsChoresContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Mark chores due at — hour").performTextClearance()
-        composeTestRule.onNodeWithText("Mark chores due at — hour").performTextInput("8")
+        composeTestRule.onNodeWithTag("dueTimeHourField").performTextClearance()
+        composeTestRule.onNodeWithTag("dueTimeHourField").performTextInput("8")
         composeTestRule.onNodeWithText("Save").performClick()
 
         assert(saved?.dueTimeHour == 8)

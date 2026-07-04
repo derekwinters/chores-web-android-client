@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -87,7 +88,11 @@ fun SettingsAuthContent(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Require Authentication")
-                        Switch(checked = draft.authEnabled, onCheckedChange = { draft = draft.copy(authEnabled = it) })
+                        Switch(
+                            modifier = Modifier.testTag("authEnabledSwitch"),
+                            checked = draft.authEnabled,
+                            onCheckedChange = { draft = draft.copy(authEnabled = it) }
+                        )
                     }
 
                     TextButton(onClick = onNavigateToAuthLog) { Text("Auth Event Log") }

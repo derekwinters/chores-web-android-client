@@ -1,6 +1,7 @@
 package com.derekwinters.chores.ui.settings
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -36,7 +37,7 @@ class SettingsAuthContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Require Authentication").performClick()
+        composeTestRule.onNodeWithTag("authEnabledSwitch").performClick()
         composeTestRule.onNodeWithText("Save").performClick()
 
         assert(saved?.authEnabled == true)

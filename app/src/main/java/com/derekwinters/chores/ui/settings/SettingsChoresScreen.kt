@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -81,7 +82,8 @@ fun SettingsChoresContent(
                     OutlinedTextField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(top = 8.dp)
+                            .testTag("dueSoonDaysField"),
                         value = draft.dueSoonDays.toString(),
                         onValueChange = { value -> value.toIntOrNull()?.let { draft = draft.copy(dueSoonDays = it) } },
                         label = { Text("Notify when due in — N days") }
@@ -90,7 +92,8 @@ fun SettingsChoresContent(
                     OutlinedTextField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(top = 8.dp)
+                            .testTag("dueTimeHourField"),
                         value = draft.dueTimeHour.toString(),
                         onValueChange = { value -> value.toIntOrNull()?.let { draft = draft.copy(dueTimeHour = it) } },
                         label = { Text("Mark chores due at — hour") }
