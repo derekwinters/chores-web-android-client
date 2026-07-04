@@ -69,6 +69,7 @@ fun SettingsChoresContent(
             is UiState.Success -> {
                 var draft by remember(uiState.data) { mutableStateOf(uiState.data) }
                 val isSaving = saveState is UiState.Loading
+                val isDirty = draft != uiState.data
 
                 Column(
                     modifier = Modifier
@@ -105,7 +106,7 @@ fun SettingsChoresContent(
                     Button(
                         modifier = Modifier.padding(top = 16.dp),
                         onClick = { onSave(draft) },
-                        enabled = !isSaving
+                        enabled = isDirty && !isSaving
                     ) {
                         if (isSaving) CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                         Text("Save")
