@@ -6,6 +6,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.filter
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.AppConfig
 import com.derekwinters.chores.data.network.dto.ConfigDto
@@ -58,9 +60,10 @@ class SettingsGeneralContentTest {
         }
 
         // Issue #106: Timezone is now selected via dropdown with UTC offset labels
-        // Use test tag to open dropdown, then select a different timezone
-        composeTestRule.onNodeWithTag("timezonePickerButton").performClick()  // Open dropdown with default UTC
-        composeTestRule.onNodeWithTag("timezone_Etc/GMT-1").performClick()  // Select UTC+01 (maps to Etc/GMT-1)
+        // Open dropdown by clicking button with UTC text
+        composeTestRule.onNodeWithTag("timezonePickerButton").performClick()
+        // Select UTC+01 from the dropdown menu
+        composeTestRule.onNodeWithText("UTC+01").performClick()
         composeTestRule.onNodeWithText("Save").performClick()
 
         // Verify that timezone was set to the selected UTC offset timezone

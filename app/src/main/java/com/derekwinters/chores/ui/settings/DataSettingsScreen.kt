@@ -30,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.ui.UiState
@@ -218,7 +217,7 @@ fun DataSettingsContent(
                 modifier = Modifier.padding(top = 4.dp)
             )
 
-            TextButton(modifier = Modifier.padding(top = 16.dp).testTag("adminPointsLogButton"), onClick = onNavigateToPointsLog) {
+            TextButton(modifier = Modifier.padding(top = 16.dp), onClick = onNavigateToPointsLog) {
                 Text("Admin Points Log")
             }
         }

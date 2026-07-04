@@ -14,7 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -99,24 +98,21 @@ fun SettingsAboutContent(
                     }
                     Text("Last checked: ${updateStatus?.lastCheckedAt?.let(::formatDateTime) ?: "never"}")
 
-                    Surface(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp)
-                            .clickable { draft = draft.copy(updateCheckEnabled = !draft.updateCheckEnabled) }
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Check for updates automatically")
-                            Switch(
-                                checked = draft.updateCheckEnabled,
-                                onCheckedChange = { draft = draft.copy(updateCheckEnabled = it) }
-                            )
-                        }
+                        Text(
+                            "Check for updates automatically",
+                            modifier = Modifier.clickable { draft = draft.copy(updateCheckEnabled = !draft.updateCheckEnabled) }
+                        )
+                        Switch(
+                            checked = draft.updateCheckEnabled,
+                            onCheckedChange = { draft = draft.copy(updateCheckEnabled = it) }
+                        )
                     }
 
                     TextButton(onClick = onCheckForUpdates) { Text("Check Now") }
