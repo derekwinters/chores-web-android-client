@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -124,6 +125,8 @@ fun SetupContent(
                     onValueChange = { username = it },
                     label = { Text(stringResource(R.string.username_label)) },
                     singleLine = true,
+                    // Issue #92: flat rectangular corners, mirroring Login (issue #66).
+                    shape = SetupFieldShape,
                     enabled = !isLoading
                 )
 
@@ -134,6 +137,7 @@ fun SetupContent(
                     label = { Text(stringResource(R.string.password_label)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
+                    shape = SetupFieldShape,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     enabled = !isLoading
                 )
@@ -145,6 +149,7 @@ fun SetupContent(
                     label = { Text(stringResource(R.string.confirm_password_label)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
+                    shape = SetupFieldShape,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     enabled = !isLoading
                 )
@@ -204,9 +209,18 @@ fun SetupContent(
                 )
 
                 Button(
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.padding(top = 16.dp).fillMaxWidth(),
                     onClick = { onCreateAccount(username, password, requireAuth) },
-                    enabled = !isLoading && username.isNotBlank() && password.isNotBlank() && passwordsMatch
+                    enabled = !isLoading && username.isNotBlank() && password.isNotBlank() && passwordsMatch,
+                    // Issue #92: flat rectangular shape + flat (no-elevation) blue button,
+                    // mirroring Login (issue #66).
+                    shape = SetupFieldShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp,
+                        disabledElevation = 0.dp
+                    )
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 8.dp))
@@ -225,3 +239,6 @@ fun SetupContent(
         }
     }
 }
+
+/** Issue #92: shared flat rectangular shape for Setup's input fields and buttons. */
+private val SetupFieldShape = RoundedCornerShape(4.dp)
