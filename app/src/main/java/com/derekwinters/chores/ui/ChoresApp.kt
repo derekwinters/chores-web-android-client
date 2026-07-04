@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -341,6 +342,20 @@ private fun ChoresAuthenticatedScaffold(
                                 restoreState = true
                             }
                         },
+                        // Issue #61: web's `.nav-active` (App.css lines 115-127) keeps the same
+                        // background as an unselected item (`--surface`) — only the text/icon
+                        // color brightens (`--text-muted` -> `--text`). Material3's default
+                        // selected-item colors draw a secondaryContainer pill, a much stronger
+                        // highlight than web's; this overrides it to a transparent container with
+                        // only a text/icon color change.
+                        colors = NavigationDrawerItemDefaults.colors(
+                            selectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                            unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                            selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
                         // Issue #60 test fix: disambiguates drawer items from the TopAppBar
                         // subtitle, which can show the same label text (e.g. both "Board" when
                         // Dashboard is current) since drawer labels now match web's PAGES copy.
