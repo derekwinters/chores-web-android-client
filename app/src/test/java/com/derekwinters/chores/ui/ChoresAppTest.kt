@@ -1,8 +1,11 @@
 package com.derekwinters.chores.ui
 
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -13,10 +16,11 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * Behaviors: drawer nav wiring the 7 destinations, admin-only Users/Settings visibility, and the
- * Logout action (issue #10, area: ui). Uses [ChoresAppContent]'s injectable slots so this doesn't
- * require a Hilt test component — see LoginContentTest and ChoreListContentTest for the real
- * screens' own behavior coverage.
+ * Behaviors: drawer nav wiring the 7 destinations, admin-only Users/Settings visibility, the
+ * Logout action (issue #10, area: ui), and the TopAppBar's household/app title branding
+ * (issue #58, area: ui). Uses [ChoresAppContent]'s injectable slots so this doesn't require a
+ * Hilt test component — see LoginContentTest and ChoreListContentTest for the real screens' own
+ * behavior coverage.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
@@ -28,7 +32,8 @@ class ChoresAppTest {
     private fun setContent(
         isAuthenticated: Boolean = true,
         isAdmin: Boolean = false,
-        onLogout: () -> Unit = {}
+        onLogout: () -> Unit = {},
+        currentTitleProvider: @Composable () -> String? = { "Test Household" }
     ) {
         composeTestRule.setContent {
             ChoresAppContent(
@@ -45,7 +50,8 @@ class ChoresAppTest {
                 preferencesContent = { Text("Fake Preferences") },
                 currentUserProvider = { UiState.Success(CurrentUser("alice", isAdmin)) },
                 isDatabaseReadyProvider = { true },
-                currentThemeProvider = { null }
+                currentThemeProvider = { null },
+                currentTitleProvider = currentTitleProvider
             )
         }
     }
@@ -110,5 +116,19 @@ class ChoresAppTest {
         composeTestRule.onNodeWithText("Logout").performClick()
 
         assert(loggedOut)
+    }
+
+    @Test
+    fun choresApp_topBar_showsHouseholdTitleBranding() {
+        setContent(currentTitleProvider = { "The Winters House" })
+
+        composeTestRule.onNodeWithTag("appTitleBranding").assertTextEquals("The Winters House")
+    }
+
+    @Test
+    fun choresApp_topBar_fallsBackToAppNameWhenTitleNotLoaded() {
+        setContent(currentTitleProvider = { null })
+
+        composeTestRule.onNodeWithTag("appTitleBranding").assertTextEquals("Chores")
     }
 }
