@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -86,7 +88,14 @@ fun SetupContent(
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                // Setup's form has more fields than Login's (username/password/confirm +
+                // Require-Authentication row + button), which can exceed a small device's
+                // viewport height inside the fixed-position Card. verticalScroll keeps every
+                // field (including the submit button) reachable instead of silently clipping/
+                // overflowing past the visible/hit-testable area.
+                modifier = Modifier
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(text = stringResource(R.string.setup_title), style = MaterialTheme.typography.headlineMedium)

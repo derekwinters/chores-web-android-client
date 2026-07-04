@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.ui.UiState
@@ -50,7 +51,11 @@ class SetupContentTest {
         composeTestRule.onNodeWithText("Username").performTextInput("admin")
         composeTestRule.onNodeWithText("Password").performTextInput("secret123")
         composeTestRule.onNodeWithText("Confirm Password").performTextInput("secret123")
-        composeTestRule.onNodeWithText("Create Account").performClick()
+        // Issue #76: the form's Card is now wrapped in a scrollable Column (necessary so the
+        // submit button stays reachable on narrow/short viewports instead of overflowing past the
+        // Card's bounds) — performScrollTo() ensures the button is actually within the visible/
+        // hit-testable viewport before clicking, regardless of the test host's window size.
+        composeTestRule.onNodeWithText("Create Account").performScrollTo().performClick()
 
         assert(captured == Triple("admin", "secret123", true))
     }
