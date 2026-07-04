@@ -30,6 +30,8 @@ import androidx.navigation.NavController
 import com.derekwinters.chores.data.model.AppConfig
 import com.derekwinters.chores.data.model.UpdateCheckStatus
 import com.derekwinters.chores.ui.UiState
+import com.derekwinters.chores.ui.common.BannerType
+import com.derekwinters.chores.ui.common.SettingsBanner
 import com.derekwinters.chores.ui.common.formatDateTime
 
 /**
@@ -110,7 +112,7 @@ fun SettingsAboutContent(
                     TextButton(onClick = onCheckForUpdates) { Text("Check Now") }
 
                     if (saveState is UiState.Error) {
-                        Text(saveState.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                        SettingsBanner(message = saveState.message, type = BannerType.ERROR, modifier = Modifier.padding(top = 8.dp))
                     }
 
                     Button(

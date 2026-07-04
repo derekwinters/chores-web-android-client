@@ -27,11 +27,15 @@ class DataSettingsContentTest {
         composeTestRule.setContent {
             DataSettingsContent(
                 logRetentionDays = 90,
+                logRetentionInput = "90",
+                logRetentionState = UiState.Idle,
                 importPreview = ImportPreview(peopleCount = 2, choresCount = 5, settingsCount = 1, rawJson = "{}"),
                 importState = UiState.Idle,
                 onExportClick = {},
                 onImportClick = {},
                 onLogRetentionChange = {},
+                onSaveLogRetention = {},
+                onClearLogRetentionState = {},
                 onConfirmImport = { confirmed = true },
                 onCancelImport = {},
                 onDismissImportResult = {},
@@ -39,7 +43,10 @@ class DataSettingsContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("2 people, 5 chores, 1 settings").assertExists()
+        composeTestRule.onNodeWithText("The following will be imported:").assertExists()
+        composeTestRule.onNodeWithText("• People: 2").assertExists()
+        composeTestRule.onNodeWithText("• Chores: 5").assertExists()
+        composeTestRule.onNodeWithText("• Settings: 1").assertExists()
         composeTestRule.onNodeWithText("This replaces all existing data and cannot be undone.").assertExists()
 
         composeTestRule.onNodeWithText("Import").performClick()
@@ -53,11 +60,15 @@ class DataSettingsContentTest {
         composeTestRule.setContent {
             DataSettingsContent(
                 logRetentionDays = 90,
+                logRetentionInput = "90",
+                logRetentionState = UiState.Idle,
                 importPreview = null,
                 importState = UiState.Idle,
                 onExportClick = {},
                 onImportClick = {},
                 onLogRetentionChange = {},
+                onSaveLogRetention = {},
+                onClearLogRetentionState = {},
                 onConfirmImport = {},
                 onCancelImport = {},
                 onDismissImportResult = {},
@@ -68,5 +79,58 @@ class DataSettingsContentTest {
         composeTestRule.onNodeWithText("Admin Points Log").performClick()
 
         assert(navigated)
+    }
+
+    @Test
+    fun dataSettingsContent_displaysThreeDistinctSections() {
+        composeTestRule.setContent {
+            DataSettingsContent(
+                logRetentionDays = 90,
+                logRetentionInput = "90",
+                logRetentionState = UiState.Idle,
+                importPreview = null,
+                importState = UiState.Idle,
+                onExportClick = {},
+                onImportClick = {},
+                onLogRetentionChange = {},
+                onSaveLogRetention = {},
+                onClearLogRetentionState = {},
+                onConfirmImport = {},
+                onCancelImport = {},
+                onDismissImportResult = {},
+                onNavigateToPointsLog = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Export & Import").assertExists()
+        composeTestRule.onNodeWithText("Log Retention").assertExists()
+        composeTestRule.onNodeWithText("Data Management").assertExists()
+    }
+
+    @Test
+    fun dataSettingsContent_logRetentionSave_invokesCallback() {
+        var saveClicked = false
+        composeTestRule.setContent {
+            DataSettingsContent(
+                logRetentionDays = 90,
+                logRetentionInput = "90",
+                logRetentionState = UiState.Idle,
+                importPreview = null,
+                importState = UiState.Idle,
+                onExportClick = {},
+                onImportClick = {},
+                onLogRetentionChange = {},
+                onSaveLogRetention = { saveClicked = true },
+                onClearLogRetentionState = {},
+                onConfirmImport = {},
+                onCancelImport = {},
+                onDismissImportResult = {},
+                onNavigateToPointsLog = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Save").performClick()
+
+        assert(saveClicked)
     }
 }

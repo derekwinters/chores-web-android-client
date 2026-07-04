@@ -30,6 +30,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.derekwinters.chores.data.model.AppConfig
 import com.derekwinters.chores.ui.UiState
+import com.derekwinters.chores.ui.common.BannerType
+import com.derekwinters.chores.ui.common.SettingsBanner
 
 /**
  * Issue #88: General settings section screen (independently-routed, shared SettingsViewModel
@@ -133,7 +135,7 @@ fun SettingsGeneralContent(
                     }
 
                     if (saveState is UiState.Error) {
-                        Text(saveState.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                        SettingsBanner(message = saveState.message, type = BannerType.ERROR, modifier = Modifier.padding(top = 8.dp))
                     }
 
                     Button(

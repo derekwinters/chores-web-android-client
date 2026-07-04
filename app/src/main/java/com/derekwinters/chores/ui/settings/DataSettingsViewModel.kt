@@ -43,6 +43,12 @@ class DataSettingsViewModel @Inject constructor(
     private val _logRetentionDays = MutableStateFlow<Int?>(null)
     val logRetentionDays: StateFlow<Int?> = _logRetentionDays.asStateFlow()
 
+    private val _logRetentionInput = MutableStateFlow<String>("")
+    val logRetentionInput: StateFlow<String> = _logRetentionInput.asStateFlow()
+
+    private val _logRetentionState = MutableStateFlow<UiState<Int>>(UiState.Idle)
+    val logRetentionState: StateFlow<UiState<Int>> = _logRetentionState.asStateFlow()
+
     private val _exportState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val exportState: StateFlow<UiState<String>> = _exportState.asStateFlow()
 
@@ -52,21 +58,47 @@ class DataSettingsViewModel @Inject constructor(
     private val _importState = MutableStateFlow<UiState<ImportSummary>>(UiState.Idle)
     val importState: StateFlow<UiState<ImportSummary>> = _importState.asStateFlow()
 
+    private val _selectedImportFilename = MutableStateFlow<String?>(null)
+    val selectedImportFilename: StateFlow<String?> = _selectedImportFilename.asStateFlow()
+
+    private val _exportFilename = MutableStateFlow<String?>(null)
+    val exportFilename: StateFlow<String?> = _exportFilename.asStateFlow()
+
     init {
         loadRetention()
     }
 
     private fun loadRetention() {
         viewModelScope.launch {
-            logRepository.getRetentionDays().onSuccess { days -> _logRetentionDays.value = days }
+            logRepository.getRetentionDays().onSuccess { days ->
+                _logRetentionDays.value = days
+                _logRetentionInput.value = days.toString()
+            }
         }
     }
 
-    fun updateLogRetentionDays(days: Int) {
-        _logRetentionDays.value = days
+    fun updateLogRetentionInput(input: String) {
+        _logRetentionInput.value = input
+    }
+
+    fun saveLogRetentionDays() {
+        val days = _logRetentionInput.value.toIntOrNull() ?: return
+        _logRetentionState.value = UiState.Loading
         viewModelScope.launch {
-            logRepository.setRetentionDays(days).onSuccess { saved -> _logRetentionDays.value = saved }
+            logRepository.setRetentionDays(days)
+                .onSuccess { saved ->
+                    _logRetentionDays.value = saved
+                    _logRetentionInput.value = saved.toString()
+                    _logRetentionState.value = UiState.Success(saved)
+                }
+                .onFailure { error ->
+                    _logRetentionState.value = UiState.Error(errorMessage(error))
+                }
         }
+    }
+
+    fun clearLogRetentionState() {
+        _logRetentionState.value = UiState.Idle
     }
 
     fun exportConfig() {
@@ -115,6 +147,14 @@ class DataSettingsViewModel @Inject constructor(
 
     fun clearImportState() {
         _importState.value = UiState.Idle
+    }
+
+    fun setSelectedImportFilename(filename: String?) {
+        _selectedImportFilename.value = filename
+    }
+
+    fun setExportFilename(filename: String?) {
+        _exportFilename.value = filename
     }
 
     private fun errorMessage(error: Throwable): String =
