@@ -143,6 +143,13 @@ fun SettingsContent(
                         onValueChange = { value -> value.toIntOrNull()?.let { draft = draft.copy(dueTimeHour = it) } },
                         label = { Text("Mark chores due at — hour") }
                     )
+
+                    Divider(modifier = Modifier.padding(vertical = 16.dp))
+                    Text("Theme", style = MaterialTheme.typography.titleMedium)
+                    TextButton(onClick = navActions.onNavigateToTheming) { Text("Household Default Theme") }
+
+                    Divider(modifier = Modifier.padding(vertical = 16.dp))
+                    Text("Data", style = MaterialTheme.typography.titleMedium)
                     TextButton(onClick = navActions.onNavigateToData) { Text("Data (Export/Import, Points Log)") }
 
                     Divider(modifier = Modifier.padding(vertical = 16.dp))
@@ -164,10 +171,6 @@ fun SettingsContent(
                         )
                     }
                     TextButton(onClick = onCheckForUpdates) { Text("Check Now") }
-
-                    Divider(modifier = Modifier.padding(vertical = 16.dp))
-                    Text("Theming", style = MaterialTheme.typography.titleMedium)
-                    TextButton(onClick = navActions.onNavigateToTheming) { Text("Household Default Theme") }
 
                     if (saveState is UiState.Error) {
                         Text(saveState.message, color = MaterialTheme.colorScheme.error)
