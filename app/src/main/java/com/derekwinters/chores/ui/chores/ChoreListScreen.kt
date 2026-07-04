@@ -12,7 +12,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -146,7 +148,17 @@ fun ChoreListContent(
                 value = filters.query,
                 onValueChange = onQueryChange,
                 label = { Text(stringResource(R.string.search_chores_label)) },
-                singleLine = true
+                singleLine = true,
+                // Issue #69: leading search icon + trailing clear ("x") button, matching web's
+                // search field.
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (filters.query.isNotEmpty()) {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.clear_search))
+                        }
+                    }
+                }
             )
             IconButton(onClick = { showFiltersDialog = true }) {
                 Icon(Icons.Filled.FilterList, contentDescription = stringResource(R.string.filters_title))

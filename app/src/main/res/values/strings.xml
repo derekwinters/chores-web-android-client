@@ -77,6 +77,8 @@
 
     <!-- Chores screen: search, filters, sorting (issue #13) -->
     <string name="search_chores_label">Search chores</string>
+    <!-- Issue #69: content description for the search field's trailing clear button. -->
+    <string name="clear_search">Clear search</string>
     <string name="filters_title">Filters</string>
     <string name="apply">Apply</string>
     <string name="clear_filters">Clear filters</string>

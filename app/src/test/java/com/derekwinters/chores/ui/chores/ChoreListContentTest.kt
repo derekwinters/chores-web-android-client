@@ -2,6 +2,7 @@ package com.derekwinters.chores.ui.chores
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -196,6 +197,39 @@ class ChoreListContentTest {
         composeTestRule.onNodeWithText("Search chores").performTextInput("dish")
 
         assert(query == "dish")
+    }
+
+    @Test
+    fun choreListContent_search_clearButtonHiddenWhenEmptyShownWhenNotEmpty() {
+        // Issue #69: leading search icon + trailing clear ("x") button on the search field.
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                filters = ChoreFilters(query = "dish")
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Clear search").assertExists()
+    }
+
+    @Test
+    fun choreListContent_search_clearButtonResetsQuery() {
+        var query: String? = null
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                filters = ChoreFilters(query = "dish"),
+                onQueryChange = { query = it }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Clear search").performClick()
+
+        assert(query == "")
     }
 
     @Test
