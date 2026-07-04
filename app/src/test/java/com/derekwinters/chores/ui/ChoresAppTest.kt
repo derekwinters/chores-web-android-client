@@ -87,8 +87,22 @@ class ChoresAppTest {
         composeTestRule.onNodeWithText("Fake Chores").assertExists()
 
         composeTestRule.onNodeWithContentDescription("Open navigation menu").performClick()
-        composeTestRule.onNodeWithText("Dashboard").performClick()
+        // Issue #60: the Dashboard destination's drawer label is "Board", matching web's PAGES copy.
+        composeTestRule.onNodeWithText("Board").performClick()
         composeTestRule.onNodeWithText("Fake Dashboard").assertExists()
+    }
+
+    @Test
+    fun choresApp_drawer_showsAllPrimaryDestinationsWithWebLabels() {
+        // Issue #60: web's PAGES order is Board -> Chores -> Users(admin) -> Log; verifies the
+        // renamed "Board"/"Log" labels are present (order itself is covered by drawerDestinations'
+        // declaration order, which drives ModalDrawerSheet's forEach rendering).
+        setContent(isAdmin = true)
+
+        composeTestRule.onNodeWithContentDescription("Open navigation menu").performClick()
+        listOf("Board", "Chores", "Users", "Log").forEach { label ->
+            composeTestRule.onNodeWithText(label).assertExists()
+        }
     }
 
     @Test

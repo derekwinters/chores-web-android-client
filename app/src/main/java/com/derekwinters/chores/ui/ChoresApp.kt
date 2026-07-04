@@ -141,15 +141,17 @@ private fun userDetailRoute(personId: Int, username: String): String =
     "users/$personId?username=${android.net.Uri.encode(username)}"
 
 /**
- * Issue #59: matches web's `PAGES` list (`App.jsx` lines 30-35), which deliberately excludes
- * Settings and Preferences from the primary nav — those live only in the avatar dropdown
- * ([ChoresAuthenticatedScaffold]'s `TopAppBar` actions) alongside Logout.
+ * Issue #59/#60: matches web's `PAGES` list (`App.jsx` lines 30-35) — order Board → Chores →
+ * Users(admin) → Log, with Settings and Preferences deliberately excluded from primary nav (they
+ * live only in the avatar dropdown, see [ChoresAuthenticatedScaffold]'s `TopAppBar` actions).
+ * [ChoresDestination.Notification] has no web equivalent to match order against, so it's kept
+ * last.
  */
 private val drawerDestinations = listOf(
     ChoresDestination.Dashboard,
     ChoresDestination.Chores,
-    ChoresDestination.ActivityLog,
     ChoresDestination.Users,
+    ChoresDestination.ActivityLog,
     ChoresDestination.Notification
 )
 
