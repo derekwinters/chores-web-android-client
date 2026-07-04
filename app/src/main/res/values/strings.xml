@@ -33,6 +33,8 @@
     <string name="require_authentication_hint_disabled">This household will be accessible without authentication.</string>
     <string name="confirm_password_label">Confirm Password</string>
     <string name="passwords_do_not_match">Passwords do not match</string>
+    <!-- Issue #85: footer disclaimer explaining this is the one-time first-run admin setup. -->
+    <string name="setup_footer_disclaimer">You are creating the first admin account for this household. You can add more users later from the Users screen.</string>
     <string name="password_reset_title">Password Reset Required</string>
     <string name="password_reset_description">Your password must be reset before you can log in.</string>
     <string name="new_password_label">New Password</string>

@@ -33,6 +33,13 @@ class SetupContentTest {
 
         // Issue #79: "Family Chores" app-branding heading above the "Create Admin Account" title.
         composeTestRule.onNodeWithText("Family Chores").assertExists()
+        // Issue #85: footer disclaimer explaining this is the one-time first-run admin setup.
+        composeTestRule
+            .onNodeWithText(
+                "You are creating the first admin account for this household. You can add more users later from the Users screen.",
+                substring = true
+            )
+            .assertExists()
         composeTestRule.onNodeWithText("Username").performTextInput("admin")
         composeTestRule.onNodeWithText("Password").performTextInput("secret123")
         composeTestRule.onNodeWithText("Confirm Password").performTextInput("different")

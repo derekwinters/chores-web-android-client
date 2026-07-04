@@ -189,6 +189,14 @@ fun SetupContent(
                     }
                     Text(stringResource(R.string.setup_submit))
                 }
+
+                // Issue #85: footer disclaimer explaining this is a one-time, first-run flow.
+                Text(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    text = stringResource(R.string.setup_footer_disclaimer),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
