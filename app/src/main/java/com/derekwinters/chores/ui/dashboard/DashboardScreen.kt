@@ -154,7 +154,8 @@ private fun DashboardUserCard(
                         Text(
                             text = card.dueNowCount.toString(),
                             style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = dueCountColor(card.dueNowCount)
                         )
                     }
                 }
@@ -167,7 +168,8 @@ private fun DashboardUserCard(
                         Text(
                             text = card.dueSoonCount.toString(),
                             style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = dueCountColor(card.dueSoonCount)
                         )
                     }
                 }
@@ -225,6 +227,18 @@ private fun trendColor(trend: TrendStatus): Color {
         TrendStatus.WARNING -> themeOption?.warning?.let(::parseHexColor) ?: Color(0xFFF9A825)
         TrendStatus.ERROR -> MaterialTheme.colorScheme.error
     }
+}
+
+/**
+ * Issue #126: Due Now/Due Soon counts render gold (the theme's warning color, reused as the
+ * "needs attention" gold web uses) when there's anything due, dimmed to a neutral color when the
+ * count is zero (nothing to draw the eye to), matching web.
+ */
+@Composable
+private fun dueCountColor(count: Int): Color {
+    if (count == 0) return MaterialTheme.colorScheme.onSurfaceVariant
+    val themeOption = LocalThemeOption.current
+    return themeOption?.warning?.let(::parseHexColor) ?: Color(0xFFF9A825)
 }
 
 private fun progressFraction(current: Int, goal: Int): Float =
