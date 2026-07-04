@@ -33,6 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -275,7 +278,26 @@ private fun ChoreRow(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { expanded = !expanded }
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        // Issue #67: colored left accent bar + due-date color coding on the chore row, matching
+        // ChoreCard.css's `.accent-bar` rules (red while due, muted gray once complete, no bar
+        // otherwise). Uses drawBehind on this Column (not a sibling Box/IntrinsicSize.Min) since
+        // that's a draw-time-only effect against the already-resolved layout size, with no
+        // interaction with layout/semantics/click routing.
+        val accentColor = statusAccentColor(chore)
+        Column(
+            modifier = Modifier
+                .drawBehind {
+                    if (accentColor != null) {
+                        drawRect(color = accentColor, size = Size(4.dp.toPx(), size.height))
+                    }
+                }
+                .padding(
+                    start = if (accentColor != null) 20.dp else 16.dp,
+                    top = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                )
+        ) {
             Text(text = chore.name, style = MaterialTheme.typography.titleMedium)
 
             chore.currentAssignee?.let {
@@ -327,6 +349,17 @@ private fun ChoreRow(
             }
         )
     }
+}
+
+/**
+ * Issue #67/#80: matches `ChoreCard.css`'s `.accent-bar` rules exactly -- red while due, muted
+ * gray once complete (a distinct `state` value from "due"/"not_due"), no bar otherwise.
+ */
+@Composable
+private fun statusAccentColor(chore: Chore): Color? = when {
+    chore.isDue -> MaterialTheme.colorScheme.error
+    chore.state == "complete" -> MaterialTheme.colorScheme.onSurfaceVariant
+    else -> null
 }
 
 /**
