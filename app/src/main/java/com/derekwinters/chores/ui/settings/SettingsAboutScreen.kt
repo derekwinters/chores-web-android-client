@@ -101,18 +101,14 @@ fun SettingsAboutContent(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(top = 8.dp)
+                            .clickable { draft = draft.copy(updateCheckEnabled = !draft.updateCheckEnabled) },
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            "Check for updates automatically",
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { draft = draft.copy(updateCheckEnabled = !draft.updateCheckEnabled) }
-                        )
+                        Text("Check for updates automatically")
                         Switch(
                             checked = draft.updateCheckEnabled,
-                            onCheckedChange = { draft = draft.copy(updateCheckEnabled = it) }
+                            onCheckedChange = {}
                         )
                     }
 
