@@ -1,6 +1,7 @@
 package com.derekwinters.chores.ui.settings
 
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -134,14 +135,15 @@ fun DataSettingsContent(
         }
 
         if (importState is UiState.Success) {
-            Text(
-                "Imported ${importState.data.peopleCount} people, ${importState.data.choresCount} chores, " +
+            SettingsBanner(
+                message = "Imported ${importState.data.peopleCount} people, ${importState.data.choresCount} chores, " +
                     "${importState.data.settingsCount} settings",
+                type = BannerType.SUCCESS,
                 modifier = Modifier.padding(top = 16.dp)
             )
             TextButton(onClick = onDismissImportResult) { Text("OK") }
         } else if (importState is UiState.Error) {
-            Text(importState.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 16.dp))
+            SettingsBanner(message = importState.message, type = BannerType.ERROR, modifier = Modifier.padding(top = 16.dp))
             TextButton(onClick = onDismissImportResult) { Text("OK") }
         }
     }
