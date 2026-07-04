@@ -1,13 +1,17 @@
 package com.derekwinters.chores.ui.login
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -82,72 +86,85 @@ fun LoginContent(
 
     val isLoading = uiState is UiState.Loading
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    // Issue #63: elevated, centered card container around the form, matching web's `.login-card`
+    // treatment (the screen previously rendered the form directly on the screen background with
+    // no card framing).
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = stringResource(R.string.login_screen_title),
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        OutlinedTextField(
+        Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 24.dp),
-            value = serverUrl,
-            onValueChange = { serverUrl = it },
-            label = { Text(stringResource(R.string.server_url_label)) },
-            placeholder = { Text(stringResource(R.string.server_url_placeholder)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-            enabled = !isLoading
-        )
-
-        OutlinedTextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            value = username,
-            onValueChange = { username = it },
-            label = { Text(stringResource(R.string.username_label)) },
-            singleLine = true,
-            enabled = !isLoading
-        )
-
-        OutlinedTextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            value = password,
-            onValueChange = { password = it },
-            label = { Text(stringResource(R.string.password_label)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            enabled = !isLoading
-        )
-
-        if (uiState is UiState.Error) {
-            Text(
-                modifier = Modifier.padding(top = 8.dp),
-                text = uiState.message,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-
-        Button(
-            modifier = Modifier.padding(top = 16.dp),
-            onClick = { onLogin(serverUrl, username, password) },
-            enabled = !isLoading && serverUrl.isNotBlank() && username.isNotBlank() && password.isNotBlank()
+                .widthIn(max = 400.dp)
+                .padding(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 8.dp))
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.login_screen_title),
+                    style = MaterialTheme.typography.headlineMedium
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp),
+                    value = serverUrl,
+                    onValueChange = { serverUrl = it },
+                    label = { Text(stringResource(R.string.server_url_label)) },
+                    placeholder = { Text(stringResource(R.string.server_url_placeholder)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    enabled = !isLoading
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text(stringResource(R.string.username_label)) },
+                    singleLine = true,
+                    enabled = !isLoading
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(stringResource(R.string.password_label)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    enabled = !isLoading
+                )
+
+                if (uiState is UiState.Error) {
+                    Text(
+                        modifier = Modifier.padding(top = 8.dp),
+                        text = uiState.message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                Button(
+                    modifier = Modifier.padding(top = 16.dp),
+                    onClick = { onLogin(serverUrl, username, password) },
+                    enabled = !isLoading && serverUrl.isNotBlank() && username.isNotBlank() && password.isNotBlank()
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 8.dp))
+                    }
+                    Text(stringResource(R.string.login_button))
+                }
             }
-            Text(stringResource(R.string.login_button))
         }
     }
 }
