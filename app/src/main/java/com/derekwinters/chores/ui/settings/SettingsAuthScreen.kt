@@ -98,7 +98,18 @@ fun SettingsAuthContent(
                         )
                     }
 
-                    TextButton(onClick = onNavigateToAuthLog) { Text("Auth Event Log") }
+                    Text(
+                        text = "When enabled, users must enter a password to access the app. Disable to allow unrestricted access.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+
+                    Divider(modifier = Modifier.padding(vertical = 16.dp))
+
+                    Text("Auth Event Log", style = MaterialTheme.typography.titleMedium)
+
+                    TextButton(onClick = onNavigateToAuthLog) { Text("View Event Log") }
 
                     if (saveState is UiState.Error) {
                         Text(saveState.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
