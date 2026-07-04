@@ -1,14 +1,18 @@
 package com.derekwinters.chores.ui.setup
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -67,78 +71,91 @@ fun SetupContent(
     val isLoading = uiState is UiState.Loading
     val passwordsMatch = password == confirmPassword
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    // Issue #76: elevated, centered card container around the form, matching Login's `.login-card`
+    // treatment (see issue #63) — the screen previously rendered the form directly on the screen
+    // background with no card framing.
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Text(text = stringResource(R.string.setup_title), style = MaterialTheme.typography.headlineMedium)
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
-            value = username,
-            onValueChange = { username = it },
-            label = { Text(stringResource(R.string.username_label)) },
-            singleLine = true,
-            enabled = !isLoading
-        )
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            value = password,
-            onValueChange = { password = it },
-            label = { Text(stringResource(R.string.password_label)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            enabled = !isLoading
-        )
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            label = { Text(stringResource(R.string.confirm_password_label)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            enabled = !isLoading
-        )
-
-        if (confirmPassword.isNotEmpty() && !passwordsMatch) {
-            Text(
-                modifier = Modifier.padding(top = 8.dp),
-                text = stringResource(R.string.passwords_do_not_match),
-                color = MaterialTheme.colorScheme.error
-            )
-        } else if (uiState is UiState.Error) {
-            Text(
-                modifier = Modifier.padding(top = 8.dp),
-                text = uiState.message,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Card(
+            modifier = Modifier
+                .widthIn(max = 400.dp)
+                .padding(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            Text(stringResource(R.string.require_authentication_label))
-            Switch(checked = requireAuth, onCheckedChange = { requireAuth = it }, enabled = !isLoading)
-        }
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = stringResource(R.string.setup_title), style = MaterialTheme.typography.headlineMedium)
 
-        Button(
-            modifier = Modifier.padding(top = 16.dp),
-            onClick = { onCreateAccount(username, password, requireAuth) },
-            enabled = !isLoading && username.isNotBlank() && password.isNotBlank() && passwordsMatch
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 8.dp))
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text(stringResource(R.string.username_label)) },
+                    singleLine = true,
+                    enabled = !isLoading
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(stringResource(R.string.password_label)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    enabled = !isLoading
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text(stringResource(R.string.confirm_password_label)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    enabled = !isLoading
+                )
+
+                if (confirmPassword.isNotEmpty() && !passwordsMatch) {
+                    Text(
+                        modifier = Modifier.padding(top = 8.dp),
+                        text = stringResource(R.string.passwords_do_not_match),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                } else if (uiState is UiState.Error) {
+                    Text(
+                        modifier = Modifier.padding(top = 8.dp),
+                        text = uiState.message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(stringResource(R.string.require_authentication_label))
+                    Switch(checked = requireAuth, onCheckedChange = { requireAuth = it }, enabled = !isLoading)
+                }
+
+                Button(
+                    modifier = Modifier.padding(top = 16.dp),
+                    onClick = { onCreateAccount(username, password, requireAuth) },
+                    enabled = !isLoading && username.isNotBlank() && password.isNotBlank() && passwordsMatch
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 8.dp))
+                    }
+                    Text(stringResource(R.string.setup_submit))
+                }
             }
-            Text(stringResource(R.string.setup_submit))
         }
     }
 }
