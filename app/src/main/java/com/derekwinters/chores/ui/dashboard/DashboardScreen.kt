@@ -119,20 +119,26 @@ private fun DashboardUserCard(
                 )
             }
 
-            ProgressRow(
-                headerLabel = stringResource(R.string.dashboard_7_day_label),
-                value = card.points7d,
-                goal = card.goal7d,
-                progress = progressFraction(card.points7d, card.goal7d),
-                trend = card.trend7d
-            )
-            ProgressRow(
-                headerLabel = stringResource(R.string.dashboard_30_day_label),
-                value = card.points30d,
-                goal = card.goal30d,
-                progress = progressFraction(card.points30d, card.goal30d),
-                trend = card.trend30d
-            )
+            // Issue #118: side-by-side layout matching web's `grid-template-columns: 1fr 1fr`
+            // (previously stacked vertically).
+            Row(modifier = Modifier.fillMaxWidth()) {
+                ProgressRow(
+                    modifier = Modifier.weight(1f),
+                    headerLabel = stringResource(R.string.dashboard_7_day_label),
+                    value = card.points7d,
+                    goal = card.goal7d,
+                    progress = progressFraction(card.points7d, card.goal7d),
+                    trend = card.trend7d
+                )
+                ProgressRow(
+                    modifier = Modifier.weight(1f).padding(start = 16.dp),
+                    headerLabel = stringResource(R.string.dashboard_30_day_label),
+                    value = card.points30d,
+                    goal = card.goal30d,
+                    progress = progressFraction(card.points30d, card.goal30d),
+                    trend = card.trend30d
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
@@ -169,8 +175,15 @@ private fun DashboardUserCard(
 }
 
 @Composable
-private fun ProgressRow(headerLabel: String, value: Int, goal: Int, progress: Float, trend: TrendStatus) {
-    Column(modifier = Modifier.padding(top = 8.dp)) {
+private fun ProgressRow(
+    headerLabel: String,
+    value: Int,
+    goal: Int,
+    progress: Float,
+    trend: TrendStatus,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.padding(top = 8.dp)) {
         Text(text = headerLabel, style = MaterialTheme.typography.bodySmall)
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
