@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,19 @@ data class SettingsNavActions(
     val onNavigateToAuthLog: () -> Unit = {},
     val onNavigateToData: () -> Unit = {},
     val onNavigateToTheming: () -> Unit = {}
+)
+
+/**
+ * Issue #88: Menu row callbacks for Settings sub-navigation (General, Auth, Chores, Theme, Data,
+ * About).
+ */
+data class SettingsMenuNavActions(
+    val onNavigateToGeneral: () -> Unit = {},
+    val onNavigateToAuth: () -> Unit = {},
+    val onNavigateToChores: () -> Unit = {},
+    val onNavigateToTheme: () -> Unit = {},
+    val onNavigateToData: () -> Unit = {},
+    val onNavigateToAbout: () -> Unit = {}
 )
 
 /**
@@ -170,5 +184,55 @@ fun SettingsContent(
                 }
             }
         }
+    }
+}
+
+/**
+ * Issue #88: Settings menu showing 6 sections (General, Auth, Chores, Theme, Data, About) as
+ * independently-routed pages, matching chores-web's SettingsLayout.jsx sub-nav structure.
+ */
+@Composable
+fun SettingsMenuContent(
+    onNavigateToGeneral: () -> Unit,
+    onNavigateToAuth: () -> Unit,
+    onNavigateToChores: () -> Unit,
+    onNavigateToTheme: () -> Unit,
+    onNavigateToData: () -> Unit,
+    onNavigateToAbout: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SettingsMenuItem(label = "General", onClick = onNavigateToGeneral)
+        SettingsMenuItem(label = "Auth", onClick = onNavigateToAuth)
+        SettingsMenuItem(label = "Chores", onClick = onNavigateToChores)
+        SettingsMenuItem(label = "Theme", onClick = onNavigateToTheme)
+        SettingsMenuItem(label = "Data", onClick = onNavigateToData)
+        SettingsMenuItem(label = "About", onClick = onNavigateToAbout)
+    }
+}
+
+@Composable
+private fun SettingsMenuItem(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }

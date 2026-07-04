@@ -44,6 +44,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navigation
 import com.derekwinters.chores.R
 import com.derekwinters.chores.data.model.CurrentUser
 import com.derekwinters.chores.data.model.ThemeOption
@@ -59,6 +60,11 @@ import com.derekwinters.chores.ui.settings.AuthLogScreen
 import com.derekwinters.chores.ui.settings.DataSettingsNavActions
 import com.derekwinters.chores.ui.settings.DataSettingsScreen
 import com.derekwinters.chores.ui.settings.PointsLogScreen
+import com.derekwinters.chores.ui.settings.SettingsAboutScreen
+import com.derekwinters.chores.ui.settings.SettingsAuthScreen
+import com.derekwinters.chores.ui.settings.SettingsChoresScreen
+import com.derekwinters.chores.ui.settings.SettingsGeneralScreen
+import com.derekwinters.chores.ui.settings.SettingsMenuContent
 import com.derekwinters.chores.ui.theme.AppThemeViewModel
 import com.derekwinters.chores.ui.theme.ChoresTheme
 import com.derekwinters.chores.ui.theme.ThemeAdminScreen
@@ -404,21 +410,42 @@ private fun ChoresAuthenticatedScaffold(
                 composable(ChoresDestination.Users.route) {
                     usersContent { username -> navController.navigate(logRouteWithArgs(chore = null, person = username)) }
                 }
-                composable(ChoresDestination.Settings.route) {
-                    settingsContent(
-                        SettingsNavActions(
-                            onNavigateToAuthLog = { navController.navigate("settings/authLog") },
+                navigation(startDestination = "settings/menu", route = ChoresDestination.Settings.route) {
+                    composable("settings/menu") {
+                        SettingsMenuContent(
+                            onNavigateToGeneral = { navController.navigate("settings/general") },
+                            onNavigateToAuth = { navController.navigate("settings/auth") },
+                            onNavigateToChores = { navController.navigate("settings/chores") },
+                            onNavigateToTheme = { navController.navigate("settings/theme") },
                             onNavigateToData = { navController.navigate("settings/data") },
-                            onNavigateToTheming = { navController.navigate("settings/theme") }
+                            onNavigateToAbout = { navController.navigate("settings/about") }
                         )
-                    )
+                    }
+                    composable("settings/general") {
+                        SettingsGeneralScreen(navController = navController)
+                    }
+                    composable("settings/auth") {
+                        SettingsAuthScreen(
+                            navController = navController,
+                            onNavigateToAuthLog = { navController.navigate("settings/authLog") }
+                        )
+                    }
+                    composable("settings/chores") {
+                        SettingsChoresScreen(
+                            navController = navController,
+                            onNavigateToData = { navController.navigate("settings/data") }
+                        )
+                    }
+                    composable("settings/about") {
+                        SettingsAboutScreen(navController = navController)
+                    }
+                    composable("settings/authLog") { authLogContent() }
+                    composable("settings/theme") { themeAdminContent() }
+                    composable("settings/data") {
+                        dataSettingsContent(DataSettingsNavActions(onNavigateToPointsLog = { navController.navigate("settings/data/pointsLog") }))
+                    }
+                    composable("settings/data/pointsLog") { pointsLogContent() }
                 }
-                composable("settings/authLog") { authLogContent() }
-                composable("settings/theme") { themeAdminContent() }
-                composable("settings/data") {
-                    dataSettingsContent(DataSettingsNavActions(onNavigateToPointsLog = { navController.navigate("settings/data/pointsLog") }))
-                }
-                composable("settings/data/pointsLog") { pointsLogContent() }
                 composable(ChoresDestination.Preferences.route) { preferencesContent() }
                 composable(ChoresDestination.Notification.route) { notificationContent() }
             }
