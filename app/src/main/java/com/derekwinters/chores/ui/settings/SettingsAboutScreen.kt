@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -29,6 +30,8 @@ import androidx.navigation.NavController
 import com.derekwinters.chores.data.model.AppConfig
 import com.derekwinters.chores.data.model.UpdateCheckStatus
 import com.derekwinters.chores.ui.UiState
+import com.derekwinters.chores.ui.common.BannerType
+import com.derekwinters.chores.ui.common.SettingsBanner
 import com.derekwinters.chores.ui.common.formatDateTime
 
 /**
@@ -75,6 +78,7 @@ fun SettingsAboutContent(
             is UiState.Success -> {
                 var draft by remember(uiState.data) { mutableStateOf(uiState.data) }
                 val isSaving = saveState is UiState.Loading
+                val isDirty = draft != uiState.data
 
                 Column(
                     modifier = Modifier
@@ -82,6 +86,7 @@ fun SettingsAboutContent(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
+                    Divider(modifier = Modifier.padding(bottom = 16.dp))
                     Text("About", style = MaterialTheme.typography.titleMedium)
 
                     Text("Current version: ${updateStatus?.currentVersion ?: "unknown"}", modifier = Modifier.padding(top = 8.dp))
@@ -107,13 +112,13 @@ fun SettingsAboutContent(
                     TextButton(onClick = onCheckForUpdates) { Text("Check Now") }
 
                     if (saveState is UiState.Error) {
-                        Text(saveState.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                        SettingsBanner(message = saveState.message, type = BannerType.ERROR, modifier = Modifier.padding(top = 8.dp))
                     }
 
                     Button(
                         modifier = Modifier.padding(top = 16.dp),
                         onClick = { onSave(draft) },
-                        enabled = !isSaving
+                        enabled = isDirty && !isSaving
                     ) {
                         if (isSaving) CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                         Text("Save")

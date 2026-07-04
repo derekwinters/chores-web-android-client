@@ -82,7 +82,8 @@ class DataSettingsViewModelTest {
         val viewModel = DataSettingsViewModel(DataRepository(api), LogRepository(api))
         advanceUntilIdle()
 
-        viewModel.updateLogRetentionDays(30)
+        viewModel.updateLogRetentionInput("30")
+        viewModel.saveLogRetentionDays()
         advanceUntilIdle()
 
         assertEquals(30, viewModel.logRetentionDays.value)

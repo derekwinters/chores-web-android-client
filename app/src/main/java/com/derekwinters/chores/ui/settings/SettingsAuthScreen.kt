@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -29,6 +30,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.derekwinters.chores.data.model.AppConfig
 import com.derekwinters.chores.ui.UiState
+import com.derekwinters.chores.ui.common.BannerType
+import com.derekwinters.chores.ui.common.SettingsBanner
 
 /**
  * Issue #88: Auth settings section screen (independently-routed, shared SettingsViewModel scoped
@@ -72,6 +75,7 @@ fun SettingsAuthContent(
             is UiState.Success -> {
                 var draft by remember(uiState.data) { mutableStateOf(uiState.data) }
                 val isSaving = saveState is UiState.Loading
+                val isDirty = draft != uiState.data
 
                 Column(
                     modifier = Modifier
@@ -79,6 +83,7 @@ fun SettingsAuthContent(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
+                    Divider(modifier = Modifier.padding(bottom = 16.dp))
                     Text("Auth Settings", style = MaterialTheme.typography.titleMedium)
 
                     Row(
@@ -95,16 +100,27 @@ fun SettingsAuthContent(
                         )
                     }
 
-                    TextButton(onClick = onNavigateToAuthLog) { Text("Auth Event Log") }
+                    Text(
+                        text = "When enabled, users must enter a password to access the app. Disable to allow unrestricted access.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+
+                    Divider(modifier = Modifier.padding(vertical = 16.dp))
+
+                    Text("Auth Event Log", style = MaterialTheme.typography.titleMedium)
+
+                    TextButton(onClick = onNavigateToAuthLog) { Text("View Event Log") }
 
                     if (saveState is UiState.Error) {
-                        Text(saveState.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                        SettingsBanner(message = saveState.message, type = BannerType.ERROR, modifier = Modifier.padding(top = 8.dp))
                     }
 
                     Button(
                         modifier = Modifier.padding(top = 16.dp),
                         onClick = { onSave(draft) },
-                        enabled = !isSaving
+                        enabled = isDirty && !isSaving
                     ) {
                         if (isSaving) CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                         Text("Save")
