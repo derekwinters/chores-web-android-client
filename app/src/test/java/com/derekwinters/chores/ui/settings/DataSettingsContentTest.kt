@@ -46,10 +46,7 @@ class DataSettingsContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("The following will be imported:").assertExists()
-        composeTestRule.onNodeWithText("• People: 2").assertExists()
-        composeTestRule.onNodeWithText("• Chores: 5").assertExists()
-        composeTestRule.onNodeWithText("• Settings: 1").assertExists()
+        composeTestRule.onNodeWithText("2 people, 5 chores, 1 settings", substring = true).assertExists()
         composeTestRule.onNodeWithText("This replaces all existing data and cannot be undone.").assertExists()
 
         composeTestRule.onNodeWithText("Import").performClick()
@@ -224,7 +221,7 @@ class DataSettingsContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Data imported successfully: 2 people, 5 chores, 1 settings").assertExists()
+        composeTestRule.onNodeWithText("Imported 2 people, 5 chores, 1 settings", substring = true).assertExists()
     }
 
     @Test
