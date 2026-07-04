@@ -240,21 +240,28 @@ fun ChoresAppContent(
         title
     }
 ) {
-    if (!isAuthenticated) {
-        loginContent()
-        return
-    }
+    // Issue #62: ChoresTheme now wraps the unauthenticated screen graph (AuthGateScreen's
+    // server-check/Login/Setup states) too, not just the post-auth scaffold, so Login and Setup
+    // pick up the household's branded colors/typography instead of Compose's default M3 scheme.
+    // currentThemeProvider's AppThemeViewModel already treats a failed/unauthenticated theme
+    // fetch as null (ChoresTheme's hardcoded-fallback case), so this is a safe no-regression
+    // superset of the previous post-auth-only wrapping.
+    val currentTheme = currentThemeProvider()
 
-    val isDatabaseReady = isDatabaseReadyProvider()
+    ChoresTheme(themeOption = currentTheme) {
+        if (!isAuthenticated) {
+            loginContent()
+            return@ChoresTheme
+        }
 
-    DbReadinessGate(isReady = isDatabaseReady, modifier = modifier) {
-        val currentUserState = currentUserProvider()
-        val isAdmin = (currentUserState as? UiState.Success)?.data?.isAdmin == true
-        val username = (currentUserState as? UiState.Success)?.data?.username
-        val currentTheme = currentThemeProvider()
-        val appTitle = currentTitleProvider()
+        val isDatabaseReady = isDatabaseReadyProvider()
 
-        ChoresTheme(themeOption = currentTheme) {
+        DbReadinessGate(isReady = isDatabaseReady, modifier = modifier) {
+            val currentUserState = currentUserProvider()
+            val isAdmin = (currentUserState as? UiState.Success)?.data?.isAdmin == true
+            val username = (currentUserState as? UiState.Success)?.data?.username
+            val appTitle = currentTitleProvider()
+
             ChoresAuthenticatedScaffold(
                 isAdmin = isAdmin,
                 username = username,

@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertTextEquals
@@ -10,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.CurrentUser
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,11 +66,47 @@ class ChoresAppTest {
             ChoresAppContent(
                 isAuthenticated = false,
                 onSendTestNotification = {},
-                loginContent = { Text("Fake Login") }
+                loginContent = { Text("Fake Login") },
+                // Issue #62: currentThemeProvider is now invoked before the auth check too (it
+                // wraps loginContent in ChoresTheme), so it needs a non-Hilt fake here same as the
+                // authenticated setContent() helper below.
+                currentThemeProvider = { null }
             )
         }
 
         composeTestRule.onNodeWithText("Fake Login").assertExists()
+    }
+
+    @Test
+    fun choresApp_signedOut_loginContentIsWrappedInHouseholdTheme() {
+        // Issue #62: Login (and Setup, via the same AuthGateScreen loginContent slot) now render
+        // inside ChoresTheme, so they pick up the household's branded colors instead of falling
+        // back to Compose's default M3 scheme even while unauthenticated.
+        val theme = com.derekwinters.chores.data.model.ThemeOption(
+            id = "1",
+            name = "Test",
+            background = "#000000",
+            surface = "#111111",
+            surface2 = "#222222",
+            accent = "#333333",
+            primary = "#4287f5",
+            secondary = "#555555",
+            success = "#00ff00",
+            warning = "#ffff00",
+            error = "#ff0000"
+        )
+        var observedPrimary: androidx.compose.ui.graphics.Color? = null
+
+        composeTestRule.setContent {
+            ChoresAppContent(
+                isAuthenticated = false,
+                onSendTestNotification = {},
+                loginContent = { observedPrimary = MaterialTheme.colorScheme.primary },
+                currentThemeProvider = { theme }
+            )
+        }
+
+        assertEquals(com.derekwinters.chores.ui.theme.parseHexColor("#4287f5"), observedPrimary)
     }
 
     @Test
