@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +11,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -21,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -67,6 +71,12 @@ fun SettingsGeneralContent(
                 var draft by remember(uiState.data) { mutableStateOf(uiState.data) }
                 val isSaving = saveState is UiState.Loading
                 val isDirty = draft != uiState.data
+                var timezoneMenuExpanded by remember { mutableStateOf(false) }
+                val availableTimezones = remember { TimezoneUtils.getAvailableTimezones() }
+                val currentTimezoneOption = remember(draft.timezone) {
+                    TimezoneUtils.findTimezoneOption(draft.timezone)
+                        ?: TimezoneOption(draft.timezone, draft.timezone)
+                }
 
                 Column(
                     modifier = Modifier
@@ -75,8 +85,9 @@ fun SettingsGeneralContent(
                         .padding(16.dp)
                 ) {
                     Divider(modifier = Modifier.padding(bottom = 16.dp))
-                    Text("General Settings", style = MaterialTheme.typography.titleMedium)
 
+                    // App Title Section
+                    Text("App Title", style = MaterialTheme.typography.titleMedium)
                     OutlinedTextField(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -86,14 +97,39 @@ fun SettingsGeneralContent(
                         label = { Text("App Title") }
                     )
 
-                    OutlinedTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        value = draft.timezone,
-                        onValueChange = { draft = draft.copy(timezone = it) },
-                        label = { Text("Timezone") }
+                    // Timezone Section
+                    Text(
+                        "Timezone",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(top = 24.dp)
                     )
+
+                    Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        OutlinedTextField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { timezoneMenuExpanded = true }
+                                .testTag("TimezoneField"),
+                            value = currentTimezoneOption.displayLabel,
+                            onValueChange = {},
+                            label = { Text("Timezone") },
+                            readOnly = true
+                        )
+                        DropdownMenu(
+                            expanded = timezoneMenuExpanded,
+                            onDismissRequest = { timezoneMenuExpanded = false }
+                        ) {
+                            availableTimezones.forEach { timezone ->
+                                DropdownMenuItem(
+                                    text = { Text(timezone.displayLabel) },
+                                    onClick = {
+                                        draft = draft.copy(timezone = timezone.zoneId)
+                                        timezoneMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
 
                     if (saveState is UiState.Error) {
                         Text(saveState.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))

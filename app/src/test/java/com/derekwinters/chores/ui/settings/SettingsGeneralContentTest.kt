@@ -1,6 +1,7 @@
 package com.derekwinters.chores.ui.settings
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
@@ -55,8 +56,15 @@ class SettingsGeneralContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Timezone").performTextClearance()
-        composeTestRule.onNodeWithText("Timezone").performTextInput("America/New_York")
+        // Click the Timezone field to open the dropdown
+        composeTestRule.onNodeWithTag("TimezoneField").performClick()
+
+        // Find and click the America/New_York option
+        // The display label contains the timezone name and UTC offset
+        // Use substring matching to find "America/New_York"
+        composeTestRule.onNodeWithText("America/New_York", substring = true)
+            .performClick()
+
         composeTestRule.onNodeWithText("Save").performClick()
 
         assert(saved?.timezone == "America/New_York")
