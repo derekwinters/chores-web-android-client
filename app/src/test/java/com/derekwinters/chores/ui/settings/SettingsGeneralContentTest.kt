@@ -53,16 +53,16 @@ class SettingsGeneralContentTest {
         var saved: AppConfig? = null
         composeTestRule.setContent {
             SettingsGeneralContent(
-                uiState = UiState.Success(ConfigDto(title = "Chores").toDomain()),
+                uiState = UiState.Success(ConfigDto(title = "Chores", timezone = "UTC").toDomain()),
                 saveState = UiState.Idle,
                 onSave = { saved = it }
             )
         }
 
         // Issue #106: Timezone is now selected via dropdown with UTC offset labels
-        // Open dropdown by clicking button with UTC text
+        // Open dropdown
         composeTestRule.onNodeWithTag("timezonePickerButton").performClick()
-        // Select UTC+01 from the dropdown menu
+        // Look for UTC+01 in the dropdown and click it
         composeTestRule.onNodeWithText("UTC+01").performClick()
         composeTestRule.onNodeWithText("Save").performClick()
 
