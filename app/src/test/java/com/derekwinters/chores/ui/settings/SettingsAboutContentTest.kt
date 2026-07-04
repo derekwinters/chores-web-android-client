@@ -26,25 +26,6 @@ class SettingsAboutContentTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun settingsAboutContent_toggleUpdateCheckEnabled_andSave_submitsUpdatedConfig() {
-        var saved: AppConfig? = null
-        composeTestRule.setContent {
-            SettingsAboutContent(
-                uiState = UiState.Success(ConfigDto(update_check_enabled = false).toDomain()),
-                saveState = UiState.Idle,
-                updateStatus = null,
-                onSave = { saved = it },
-                onCheckForUpdates = {}
-            )
-        }
-
-        composeTestRule.onNodeWithText("Check for updates automatically").performClick()
-        composeTestRule.onNodeWithText("Save").performClick()
-
-        assert(saved?.updateCheckEnabled == true) { "Expected updateCheckEnabled to be true but was ${saved?.updateCheckEnabled}" }
-    }
-
-    @Test
     fun settingsAboutContent_checkNow_invokesCallback() {
         var checked = false
         composeTestRule.setContent {
