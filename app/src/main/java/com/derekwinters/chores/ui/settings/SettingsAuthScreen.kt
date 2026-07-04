@@ -3,7 +3,7 @@ package com.derekwinters.chores.ui.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -84,7 +84,7 @@ fun SettingsAuthContent(
                         .padding(16.dp)
                 ) {
                     // Issue #102: Divider before heading
-                    Divider(modifier = Modifier.padding(bottom = 16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(bottom = 16.dp))
                     Text("Authentication", style = MaterialTheme.typography.titleMedium)
 
                     Row(
@@ -110,7 +110,7 @@ fun SettingsAuthContent(
                     )
 
                     // Issue #109: Separate Auth Event Log section with divider
-                    Divider(modifier = Modifier.padding(vertical = 16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                     Text("Auth Event Log", style = MaterialTheme.typography.titleMedium)
                     TextButton(onClick = onNavigateToAuthLog) { Text("View Auth Event Log") }
 

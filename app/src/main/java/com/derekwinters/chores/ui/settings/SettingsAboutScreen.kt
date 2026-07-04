@@ -3,7 +3,7 @@ package com.derekwinters.chores.ui.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -87,7 +87,7 @@ fun SettingsAboutContent(
                         .padding(16.dp)
                 ) {
                     // Issue #102: Divider before heading
-                    Divider(modifier = Modifier.padding(bottom = 16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(bottom = 16.dp))
                     Text("About", style = MaterialTheme.typography.titleMedium)
 
                     Text("Current version: ${updateStatus?.currentVersion ?: "unknown"}", modifier = Modifier.padding(top = 8.dp))

@@ -2,7 +2,7 @@ package com.derekwinters.chores.ui.settings
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -94,7 +94,7 @@ fun SettingsChoresContent(
                         .padding(16.dp)
                 ) {
                     // Issue #102: Divider before heading
-                    Divider(modifier = Modifier.padding(bottom = 16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(bottom = 16.dp))
                     Text("Chores", style = MaterialTheme.typography.titleMedium)
 
                     // Issue #112: Add description text

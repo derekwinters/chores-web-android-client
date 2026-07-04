@@ -14,7 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -132,7 +132,7 @@ fun DataSettingsContent(
                 .padding(16.dp)
         ) {
             // Issue #114: Split into Export & Import section
-            Divider(modifier = Modifier.padding(bottom = 16.dp))
+            HorizontalDivider(modifier = Modifier.padding(bottom = 16.dp))
             Text("Export & Import", style = MaterialTheme.typography.titleMedium)
 
             // Issue #117: Add description text
@@ -187,7 +187,7 @@ fun DataSettingsContent(
             }
 
             // Issue #114: Log Retention section
-            Divider(modifier = Modifier.padding(vertical = 16.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
             Text("Log Retention", style = MaterialTheme.typography.titleMedium)
 
             Text(
@@ -207,7 +207,7 @@ fun DataSettingsContent(
             }
 
             // Issue #114: Data Management section
-            Divider(modifier = Modifier.padding(vertical = 16.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
             Text("Data Management", style = MaterialTheme.typography.titleMedium)
 
             Text(

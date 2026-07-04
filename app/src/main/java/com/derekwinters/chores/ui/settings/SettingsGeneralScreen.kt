@@ -9,7 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -109,7 +109,7 @@ fun SettingsGeneralContent(
                         .padding(16.dp)
                 ) {
                     // Issue #102: Divider before heading for App Title section
-                    Divider(modifier = Modifier.padding(bottom = 16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(bottom = 16.dp))
                     Text("App Title", style = MaterialTheme.typography.titleMedium)
 
                     OutlinedTextField(
@@ -122,7 +122,7 @@ fun SettingsGeneralContent(
                     )
 
                     // Issue #102: Divider before heading for Timezone section
-                    Divider(modifier = Modifier.padding(vertical = 16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                     Text("Timezone", style = MaterialTheme.typography.titleMedium)
 
                     // Issue #106: Replace free-text timezone with UTC-offset picker dropdown
