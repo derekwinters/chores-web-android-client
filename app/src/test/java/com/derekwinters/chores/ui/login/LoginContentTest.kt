@@ -29,6 +29,8 @@ class LoginContentTest {
             LoginContent(uiState = UiState.Idle, onLogin = { _, _, _ -> })
         }
 
+        // Issue #64: "Family Chores" app-branding heading above the login title.
+        composeTestRule.onNodeWithText("Family Chores").assertExists()
         composeTestRule.onNodeWithText("Log in to Chores").assertExists()
         composeTestRule.onNodeWithText("Server URL").assertExists()
         composeTestRule.onNodeWithText("Username").assertExists()

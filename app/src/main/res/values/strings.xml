@@ -38,6 +38,8 @@
 
     <!-- Login screen (issue #5) -->
     <string name="login_screen_title">Log in to Chores</string>
+    <!-- Issue #64: app-branding heading shown above login_screen_title, matching web's branded header. -->
+    <string name="login_app_branding">Family Chores</string>
     <string name="server_url_label">Server URL</string>
     <string name="server_url_placeholder">http://192.168.1.10:8000</string>
     <string name="username_label">Username</string>
