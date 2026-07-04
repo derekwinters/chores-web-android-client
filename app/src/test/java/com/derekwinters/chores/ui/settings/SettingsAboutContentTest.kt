@@ -30,7 +30,7 @@ class SettingsAboutContentTest {
         var saved: AppConfig? = null
         composeTestRule.setContent {
             SettingsAboutContent(
-                uiState = UiState.Success(ConfigDto().toDomain()),
+                uiState = UiState.Success(ConfigDto(update_check_enabled = false).toDomain()),
                 saveState = UiState.Idle,
                 updateStatus = null,
                 onSave = { saved = it },
