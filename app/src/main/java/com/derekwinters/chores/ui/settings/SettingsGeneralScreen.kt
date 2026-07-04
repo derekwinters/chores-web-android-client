@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -73,6 +74,7 @@ fun SettingsGeneralContent(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
+                    Divider(modifier = Modifier.padding(bottom = 16.dp))
                     Text("General Settings", style = MaterialTheme.typography.titleMedium)
 
                     OutlinedTextField(

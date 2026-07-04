@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -83,6 +84,7 @@ fun SettingsAboutContent(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
+                    Divider(modifier = Modifier.padding(bottom = 16.dp))
                     Text("About", style = MaterialTheme.typography.titleMedium)
 
                     Text("Current version: ${updateStatus?.currentVersion ?: "unknown"}", modifier = Modifier.padding(top = 8.dp))
