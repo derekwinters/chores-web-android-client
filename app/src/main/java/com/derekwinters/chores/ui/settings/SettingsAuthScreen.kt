@@ -3,6 +3,7 @@ package com.derekwinters.chores.ui.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Divider
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.derekwinters.chores.data.model.AppConfig
 import com.derekwinters.chores.ui.UiState
+import com.derekwinters.chores.ui.common.SettingsBanner
 
 /**
  * Issue #88: Auth settings section screen (independently-routed, shared SettingsViewModel scoped
@@ -72,6 +74,8 @@ fun SettingsAuthContent(
             is UiState.Success -> {
                 var draft by remember(uiState.data) { mutableStateOf(uiState.data) }
                 val isSaving = saveState is UiState.Loading
+                // Issue #96: Track dirty state
+                val isDirty = draft != uiState.data
 
                 Column(
                     modifier = Modifier
@@ -79,7 +83,9 @@ fun SettingsAuthContent(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
-                    Text("Auth Settings", style = MaterialTheme.typography.titleMedium)
+                    // Issue #102: Divider before heading
+                    Divider(modifier = Modifier.padding(bottom = 16.dp))
+                    Text("Authentication", style = MaterialTheme.typography.titleMedium)
 
                     Row(
                         modifier = Modifier
@@ -95,16 +101,35 @@ fun SettingsAuthContent(
                         )
                     }
 
-                    TextButton(onClick = onNavigateToAuthLog) { Text("Auth Event Log") }
+                    // Issue #109: Add description text under the toggle
+                    Text(
+                        "Require users to authenticate before accessing the app",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
 
+                    // Issue #109: Separate Auth Event Log section with divider
+                    Divider(modifier = Modifier.padding(vertical = 16.dp))
+                    Text("Auth Event Log", style = MaterialTheme.typography.titleMedium)
+                    TextButton(onClick = onNavigateToAuthLog) { Text("View Auth Event Log") }
+
+                    // Issue #116: Use banner for error messages
                     if (saveState is UiState.Error) {
-                        Text(saveState.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                        SettingsBanner(
+                            message = saveState.message,
+                            isError = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp)
+                        )
                     }
 
+                    // Issue #96: Disable save button when not dirty
                     Button(
                         modifier = Modifier.padding(top = 16.dp),
                         onClick = { onSave(draft) },
-                        enabled = !isSaving
+                        enabled = !isSaving && isDirty
                     ) {
                         if (isSaving) CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                         Text("Save")

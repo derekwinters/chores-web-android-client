@@ -26,6 +26,8 @@ class DataSettingsContentTest {
         var confirmed = false
         composeTestRule.setContent {
             DataSettingsContent(
+                selectedImportFilename = null,
+                exportState = UiState.Idle,
                 logRetentionDays = 90,
                 importPreview = ImportPreview(peopleCount = 2, choresCount = 5, settingsCount = 1, rawJson = "{}"),
                 importState = UiState.Idle,
@@ -39,7 +41,10 @@ class DataSettingsContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("2 people, 5 chores, 1 settings").assertExists()
+        // Issue #119: Check for bulleted breakdown instead of single line
+        composeTestRule.onNodeWithText("• 2 people").assertExists()
+        composeTestRule.onNodeWithText("• 5 chores").assertExists()
+        composeTestRule.onNodeWithText("• 1 settings").assertExists()
         composeTestRule.onNodeWithText("This replaces all existing data and cannot be undone.").assertExists()
 
         composeTestRule.onNodeWithText("Import").performClick()
@@ -52,6 +57,8 @@ class DataSettingsContentTest {
         var navigated = false
         composeTestRule.setContent {
             DataSettingsContent(
+                selectedImportFilename = null,
+                exportState = UiState.Idle,
                 logRetentionDays = 90,
                 importPreview = null,
                 importState = UiState.Idle,

@@ -55,7 +55,7 @@ class SettingsAuthContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Auth Event Log").performClick()
+        composeTestRule.onNodeWithText("View Auth Event Log").performClick()
 
         assert(navigated)
     }

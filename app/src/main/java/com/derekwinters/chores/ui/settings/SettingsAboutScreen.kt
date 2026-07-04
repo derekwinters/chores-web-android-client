@@ -3,6 +3,7 @@ package com.derekwinters.chores.ui.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Divider
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +31,7 @@ import com.derekwinters.chores.data.model.AppConfig
 import com.derekwinters.chores.data.model.UpdateCheckStatus
 import com.derekwinters.chores.ui.UiState
 import com.derekwinters.chores.ui.common.formatDateTime
+import com.derekwinters.chores.ui.common.SettingsBanner
 
 /**
  * Issue #88: About settings section screen (independently-routed, shared SettingsViewModel scoped
@@ -75,6 +77,8 @@ fun SettingsAboutContent(
             is UiState.Success -> {
                 var draft by remember(uiState.data) { mutableStateOf(uiState.data) }
                 val isSaving = saveState is UiState.Loading
+                // Issue #96: Track dirty state
+                val isDirty = draft != uiState.data
 
                 Column(
                     modifier = Modifier
@@ -82,6 +86,8 @@ fun SettingsAboutContent(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
+                    // Issue #102: Divider before heading
+                    Divider(modifier = Modifier.padding(bottom = 16.dp))
                     Text("About", style = MaterialTheme.typography.titleMedium)
 
                     Text("Current version: ${updateStatus?.currentVersion ?: "unknown"}", modifier = Modifier.padding(top = 8.dp))
@@ -106,14 +112,22 @@ fun SettingsAboutContent(
 
                     TextButton(onClick = onCheckForUpdates) { Text("Check Now") }
 
+                    // Issue #116: Use banner for error messages
                     if (saveState is UiState.Error) {
-                        Text(saveState.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                        SettingsBanner(
+                            message = saveState.message,
+                            isError = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp)
+                        )
                     }
 
+                    // Issue #96: Disable save button when not dirty
                     Button(
                         modifier = Modifier.padding(top = 16.dp),
                         onClick = { onSave(draft) },
-                        enabled = !isSaving
+                        enabled = !isSaving && isDirty
                     ) {
                         if (isSaving) CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                         Text("Save")
