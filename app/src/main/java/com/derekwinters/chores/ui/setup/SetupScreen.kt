@@ -1,6 +1,5 @@
 package com.derekwinters.chores.ui.setup
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,10 +14,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -160,14 +159,25 @@ fun SetupContent(
                     )
                 }
 
+                // Issue #83: checkbox-left layout (checkbox precedes its label, replacing the
+                // previous Switch-on-the-right layout), with a dynamic hint beneath describing
+                // the consequence of the current setting.
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Checkbox(checked = requireAuth, onCheckedChange = { requireAuth = it }, enabled = !isLoading)
                     Text(stringResource(R.string.require_authentication_label))
-                    Switch(checked = requireAuth, onCheckedChange = { requireAuth = it }, enabled = !isLoading)
                 }
+                Text(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    text = stringResource(
+                        if (requireAuth) R.string.require_authentication_hint_enabled
+                        else R.string.require_authentication_hint_disabled
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
                 Button(
                     modifier = Modifier.padding(top = 16.dp),

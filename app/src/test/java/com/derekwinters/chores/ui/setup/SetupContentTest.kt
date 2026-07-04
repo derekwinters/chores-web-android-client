@@ -1,8 +1,10 @@
 package com.derekwinters.chores.ui.setup
 
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNode
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -60,5 +62,20 @@ class SetupContentTest {
         composeTestRule.onNodeWithText("Create Account").performScrollTo().performClick()
 
         assert(captured == Triple("admin", "secret123", true))
+    }
+
+    @Test
+    fun setupContent_requireAuthenticationHint_reflectsCheckboxState() {
+        composeTestRule.setContent {
+            SetupContent(uiState = UiState.Idle, onCreateAccount = { _, _, _ -> })
+        }
+
+        // Issue #83: dynamic hint text switches based on the Require-Authentication checkbox,
+        // which defaults to checked.
+        composeTestRule.onNodeWithText("Users will need to log in to access this household.").assertExists()
+
+        composeTestRule.onNode(isToggleable()).performClick()
+
+        composeTestRule.onNodeWithText("This household will be accessible without authentication.").assertExists()
     }
 }

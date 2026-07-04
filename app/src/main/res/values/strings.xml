@@ -28,6 +28,9 @@
     <string name="setup_title">Create Admin Account</string>
     <string name="setup_submit">Create Account</string>
     <string name="require_authentication_label">Require Authentication</string>
+    <!-- Issue #83: dynamic hint beneath the Require-Authentication checkbox. -->
+    <string name="require_authentication_hint_enabled">Users will need to log in to access this household.</string>
+    <string name="require_authentication_hint_disabled">This household will be accessible without authentication.</string>
     <string name="confirm_password_label">Confirm Password</string>
     <string name="passwords_do_not_match">Passwords do not match</string>
     <string name="password_reset_title">Password Reset Required</string>
