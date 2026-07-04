@@ -1,6 +1,7 @@
 package com.derekwinters.chores.ui.settings
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
@@ -37,9 +38,9 @@ class SettingsGeneralContentTest {
             )
         }
 
-        // Issue #102/#106: App Title is now a separate section heading, so find the editable field with the current value
-        composeTestRule.onNodeWithText("Chores").performTextClearance()
-        composeTestRule.onNodeWithText("Chores").performTextInput("My House")
+        // Use test tag to reliably find the app title input field
+        composeTestRule.onNodeWithTag("appTitleInput").performTextClearance()
+        composeTestRule.onNodeWithTag("appTitleInput").performTextInput("My House")
         composeTestRule.onNodeWithText("Save").performClick()
 
         assert(saved?.appTitle == "My House")
