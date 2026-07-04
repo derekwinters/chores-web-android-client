@@ -103,9 +103,14 @@ fun DataSettingsScreen(
         }
     }
 
+    val logRetentionInput by viewModel.logRetentionInput.collectAsState()
+    val logRetentionState by viewModel.logRetentionState.collectAsState()
+
     DataSettingsContent(
         modifier = modifier,
         logRetentionDays = logRetentionDays,
+        logRetentionInput = logRetentionInput,
+        logRetentionState = logRetentionState,
         importPreview = importPreview,
         importState = importState,
         selectedImportFilename = selectedImportFilename,
@@ -113,7 +118,9 @@ fun DataSettingsScreen(
         exportState = exportState,
         onExportClick = { exportLauncher.launch("chores-backup.json") },
         onImportClick = { importLauncher.launch(arrayOf("application/json")) },
-        onLogRetentionChange = viewModel::updateLogRetentionDays,
+        onLogRetentionChange = viewModel::updateLogRetentionInput,
+        onSaveLogRetention = viewModel::saveLogRetentionDays,
+        onClearLogRetentionState = viewModel::clearLogRetentionState,
         onConfirmImport = viewModel::confirmImport,
         onCancelImport = viewModel::cancelImport,
         onDismissImportResult = viewModel::clearImportState,
@@ -124,6 +131,8 @@ fun DataSettingsScreen(
 @Composable
 fun DataSettingsContent(
     logRetentionDays: Int?,
+    logRetentionInput: String,
+    logRetentionState: UiState<Int>,
     importPreview: ImportPreview?,
     importState: UiState<com.derekwinters.chores.data.repository.ImportSummary>,
     selectedImportFilename: String?,
@@ -131,7 +140,9 @@ fun DataSettingsContent(
     exportState: UiState<String>,
     onExportClick: () -> Unit,
     onImportClick: () -> Unit,
-    onLogRetentionChange: (Int) -> Unit,
+    onLogRetentionChange: (String) -> Unit,
+    onSaveLogRetention: () -> Unit,
+    onClearLogRetentionState: () -> Unit,
     onConfirmImport: () -> Unit,
     onCancelImport: () -> Unit,
     onDismissImportResult: () -> Unit,
@@ -142,21 +153,121 @@ fun DataSettingsContent(
         Divider(modifier = Modifier.padding(bottom = 16.dp))
         Text("Data", style = MaterialTheme.typography.titleMedium)
 
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Button(onClick = onExportClick) { Text("Export Backup") }
-            Button(onClick = onImportClick) { Text("Import Backup") }
+        // ========== Export & Import Section ==========
+        Text("Export & Import", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 16.dp))
+        Text(
+            "Back up your data by exporting to a file, or restore from a previous backup by importing.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                Button(onClick = onExportClick, modifier = Modifier.fillMaxWidth()) {
+                    Text("Export Backup")
+                }
+                Text(
+                    "Download your data as a JSON file for backup or migration purposes",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Button(onClick = onImportClick, modifier = Modifier.fillMaxWidth()) {
+                    Text("Import Backup")
+                }
+                Text(
+                    "Upload a previously exported JSON file to restore or migrate your data",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
 
-        if (logRetentionDays != null) {
+        // Show selected import filename confirmation
+        if (selectedImportFilename != null) {
+            Text(
+                "Selected: $selectedImportFilename",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
+
+        // Show export state
+        if (exportState is UiState.Success) {
+            SettingsBanner(
+                message = "Data exported successfully to: ${exportFilename ?: "file"}",
+                type = BannerType.SUCCESS,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        } else if (exportState is UiState.Error) {
+            SettingsBanner(
+                message = exportState.message,
+                type = BannerType.ERROR,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
+
+        // ========== Log Retention Section ==========
+        Divider(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp))
+        Text("Log Retention", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "Control how long activity logs are kept. Older entries will be automatically deleted.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        if (logRetentionInput.isNotEmpty()) {
             OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                value = logRetentionDays.toString(),
-                onValueChange = { value -> value.toIntOrNull()?.let(onLogRetentionChange) },
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                value = logRetentionInput,
+                onValueChange = onLogRetentionChange,
                 label = { Text("Days to keep log entries") }
             )
         }
 
-        TextButton(modifier = Modifier.padding(top = 16.dp), onClick = onNavigateToPointsLog) {
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onSaveLogRetention, modifier = Modifier.weight(1f)) {
+                Text("Save")
+            }
+        }
+
+        if (logRetentionState is UiState.Success) {
+            SettingsBanner(
+                message = "Log retention updated to ${logRetentionState.data} days",
+                type = BannerType.SUCCESS,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            TextButton(onClick = onClearLogRetentionState, modifier = Modifier.padding(top = 0.dp)) {
+                Text("OK")
+            }
+        } else if (logRetentionState is UiState.Error) {
+            SettingsBanner(
+                message = logRetentionState.message,
+                type = BannerType.ERROR,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            TextButton(onClick = onClearLogRetentionState, modifier = Modifier.padding(top = 0.dp)) {
+                Text("OK")
+            }
+        }
+
+        // ========== Data Management Section ==========
+        Divider(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp))
+        Text("Data Management", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "Access detailed information about your activity logs.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        TextButton(modifier = Modifier.padding(top = 12.dp), onClick = onNavigateToPointsLog) {
             Text("Admin Points Log")
         }
 

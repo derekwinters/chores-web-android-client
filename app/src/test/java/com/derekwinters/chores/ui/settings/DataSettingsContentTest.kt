@@ -31,6 +31,9 @@ class DataSettingsContentTest {
                 logRetentionState = UiState.Idle,
                 importPreview = ImportPreview(peopleCount = 2, choresCount = 5, settingsCount = 1, rawJson = "{}"),
                 importState = UiState.Idle,
+                selectedImportFilename = null,
+                exportFilename = null,
+                exportState = UiState.Idle,
                 onExportClick = {},
                 onImportClick = {},
                 onLogRetentionChange = {},
@@ -64,6 +67,9 @@ class DataSettingsContentTest {
                 logRetentionState = UiState.Idle,
                 importPreview = null,
                 importState = UiState.Idle,
+                selectedImportFilename = null,
+                exportFilename = null,
+                exportState = UiState.Idle,
                 onExportClick = {},
                 onImportClick = {},
                 onLogRetentionChange = {},
@@ -90,6 +96,9 @@ class DataSettingsContentTest {
                 logRetentionState = UiState.Idle,
                 importPreview = null,
                 importState = UiState.Idle,
+                selectedImportFilename = null,
+                exportFilename = null,
+                exportState = UiState.Idle,
                 onExportClick = {},
                 onImportClick = {},
                 onLogRetentionChange = {},
@@ -117,6 +126,9 @@ class DataSettingsContentTest {
                 logRetentionState = UiState.Idle,
                 importPreview = null,
                 importState = UiState.Idle,
+                selectedImportFilename = null,
+                exportFilename = null,
+                exportState = UiState.Idle,
                 onExportClick = {},
                 onImportClick = {},
                 onLogRetentionChange = {},
@@ -132,5 +144,113 @@ class DataSettingsContentTest {
         composeTestRule.onNodeWithText("Save").performClick()
 
         assert(saveClicked)
+    }
+
+    @Test
+    fun dataSettingsContent_selectedImportFilename_displaysConfirmation() {
+        composeTestRule.setContent {
+            DataSettingsContent(
+                logRetentionDays = 90,
+                logRetentionInput = "90",
+                logRetentionState = UiState.Idle,
+                importPreview = null,
+                importState = UiState.Idle,
+                selectedImportFilename = "my_chores_backup.json",
+                exportFilename = null,
+                exportState = UiState.Idle,
+                onExportClick = {},
+                onImportClick = {},
+                onLogRetentionChange = {},
+                onSaveLogRetention = {},
+                onClearLogRetentionState = {},
+                onConfirmImport = {},
+                onCancelImport = {},
+                onDismissImportResult = {},
+                onNavigateToPointsLog = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Selected: my_chores_backup.json").assertExists()
+    }
+
+    @Test
+    fun dataSettingsContent_exportSuccess_displaysBanner() {
+        composeTestRule.setContent {
+            DataSettingsContent(
+                logRetentionDays = 90,
+                logRetentionInput = "90",
+                logRetentionState = UiState.Idle,
+                importPreview = null,
+                importState = UiState.Idle,
+                selectedImportFilename = null,
+                exportFilename = "chores-backup.json",
+                exportState = UiState.Success("{}"),
+                onExportClick = {},
+                onImportClick = {},
+                onLogRetentionChange = {},
+                onSaveLogRetention = {},
+                onClearLogRetentionState = {},
+                onConfirmImport = {},
+                onCancelImport = {},
+                onDismissImportResult = {},
+                onNavigateToPointsLog = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Data exported successfully to: chores-backup.json").assertExists()
+    }
+
+    @Test
+    fun dataSettingsContent_importSuccess_displaysBanner() {
+        composeTestRule.setContent {
+            DataSettingsContent(
+                logRetentionDays = 90,
+                logRetentionInput = "90",
+                logRetentionState = UiState.Idle,
+                importPreview = null,
+                importState = UiState.Success(com.derekwinters.chores.data.repository.ImportSummary(peopleCount = 2, choresCount = 5, settingsCount = 1)),
+                selectedImportFilename = null,
+                exportFilename = null,
+                exportState = UiState.Idle,
+                onExportClick = {},
+                onImportClick = {},
+                onLogRetentionChange = {},
+                onSaveLogRetention = {},
+                onClearLogRetentionState = {},
+                onConfirmImport = {},
+                onCancelImport = {},
+                onDismissImportResult = {},
+                onNavigateToPointsLog = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Data imported successfully: 2 people, 5 chores, 1 settings").assertExists()
+    }
+
+    @Test
+    fun dataSettingsContent_importError_displaysBanner() {
+        composeTestRule.setContent {
+            DataSettingsContent(
+                logRetentionDays = 90,
+                logRetentionInput = "90",
+                logRetentionState = UiState.Idle,
+                importPreview = null,
+                importState = UiState.Error("Import failed"),
+                selectedImportFilename = null,
+                exportFilename = null,
+                exportState = UiState.Idle,
+                onExportClick = {},
+                onImportClick = {},
+                onLogRetentionChange = {},
+                onSaveLogRetention = {},
+                onClearLogRetentionState = {},
+                onConfirmImport = {},
+                onCancelImport = {},
+                onDismissImportResult = {},
+                onNavigateToPointsLog = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Import failed").assertExists()
     }
 }
