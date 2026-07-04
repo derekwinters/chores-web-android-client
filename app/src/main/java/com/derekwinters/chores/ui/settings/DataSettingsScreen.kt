@@ -54,17 +54,31 @@ fun DataSettingsScreen(
     val importPreview by viewModel.importPreview.collectAsState()
     val importState by viewModel.importState.collectAsState()
     val logRetentionDays by viewModel.logRetentionDays.collectAsState()
+    val selectedImportFilename by viewModel.selectedImportFilename.collectAsState()
+    val exportFilename by viewModel.exportFilename.collectAsState()
 
     var pendingExportUri by remember { mutableStateOf<Uri?>(null) }
+
+    fun extractFilename(uri: Uri): String {
+        return context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            cursor.moveToFirst()
+            cursor.getString(nameIndex)
+        } ?: "file"
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) {
             pendingExportUri = uri
+            val filename = extractFilename(uri)
+            viewModel.setExportFilename(filename)
             viewModel.exportConfig()
         }
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
+            val filename = extractFilename(uri)
+            viewModel.setSelectedImportFilename(filename)
             scope.launch {
                 context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { reader ->
                     viewModel.previewImport(reader.readText())
@@ -83,11 +97,20 @@ fun DataSettingsScreen(
         }
     }
 
+    LaunchedEffect(importState) {
+        if (importState is UiState.Success || importState is UiState.Error) {
+            viewModel.setSelectedImportFilename(null)
+        }
+    }
+
     DataSettingsContent(
         modifier = modifier,
         logRetentionDays = logRetentionDays,
         importPreview = importPreview,
         importState = importState,
+        selectedImportFilename = selectedImportFilename,
+        exportFilename = exportFilename,
+        exportState = exportState,
         onExportClick = { exportLauncher.launch("chores-backup.json") },
         onImportClick = { importLauncher.launch(arrayOf("application/json")) },
         onLogRetentionChange = viewModel::updateLogRetentionDays,
@@ -103,6 +126,9 @@ fun DataSettingsContent(
     logRetentionDays: Int?,
     importPreview: ImportPreview?,
     importState: UiState<com.derekwinters.chores.data.repository.ImportSummary>,
+    selectedImportFilename: String?,
+    exportFilename: String?,
+    exportState: UiState<String>,
     onExportClick: () -> Unit,
     onImportClick: () -> Unit,
     onLogRetentionChange: (Int) -> Unit,
