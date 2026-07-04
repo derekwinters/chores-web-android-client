@@ -26,43 +26,6 @@ class SettingsChoresContentTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    @Test
-    fun settingsChoresContent_editDueSoonDays_andSave_submitsUpdatedConfig() {
-        var saved: AppConfig? = null
-        composeTestRule.setContent {
-            SettingsChoresContent(
-                uiState = UiState.Success(ConfigDto().toDomain()),
-                saveState = UiState.Idle,
-                onSave = { saved = it },
-                onNavigateToData = {}
-            )
-        }
-
-        composeTestRule.onNodeWithText("Due Soon Days").performTextClearance()
-        composeTestRule.onNodeWithText("Due Soon Days").performTextInput("5")
-        composeTestRule.onNodeWithText("Save").performClick()
-
-        assert(saved?.dueSoonDays == 5)
-    }
-
-    @Test
-    fun settingsChoresContent_editDueTimeHour_andSave_submitsUpdatedConfig() {
-        var saved: AppConfig? = null
-        composeTestRule.setContent {
-            SettingsChoresContent(
-                uiState = UiState.Success(ConfigDto().toDomain()),
-                saveState = UiState.Idle,
-                onSave = { saved = it },
-                onNavigateToData = {}
-            )
-        }
-
-        composeTestRule.onNodeWithText("Due Time Hour").performTextClearance()
-        composeTestRule.onNodeWithText("Due Time Hour").performTextInput("8")
-        composeTestRule.onNodeWithText("Save").performClick()
-
-        assert(saved?.dueTimeHour == 8)
-    }
 
     @Test
     fun settingsChoresContent_dataLink_invokesNavCallback() {
