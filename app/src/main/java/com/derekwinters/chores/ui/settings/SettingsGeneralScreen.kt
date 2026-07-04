@@ -181,12 +181,15 @@ private fun TimezonePicker(
         onDismissRequest = { expanded = false }
     ) {
         TIMEZONE_OPTIONS.forEach { (label, value) ->
-            DropdownMenuItem(
-                text = { Text(label) },
-                onClick = {
-                    onTimezoneSelected(value)
-                    expanded = false
-                }
+            Text(
+                label,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onTimezoneSelected(value)
+                        expanded = false
+                    }
+                    .padding(16.dp)
             )
         }
     }

@@ -219,7 +219,10 @@ fun DataSettingsContent(
             )
 
             TextButton(
-                modifier = Modifier.padding(top = 16.dp).testTag("adminPointsLogButton"),
+                modifier = Modifier
+                    .padding(top = 16.dp)
+                    .testTag("adminPointsLogButton")
+                    .clickable { onNavigateToPointsLog() },
                 onClick = onNavigateToPointsLog
             ) {
                 Text("Admin Points Log")
