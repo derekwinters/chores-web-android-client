@@ -1,5 +1,7 @@
 package com.derekwinters.chores.ui.login
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -25,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -158,12 +162,23 @@ fun LoginContent(
                     enabled = !isLoading
                 )
 
+                // Issue #65: bordered/tinted callout box instead of plain red text, matching
+                // web's error styling.
                 if (uiState is UiState.Error) {
-                    Text(
-                        modifier = Modifier.padding(top = 8.dp),
-                        text = uiState.message,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = uiState.message,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
                 }
 
                 Button(
