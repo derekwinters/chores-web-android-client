@@ -1,5 +1,7 @@
 package com.derekwinters.chores.ui.setup
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -27,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -145,18 +149,38 @@ fun SetupContent(
                     enabled = !isLoading
                 )
 
+                // Issue #89: bordered/tinted callout box instead of plain text, mirroring
+                // Login's error styling (issue #65).
                 if (confirmPassword.isNotEmpty() && !passwordsMatch) {
-                    Text(
-                        modifier = Modifier.padding(top = 8.dp),
-                        text = stringResource(R.string.passwords_do_not_match),
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.passwords_do_not_match),
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
                 } else if (uiState is UiState.Error) {
-                    Text(
-                        modifier = Modifier.padding(top = 8.dp),
-                        text = uiState.message,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = uiState.message,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
                 }
 
                 // Issue #83: checkbox-left layout (checkbox precedes its label, replacing the
