@@ -155,7 +155,11 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        composeTestRule.onNodeWithText("Complete").performClick()
+        // The expanded row's action-button Row can render taller than the viewport once the
+        // Add-Chore FAB's carved-out bottom padding is applied; performScrollTo() is a safe
+        // no-op when the node is already fully visible, so it's applied consistently to every
+        // expanded-row button click in this file rather than only the ones observed to need it.
+        composeTestRule.onNodeWithText("Complete").performScrollTo().performClick()
 
         assert(completed == (assignedChore to null))
     }
@@ -172,7 +176,7 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Trash").performClick()
-        composeTestRule.onNodeWithText("Complete").performClick()
+        composeTestRule.onNodeWithText("Complete").performScrollTo().performClick()
         composeTestRule.onNodeWithText("Who completed this?").assertExists()
 
         composeTestRule.onNodeWithText("bob").performClick()
@@ -198,7 +202,7 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Trash").performClick()
-        composeTestRule.onNodeWithText("Complete").performClick()
+        composeTestRule.onNodeWithText("Complete").performScrollTo().performClick()
         composeTestRule.onNodeWithText("bob").performClick()
         composeTestRule.onNodeWithText("Confirm").performClick()
 
@@ -352,7 +356,7 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        composeTestRule.onNodeWithText("Skip").performClick()
+        composeTestRule.onNodeWithText("Skip").performScrollTo().performClick()
 
         assert(skipped == assignedChore)
     }
