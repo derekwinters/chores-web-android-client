@@ -8,7 +8,6 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -291,14 +290,23 @@ class ActivityLogContentTest {
         }
     }
 
-    /** Issue #81: entries under 24h old keep the default (non-error) timestamp color. */
+    /**
+     * Issue #81: entries under 24h old keep the default (non-error) timestamp color.
+     *
+     * Renders a single row rather than recent+aged together: #68's filter panel (action-type
+     * chips, date-range fields, clear-filters button) added enough height above the entry list
+     * that Robolectric's fixed test-window viewport no longer composes a second LazyColumn item,
+     * so `onAllNodesWithTag(...)[1]` became unreachable ("There is 1 node only"). Asserting the
+     * resolved color's alpha directly (mirroring [activityLogContent_agedTimestamp_rendersInMutedRed]'s
+     * own alpha/redness assertions) verifies the same behavior without depending on two rows
+     * being simultaneously visible.
+     */
     @Test
     fun activityLogContent_recentTimestamp_keepsDefaultColor() {
         val recentEntry = amendment.copy(timestamp = java.time.Instant.now().minus(java.time.Duration.ofHours(1)).toString())
-        val agedEntry = amendment.copy(id = 2, timestamp = java.time.Instant.now().minus(java.time.Duration.ofHours(48)).toString())
         composeTestRule.setContent {
             ActivityLogContent(
-                uiState = UiState.Success(ActivityLogPageState(listOf(recentEntry, agedEntry), total = 2, page = 1)),
+                uiState = UiState.Success(ActivityLogPageState(listOf(recentEntry), total = 1, page = 1)),
                 filters = LogFilters(),
                 onFiltersChange = {},
                 onNextPage = {},
@@ -306,12 +314,10 @@ class ActivityLogContentTest {
             )
         }
 
-        val timestampNodes = composeTestRule.onAllNodesWithTag("logRowTimestamp", useUnmergedTree = true)
-        val recentColor = timestampNodes[0].textColor()
-        val agedColor = timestampNodes[1].textColor()
+        val color = composeTestRule.onNodeWithTag("logRowTimestamp", useUnmergedTree = true).textColor()
 
-        assert(recentColor != agedColor) {
-            "expected recent and aged timestamps to render in different colors, both were $recentColor"
+        assert(color.alpha == 1f) {
+            "expected a recent entry to keep the default (fully opaque) color, got alpha=${color.alpha}"
         }
     }
 
