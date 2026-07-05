@@ -5,6 +5,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.Chore
@@ -369,7 +370,11 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        composeTestRule.onNodeWithText("Delete").performClick()
+        // The row's Delete button can render underneath the fixed Add-Chore FAB depending on
+        // available viewport height; performScrollTo() uses the LazyColumn's contentPadding
+        // headroom (see ChoreListContent) to scroll it clear of the FAB's fixed overlap zone
+        // before clicking, so the FAB doesn't intercept the touch instead.
+        composeTestRule.onNodeWithText("Delete").performScrollTo().performClick()
         composeTestRule.onNodeWithText("This also removes all points history for this chore and cannot be undone.").assertExists()
 
         composeTestRule.onAllNodesWithText("Delete")[1].performClick()
@@ -390,7 +395,8 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        composeTestRule.onNodeWithText("History").performClick()
+        // See the Delete test above for why performScrollTo() is needed here.
+        composeTestRule.onNodeWithText("History").performScrollTo().performClick()
 
         assert(history == assignedChore)
     }
