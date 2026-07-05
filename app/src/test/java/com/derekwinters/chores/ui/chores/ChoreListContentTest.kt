@@ -288,6 +288,23 @@ class ChoreListContentTest {
     }
 
     @Test
+    fun choreListContent_noActiveFilters_stillShowsCountButHidesClearAction() {
+        // Issue #74: the "Showing N of M chores" count is always visible, matching web, even
+        // when no filters are active -- "Clear filters" only makes sense when they are.
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                totalCount = 1
+            )
+        }
+
+        composeTestRule.onNodeWithText("Showing 1 of 1 chores").assertExists()
+        composeTestRule.onNodeWithText("Clear filters").assertDoesNotExist()
+    }
+
+    @Test
     fun choreListContent_expandDueChore_showsSkipAndHistoryNotMarkDue() {
         composeTestRule.setContent {
             ChoreListContent(

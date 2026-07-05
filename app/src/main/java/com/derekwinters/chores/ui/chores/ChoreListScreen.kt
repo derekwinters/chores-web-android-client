@@ -171,17 +171,20 @@ fun ChoreListContent(
             }
         }
 
-        if (filters.isActive) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val visibleCount = (uiState as? UiState.Success)?.data?.size ?: 0
-                Text(
-                    text = stringResource(R.string.showing_n_of_m_chores, visibleCount, totalCount),
-                    style = MaterialTheme.typography.bodySmall
-                )
+        // Issue #74: "Showing N of M chores" is now always visible (previously hidden unless
+        // filters were active), matching web's always-visible count. "Clear filters" remains
+        // conditional -- it wouldn't make sense to offer clearing filters that aren't active.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val visibleCount = (uiState as? UiState.Success)?.data?.size ?: 0
+            Text(
+                text = stringResource(R.string.showing_n_of_m_chores, visibleCount, totalCount),
+                style = MaterialTheme.typography.bodySmall
+            )
+            if (filters.isActive) {
                 TextButton(onClick = { onFiltersChange(ChoreFilters()) }) {
                     Text(stringResource(R.string.clear_filters))
                 }
