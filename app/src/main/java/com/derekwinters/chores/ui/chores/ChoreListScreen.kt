@@ -133,6 +133,15 @@ fun ChoreListContent(
     statsPanel: @Composable () -> Unit = {}
 ) {
     var choreAwaitingCompleter by remember { mutableStateOf<Chore?>(null) }
+    // Issue #74 CI fix: hoisted up from ChoreRow (a LazyColumn item composable) to match every
+    // other delete-confirmation dialog in this codebase (PointsLog, ThemeAdmin) and this same
+    // file's own CompleterPickerDialog below -- all of which keep their "awaiting confirmation"
+    // state as a sibling of the list, not owned by a list item itself. Owning it inside the
+    // LazyColumn item was the actual root cause of choreListContent_deleteAction_requiresConfirmation
+    // intermittently failing to find the dialog after the list's layout changed (issue #74):
+    // list-item-owned state is subject to that item's own composition lifecycle, which isn't
+    // guaranteed stable in the same way a parent-level remember is.
+    var choreAwaitingDelete by remember { mutableStateOf<Chore?>(null) }
     var showFiltersDialog by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -229,7 +238,7 @@ fun ChoreListContent(
                                     },
                                     onSkip = { onSkip(chore) },
                                     onMarkDue = { onMarkDue(chore) },
-                                    onDelete = { onDelete(chore) },
+                                    onDeleteClick = { choreAwaitingDelete = chore },
                                     onHistory = { onHistory(chore) },
                                     onEdit = { onEdit(chore) }
                                 )
@@ -278,6 +287,23 @@ fun ChoreListContent(
             onDismiss = { choreAwaitingCompleter = null }
         )
     }
+
+    choreAwaitingDelete?.let { chore ->
+        AlertDialog(
+            onDismissRequest = { choreAwaitingDelete = null },
+            title = { Text(stringResource(R.string.chore_delete_confirm_title)) },
+            text = { Text(stringResource(R.string.chore_delete_confirmation)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    choreAwaitingDelete = null
+                    onDelete(chore)
+                }) { Text(stringResource(R.string.chore_delete_action)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { choreAwaitingDelete = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
 }
 
 @Composable
@@ -288,12 +314,11 @@ private fun ChoreRow(
     onCompleteClick: () -> Unit,
     onSkip: () -> Unit,
     onMarkDue: () -> Unit,
-    onDelete: () -> Unit,
+    onDeleteClick: () -> Unit,
     onHistory: () -> Unit,
     onEdit: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -349,28 +374,11 @@ private fun ChoreRow(
                         }
                         TextButton(onClick = onEdit) { Text(stringResource(R.string.chore_edit_action)) }
                         TextButton(onClick = onHistory) { Text(stringResource(R.string.chore_history_action)) }
-                        TextButton(onClick = { showDeleteConfirm = true }) { Text(stringResource(R.string.chore_delete_action)) }
+                        TextButton(onClick = onDeleteClick) { Text(stringResource(R.string.chore_delete_action)) }
                     }
                 }
             }
         }
-    }
-
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(stringResource(R.string.chore_delete_confirm_title)) },
-            text = { Text(stringResource(R.string.chore_delete_confirmation)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteConfirm = false
-                    onDelete()
-                }) { Text(stringResource(R.string.chore_delete_action)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
-            }
-        )
     }
 }
 

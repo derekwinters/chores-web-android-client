@@ -370,11 +370,6 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        // The now-always-visible "Showing N of M chores" row (issue #74) leaves less vertical
-        // room for the LazyColumn's viewport, so the expanded row's action buttons can sit
-        // below the currently-visible area -- performScrollTo() ensures the target is actually
-        // scrolled into the hit-testable viewport before clicking (same pattern as the Setup
-        // form fix in issue #76).
         composeTestRule.onNodeWithText("Delete").performScrollTo().performClick()
         composeTestRule.onNodeWithText("This also removes all points history for this chore and cannot be undone.").assertExists()
 
@@ -396,7 +391,6 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        // See the Delete test above for why performScrollTo() is needed here.
         composeTestRule.onNodeWithText("History").performScrollTo().performClick()
 
         assert(history == assignedChore)
