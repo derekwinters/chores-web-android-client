@@ -64,18 +64,34 @@ class AuthLogContentTest {
         composeTestRule.onNodeWithText("Changed by: admin").assertExists()
     }
 
-    /** Issue #91: raw action values are mapped to humanized labels. */
+    /** Issue #91: raw action values are mapped to humanized labels. One entry per test — the
+     *  LazyColumn sits below the filter fields in a height-constrained viewport, so a multi-entry
+     *  list isn't guaranteed to compose every row under Robolectric. */
     @Test
-    fun authLogContent_humanizesKnownActionValues() {
-        val entries = listOf(
-            AuthLogEntry(id = 1, timestamp = "2026-07-02T22:40:54.326377Z", username = "a", action = "login_succeeded", changedBy = null),
-            AuthLogEntry(id = 2, timestamp = "2026-07-02T22:40:54.326377Z", username = "b", action = "login_failed", changedBy = null),
-            AuthLogEntry(id = 3, timestamp = "2026-07-02T22:40:54.326377Z", username = "c", action = "password_changed", changedBy = null),
-            AuthLogEntry(id = 4, timestamp = "2026-07-02T22:40:54.326377Z", username = "d", action = "user_created", changedBy = null)
-        )
+    fun authLogContent_humanizesLoginSucceeded() {
+        assertHumanizedAction(actionValue = "login_succeeded", expectedLabel = "Login Succeeded")
+    }
+
+    @Test
+    fun authLogContent_humanizesLoginFailed() {
+        assertHumanizedAction(actionValue = "login_failed", expectedLabel = "Login Failed")
+    }
+
+    @Test
+    fun authLogContent_humanizesPasswordChanged() {
+        assertHumanizedAction(actionValue = "password_changed", expectedLabel = "Password Changed")
+    }
+
+    @Test
+    fun authLogContent_humanizesUserCreated() {
+        assertHumanizedAction(actionValue = "user_created", expectedLabel = "User Created")
+    }
+
+    private fun assertHumanizedAction(actionValue: String, expectedLabel: String) {
+        val entry = AuthLogEntry(id = 1, timestamp = "2026-07-02T22:40:54.326377Z", username = "a", action = actionValue, changedBy = null)
         composeTestRule.setContent {
             AuthLogContent(
-                uiState = UiState.Success(AuthLogPageState(entries, total = entries.size, page = 1)),
+                uiState = UiState.Success(AuthLogPageState(listOf(entry), total = 1, page = 1)),
                 filters = AuthLogFilters(),
                 onFiltersChange = {},
                 onNextPage = {},
@@ -83,10 +99,7 @@ class AuthLogContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Login Succeeded").assertExists()
-        composeTestRule.onNodeWithText("Login Failed").assertExists()
-        composeTestRule.onNodeWithText("Password Changed").assertExists()
-        composeTestRule.onNodeWithText("User Created").assertExists()
+        composeTestRule.onNodeWithText(expectedLabel).assertExists()
     }
 
     /** Issue #91: unmapped action values fall back to a title-cased transform. */
