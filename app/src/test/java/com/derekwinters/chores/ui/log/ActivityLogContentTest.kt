@@ -143,6 +143,62 @@ class ActivityLogContentTest {
         composeTestRule.onNodeWithText("Some New Event").assertExists()
     }
 
+    /**
+     * Issue #71: the action value renders inside a dedicated `actionBadge`-tagged pill (not just
+     * loose row text), so it can be styled/colored distinctly from the rest of the row.
+     */
+    @Test
+    fun activityLogContent_actionRendersAsBadge() {
+        val entry = amendment.copy(action = "completed", fieldName = null, oldValue = null, newValue = null)
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(entry), total = 1, page = 1)),
+                filters = LogFilters(),
+                onFiltersChange = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("actionBadge").assertTextEquals("Completed")
+    }
+
+    /**
+     * Issue #71: the target value (chore name / person name) renders inside a dedicated
+     * `targetBadge`-tagged pill, distinct from the existing `targetTypeChip` (User/Chore)
+     * indicator.
+     */
+    @Test
+    fun activityLogContent_targetRendersAsBadge() {
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(amendment), total = 1, page = 1)),
+                filters = LogFilters(),
+                onFiltersChange = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("targetBadge").assertTextEquals("Dishes")
+    }
+
+    /** Issue #71: person-target rows' target badge strips the "Person: " prefix, same as before. */
+    @Test
+    fun activityLogContent_personTarget_targetBadgeStripsPrefix() {
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(personEntry), total = 1, page = 1)),
+                filters = LogFilters(),
+                onFiltersChange = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("targetBadge").assertTextEquals("bob")
+    }
+
     @Test
     fun activityLogContent_expandEntry_showsFullTimestamp() {
         val timestampedEntry = amendment.copy(timestamp = "2026-07-02T22:40:54.326377Z")

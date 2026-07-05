@@ -10,11 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -32,6 +34,8 @@ import com.derekwinters.chores.data.model.LogEntry
 import com.derekwinters.chores.ui.UiState
 import com.derekwinters.chores.ui.common.formatDateTime
 import com.derekwinters.chores.ui.common.humanizeActionLabel
+import com.derekwinters.chores.ui.theme.LocalThemeOption
+import com.derekwinters.chores.ui.theme.parseHexColor
 import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeParseException
@@ -134,16 +138,27 @@ private fun LogRow(entry: LogEntry) {
             .clickable { expanded = !expanded }
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            AssistChip(
-                modifier = Modifier.testTag("targetTypeChip"),
-                onClick = {},
-                label = { Text(if (isPersonTarget) "User" else "Chore") }
+            PillBadge(
+                text = if (isPersonTarget) "User" else "Chore",
+                color = targetBadgeColor(isPersonTarget),
+                testTag = "targetTypeChip"
             )
-            Text(humanizeActionLabel(entry.action), style = MaterialTheme.typography.titleSmall)
-            Text(targetName, style = MaterialTheme.typography.titleSmall)
+            PillBadge(
+                modifier = Modifier.padding(top = 4.dp),
+                text = humanizeActionLabel(entry.action),
+                color = actionBadgeColor(entry.action),
+                testTag = "actionBadge"
+            )
+            PillBadge(
+                modifier = Modifier.padding(top = 4.dp),
+                text = targetName,
+                color = targetBadgeColor(isPersonTarget),
+                testTag = "targetBadge"
+            )
             Text(
                 "${entry.person} · ${formatRelativeTimestamp(entry.timestamp)}",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
             )
 
             if (expanded) {
@@ -158,6 +173,72 @@ private fun LogRow(entry: LogEntry) {
                 }
             }
         }
+    }
+}
+
+/**
+ * Issue #71: pill-shaped, color-coded badge shared by the action and target values on each
+ * Activity Log row, replacing the previous plain `Text`/generic uncolored `AssistChip` treatment.
+ * A translucent tint of [color] as the container plus the opaque [color] as content color keeps
+ * the badge legible against both light and dark surfaces without needing per-theme on-color pairs.
+ *
+ * [testTag] (when given) is applied to the inner `Text`, not the outer `Surface`: unlike
+ * `AssistChip` (which merges its label's semantics into its own clickable node), a plain
+ * non-clickable `Surface` doesn't merge descendant semantics, so tagging the `Surface` itself
+ * would leave `onNodeWithTag(...).assertTextEquals(...)` unable to see the text.
+ */
+@Composable
+private fun PillBadge(text: String, color: Color, modifier: Modifier = Modifier, testTag: String? = null) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(percent = 50),
+        color = color.copy(alpha = 0.15f),
+        contentColor = color
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier
+                .padding(horizontal = 10.dp, vertical = 4.dp)
+                .let { base -> if (testTag != null) base.testTag(testTag) else base }
+        )
+    }
+}
+
+/**
+ * Issue #71: per-action-type color scheme for the action badge, mirroring chores-web's
+ * success/warning/error-toned treatment. Reuses the same [LocalThemeOption] success/warning/error
+ * lookup (falling back to hardcoded Material equivalents) established by Dashboard's trend
+ * coloring (issue #120) and the Chore row's Complete/Delete actions (issue #93), rather than
+ * inventing new colors -- `completed`/`created` land on the positive/success color, `skipped`/
+ * `reassigned`/password-related events land on the warning (attention-needed) color, `deleted`
+ * lands on error, and anything else (e.g. `updated` amendments, unmapped future actions) falls
+ * back to a neutral onSurfaceVariant so unknown actions never silently render as red/green.
+ */
+@Composable
+private fun actionBadgeColor(action: String): Color {
+    val themeOption = LocalThemeOption.current
+    return when (action) {
+        "completed", "created" -> themeOption?.success?.let(::parseHexColor) ?: MaterialTheme.colorScheme.primary
+        "skipped", "reassigned", "password_changed", "password_reset" ->
+            themeOption?.warning?.let(::parseHexColor) ?: Color(0xFFF9A825)
+        "deleted" -> themeOption?.error?.let(::parseHexColor) ?: MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+}
+
+/**
+ * Issue #71: color-codes the target badge (both the User/Chore type indicator and the target
+ * name itself) by target type, reusing [ThemeOption]'s primary/secondary split that already
+ * distinguishes the two elsewhere in the theme (see [com.derekwinters.chores.ui.theme.ChoresTheme]).
+ */
+@Composable
+private fun targetBadgeColor(isPersonTarget: Boolean): Color {
+    val themeOption = LocalThemeOption.current
+    return if (isPersonTarget) {
+        themeOption?.secondary?.let(::parseHexColor) ?: MaterialTheme.colorScheme.secondary
+    } else {
+        themeOption?.primary?.let(::parseHexColor) ?: MaterialTheme.colorScheme.primary
     }
 }
 
