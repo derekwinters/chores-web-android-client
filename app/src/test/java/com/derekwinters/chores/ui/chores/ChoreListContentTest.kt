@@ -68,6 +68,20 @@ class ChoreListContentTest {
     }
 
     @Test
+    fun choreListContent_filterToggle_showsTextLabel() {
+        // Issue #72: visible text label ("Filters") alongside the filter toggle's icon.
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Filters", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun choreListContent_rendersCollapsedNameAssigneeNextDue() {
         composeTestRule.setContent {
             ChoreListContent(

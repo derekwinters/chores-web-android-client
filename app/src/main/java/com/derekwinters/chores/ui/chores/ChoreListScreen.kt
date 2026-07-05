@@ -160,8 +160,14 @@ fun ChoreListContent(
                     }
                 }
             )
-            IconButton(onClick = { showFiltersDialog = true }) {
-                Icon(Icons.Filled.FilterList, contentDescription = stringResource(R.string.filters_title))
+            // Issue #72: visible text label alongside the filter toggle's icon (previously
+            // icon-only), matching web's affordance.
+            TextButton(onClick = { showFiltersDialog = true }) {
+                Icon(Icons.Filled.FilterList, contentDescription = null)
+                Text(
+                    modifier = Modifier.padding(start = 4.dp),
+                    text = stringResource(R.string.filters_title)
+                )
             }
         }
 
