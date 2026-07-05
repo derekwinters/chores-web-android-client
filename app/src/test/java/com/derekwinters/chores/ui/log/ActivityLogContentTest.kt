@@ -84,7 +84,10 @@ class ActivityLogContentTest {
         }
 
         // Not onNodeWithText("Chore") -- the filters row also has a "Chore" text-field label.
-        composeTestRule.onNodeWithTag("targetTypeChip").assertTextEquals("Chore")
+        // useUnmergedTree is required: LogRow's Card is clickable (mergeDescendants = true), and
+        // TestTag isn't propagated upward through a merge boundary -- it stays on the exact node
+        // (PillBadge's inner Text) it was set on. Same pattern as ChoreListContentTest.
+        composeTestRule.onNodeWithTag("targetTypeChip", useUnmergedTree = true).assertTextEquals("Chore")
         composeTestRule.onNodeWithText("Updated").assertExists()
         composeTestRule.onNodeWithText("Dishes").assertExists()
     }
@@ -101,7 +104,7 @@ class ActivityLogContentTest {
             )
         }
 
-        composeTestRule.onNodeWithTag("targetTypeChip").assertTextEquals("User")
+        composeTestRule.onNodeWithTag("targetTypeChip", useUnmergedTree = true).assertTextEquals("User")
         composeTestRule.onNodeWithText("Password Changed").assertExists()
         composeTestRule.onNodeWithText("bob").assertExists()
     }
@@ -160,7 +163,7 @@ class ActivityLogContentTest {
             )
         }
 
-        composeTestRule.onNodeWithTag("actionBadge").assertTextEquals("Completed")
+        composeTestRule.onNodeWithTag("actionBadge", useUnmergedTree = true).assertTextEquals("Completed")
     }
 
     /**
@@ -180,7 +183,7 @@ class ActivityLogContentTest {
             )
         }
 
-        composeTestRule.onNodeWithTag("targetBadge").assertTextEquals("Dishes")
+        composeTestRule.onNodeWithTag("targetBadge", useUnmergedTree = true).assertTextEquals("Dishes")
     }
 
     /** Issue #71: person-target rows' target badge strips the "Person: " prefix, same as before. */
@@ -196,7 +199,7 @@ class ActivityLogContentTest {
             )
         }
 
-        composeTestRule.onNodeWithTag("targetBadge").assertTextEquals("bob")
+        composeTestRule.onNodeWithTag("targetBadge", useUnmergedTree = true).assertTextEquals("bob")
     }
 
     @Test
