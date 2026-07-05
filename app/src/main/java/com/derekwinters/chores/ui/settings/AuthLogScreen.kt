@@ -56,13 +56,50 @@ fun AuthLogContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            value = filters.username.orEmpty(),
-            onValueChange = { value -> onFiltersChange(filters.copy(username = value.ifBlank { null })) },
-            label = { Text("Username") },
-            singleLine = true
-        )
+        // Username and Action filter row
+        Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+            OutlinedTextField(
+                modifier = Modifier.weight(1f).padding(end = 4.dp),
+                value = filters.username.orEmpty(),
+                onValueChange = { value -> onFiltersChange(filters.copy(username = value.ifBlank { null })) },
+                label = { Text("Username") },
+                singleLine = true
+            )
+            OutlinedTextField(
+                modifier = Modifier.weight(1f).padding(start = 4.dp),
+                value = filters.action.orEmpty(),
+                onValueChange = { value -> onFiltersChange(filters.copy(action = value.ifBlank { null })) },
+                label = { Text("Action") },
+                singleLine = true
+            )
+        }
+
+        // Date range filter row
+        Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+            OutlinedTextField(
+                modifier = Modifier.weight(1f).padding(end = 4.dp),
+                value = filters.start.orEmpty(),
+                onValueChange = { value -> onFiltersChange(filters.copy(start = value.ifBlank { null })) },
+                label = { Text("Start Date") },
+                singleLine = true
+            )
+            OutlinedTextField(
+                modifier = Modifier.weight(1f).padding(start = 4.dp),
+                value = filters.end.orEmpty(),
+                onValueChange = { value -> onFiltersChange(filters.copy(end = value.ifBlank { null })) },
+                label = { Text("End Date") },
+                singleLine = true
+            )
+        }
+
+        // Clear filters button
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
+            TextButton(
+                onClick = { onFiltersChange(AuthLogFilters()) }
+            ) {
+                Text("Clear Filters")
+            }
+        }
 
         Box(modifier = Modifier.weight(1f).fillMaxSize()) {
             when (uiState) {
@@ -88,7 +125,7 @@ fun AuthLogContent(
         if (uiState is UiState.Success) {
             Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(onClick = onPreviousPage, enabled = uiState.data.page > 1) { Text("Previous") }
-                Text("Page ${uiState.data.page} (${uiState.data.total} total)")
+                Text("Page ${uiState.data.page} of ${uiState.data.totalPages}")
                 TextButton(onClick = onNextPage, enabled = uiState.data.page < uiState.data.totalPages) { Text("Next") }
             }
         }
@@ -99,10 +136,23 @@ fun AuthLogContent(
 private fun AuthLogRow(entry: AuthLogEntry) {
     Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(entry.action, style = MaterialTheme.typography.titleSmall)
+            Text(humanizeActionLabel(entry.action), style = MaterialTheme.typography.titleSmall)
             Text(entry.username, style = MaterialTheme.typography.bodyMedium)
             Text(formatDateTime(entry.timestamp), style = MaterialTheme.typography.bodySmall)
             entry.changedBy?.let { Text("Changed by: $it", style = MaterialTheme.typography.bodySmall) }
         }
     }
+}
+
+/**
+ * Issue #91: Map raw auth action values to humanized display labels.
+ * Mirrors the same approach used by the Activity Log's humanizeActionLabel.
+ */
+private fun humanizeActionLabel(action: String): String = when (action) {
+    "login_succeeded" -> "Login Succeeded"
+    "login_failed" -> "Login Failed"
+    "password_changed" -> "Password Changed"
+    "password_reset" -> "Password Reset"
+    "user_created" -> "User Created"
+    else -> action.split("_").joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
 }
