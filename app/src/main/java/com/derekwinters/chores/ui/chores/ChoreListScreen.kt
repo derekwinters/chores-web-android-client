@@ -51,6 +51,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.R
 import com.derekwinters.chores.data.model.Chore
 import com.derekwinters.chores.ui.UiState
+import com.derekwinters.chores.ui.theme.LocalThemeOption
+import com.derekwinters.chores.ui.theme.parseHexColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -385,7 +387,17 @@ private fun ChoreRow(
                         CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                     } else {
                         if (chore.isDue) {
-                            Button(onClick = onCompleteClick) { Text(stringResource(R.string.complete_chore_button)) }
+                            // Issue #93 (step 2 of 3): success/green content color, sourced from
+                            // the theme's success color (no first-class Material3 ColorScheme
+                            // slot -- same LocalThemeOption pattern as Dashboard's trend coloring,
+                            // issue #120), falling back to colorScheme.primary if no theme has
+                            // resolved yet.
+                            val themeOption = LocalThemeOption.current
+                            ChoreActionButton(
+                                onClick = onCompleteClick,
+                                text = stringResource(R.string.complete_chore_button),
+                                contentColor = themeOption?.success?.let(::parseHexColor) ?: MaterialTheme.colorScheme.primary
+                            )
                             ChoreActionButton(onClick = onSkip, text = stringResource(R.string.chore_skip_action))
                         } else {
                             ChoreActionButton(onClick = onMarkDue, text = stringResource(R.string.chore_mark_due_action))
