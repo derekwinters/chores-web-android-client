@@ -2,8 +2,10 @@ package com.derekwinters.chores.ui.chores
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.Chore
@@ -46,6 +48,41 @@ class ChoreListContentTest {
     )
 
     @Test
+    fun choreListContent_addChoreFab_showsTextLabelAndInvokesCallback() {
+        // Issue #70: extended FAB with an "Add Chore" text label, not icon-only.
+        var added = false
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                onAddChore = { added = true }
+            )
+        }
+
+        // ExtendedFloatingActionButton's icon+text don't merge into a single semantics node by
+        // default, so the merged-tree finder can't locate the text node -- useUnmergedTree is
+        // required here.
+        composeTestRule.onNodeWithText("Add Chore", useUnmergedTree = true).performClick()
+
+        assert(added)
+    }
+
+    @Test
+    fun choreListContent_filterToggle_showsTextLabel() {
+        // Issue #72: visible text label ("Filters") alongside the filter toggle's icon.
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Filters", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun choreListContent_rendersCollapsedNameAssigneeNextDue() {
         composeTestRule.setContent {
             ChoreListContent(
@@ -74,8 +111,12 @@ class ChoreListContentTest {
 
         composeTestRule.onNodeWithText("Dishes").performClick()
 
-        composeTestRule.onNodeWithText("Points: 5").assertExists()
-        composeTestRule.onNodeWithText("Status: due").assertExists()
+        // Issue #87: 2-column detail grid renders each label/value as separate Text nodes now
+        // (label uppercase, e.g. "POINTS"/"STATUS"), replacing the old combined "Points: 5" text.
+        composeTestRule.onNodeWithText("POINTS").assertExists()
+        composeTestRule.onNodeWithText("5").assertExists()
+        composeTestRule.onNodeWithText("STATUS").assertExists()
+        composeTestRule.onNodeWithText("due").assertExists()
     }
 
     @Test
@@ -103,7 +144,9 @@ class ChoreListContentTest {
 
         composeTestRule.onNodeWithText("Trash").performClick()
 
-        composeTestRule.onNodeWithText("Assignee: Completer").assertExists()
+        // Issue #87: label/value are separate Text nodes now ("ASSIGNEE" label + "Completer" value).
+        composeTestRule.onNodeWithText("ASSIGNEE").assertExists()
+        composeTestRule.onNodeWithText("Completer").assertExists()
     }
 
     @Test
@@ -118,7 +161,11 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        composeTestRule.onNodeWithText("Complete").performClick()
+        // The expanded row's action-button Row can render taller than the viewport once the
+        // Add-Chore FAB's carved-out bottom padding is applied; performScrollTo() is a safe
+        // no-op when the node is already fully visible, so it's applied consistently to every
+        // expanded-row button click in this file rather than only the ones observed to need it.
+        composeTestRule.onNodeWithText("Complete").performScrollTo().performClick()
 
         assert(completed == (assignedChore to null))
     }
@@ -135,7 +182,7 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Trash").performClick()
-        composeTestRule.onNodeWithText("Complete").performClick()
+        composeTestRule.onNodeWithText("Complete").performScrollTo().performClick()
         composeTestRule.onNodeWithText("Who completed this?").assertExists()
 
         composeTestRule.onNodeWithText("bob").performClick()
@@ -161,7 +208,7 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Trash").performClick()
-        composeTestRule.onNodeWithText("Complete").performClick()
+        composeTestRule.onNodeWithText("Complete").performScrollTo().performClick()
         composeTestRule.onNodeWithText("bob").performClick()
         composeTestRule.onNodeWithText("Confirm").performClick()
 
@@ -199,6 +246,39 @@ class ChoreListContentTest {
     }
 
     @Test
+    fun choreListContent_search_clearButtonHiddenWhenEmptyShownWhenNotEmpty() {
+        // Issue #69: leading search icon + trailing clear ("x") button on the search field.
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                filters = ChoreFilters(query = "dish")
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Clear search").assertExists()
+    }
+
+    @Test
+    fun choreListContent_search_clearButtonResetsQuery() {
+        var query: String? = null
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                filters = ChoreFilters(query = "dish"),
+                onQueryChange = { query = it }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Clear search").performClick()
+
+        assert(query == "")
+    }
+
+    @Test
     fun choreListContent_activeFilters_showsCountAndClearAction() {
         var cleared = false
         composeTestRule.setContent {
@@ -216,6 +296,23 @@ class ChoreListContentTest {
         composeTestRule.onNodeWithText("Clear filters").performClick()
 
         assert(cleared)
+    }
+
+    @Test
+    fun choreListContent_noActiveFilters_stillShowsCountButHidesClearAction() {
+        // Issue #74: the "Showing N of M chores" count is always visible, matching web, even
+        // when no filters are active -- "Clear filters" only makes sense when they are.
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                totalCount = 1
+            )
+        }
+
+        composeTestRule.onNodeWithText("Showing 1 of 1 chores").assertExists()
+        composeTestRule.onNodeWithText("Clear filters").assertDoesNotExist()
     }
 
     @Test
@@ -265,7 +362,7 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        composeTestRule.onNodeWithText("Skip").performClick()
+        composeTestRule.onNodeWithText("Skip").performScrollTo().performClick()
 
         assert(skipped == assignedChore)
     }
@@ -283,7 +380,11 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        composeTestRule.onNodeWithText("Delete").performClick()
+        // The row's Delete button can render underneath the fixed Add-Chore FAB depending on
+        // available viewport height; performScrollTo() uses the LazyColumn's contentPadding
+        // headroom (see ChoreListContent) to scroll it clear of the FAB's fixed overlap zone
+        // before clicking, so the FAB doesn't intercept the touch instead.
+        composeTestRule.onNodeWithText("Delete").performScrollTo().performClick()
         composeTestRule.onNodeWithText("This also removes all points history for this chore and cannot be undone.").assertExists()
 
         composeTestRule.onAllNodesWithText("Delete")[1].performClick()
@@ -304,7 +405,8 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        composeTestRule.onNodeWithText("History").performClick()
+        // See the Delete test above for why performScrollTo() is needed here.
+        composeTestRule.onNodeWithText("History").performScrollTo().performClick()
 
         assert(history == assignedChore)
     }

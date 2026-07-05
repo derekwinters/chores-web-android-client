@@ -33,6 +33,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.R
 import com.derekwinters.chores.ui.UiState
 import com.derekwinters.chores.ui.chores.DueWithinFilter
+import com.derekwinters.chores.ui.theme.LocalThemeOption
+import com.derekwinters.chores.ui.theme.parseHexColor
 
 /**
  * Issue #12: chores-web's default screen (Board) — a grid (here, a column on phone-width
@@ -105,10 +107,12 @@ private fun DashboardUserCard(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .background(color = MaterialTheme.colorScheme.primary, shape = CircleShape),
+                        // Issue #115: web's avatar circle uses --accent, not the primary color;
+                        // ChoresTheme maps accent -> tertiary in the Material3 ColorScheme.
+                        .background(color = MaterialTheme.colorScheme.tertiary, shape = CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = card.initial, color = MaterialTheme.colorScheme.onPrimary)
+                    Text(text = card.initial, color = MaterialTheme.colorScheme.onTertiary)
                 }
                 Text(
                     text = card.displayName,
@@ -117,20 +121,26 @@ private fun DashboardUserCard(
                 )
             }
 
-            ProgressRow(
-                headerLabel = stringResource(R.string.dashboard_7_day_label),
-                value = card.points7d,
-                goal = card.goal7d,
-                progress = progressFraction(card.points7d, card.goal7d),
-                trend = card.trend7d
-            )
-            ProgressRow(
-                headerLabel = stringResource(R.string.dashboard_30_day_label),
-                value = card.points30d,
-                goal = card.goal30d,
-                progress = progressFraction(card.points30d, card.goal30d),
-                trend = card.trend30d
-            )
+            // Issue #118: side-by-side layout matching web's `grid-template-columns: 1fr 1fr`
+            // (previously stacked vertically).
+            Row(modifier = Modifier.fillMaxWidth()) {
+                ProgressRow(
+                    modifier = Modifier.weight(1f),
+                    headerLabel = stringResource(R.string.dashboard_7_day_label),
+                    value = card.points7d,
+                    goal = card.goal7d,
+                    progress = progressFraction(card.points7d, card.goal7d),
+                    trend = card.trend7d
+                )
+                ProgressRow(
+                    modifier = Modifier.weight(1f).padding(start = 16.dp),
+                    headerLabel = stringResource(R.string.dashboard_30_day_label),
+                    value = card.points30d,
+                    goal = card.goal30d,
+                    progress = progressFraction(card.points30d, card.goal30d),
+                    trend = card.trend30d
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
@@ -144,7 +154,8 @@ private fun DashboardUserCard(
                         Text(
                             text = card.dueNowCount.toString(),
                             style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = dueCountColor(card.dueNowCount)
                         )
                     }
                 }
@@ -157,7 +168,8 @@ private fun DashboardUserCard(
                         Text(
                             text = card.dueSoonCount.toString(),
                             style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = dueCountColor(card.dueSoonCount)
                         )
                     }
                 }
@@ -167,8 +179,15 @@ private fun DashboardUserCard(
 }
 
 @Composable
-private fun ProgressRow(headerLabel: String, value: Int, goal: Int, progress: Float, trend: TrendStatus) {
-    Column(modifier = Modifier.padding(top = 8.dp)) {
+private fun ProgressRow(
+    headerLabel: String,
+    value: Int,
+    goal: Int,
+    progress: Float,
+    trend: TrendStatus,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.padding(top = 8.dp)) {
         Text(text = headerLabel, style = MaterialTheme.typography.bodySmall)
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
@@ -197,10 +216,29 @@ private fun ProgressRow(headerLabel: String, value: Int, goal: Int, progress: Fl
 }
 
 @Composable
-private fun trendColor(trend: TrendStatus): Color = when (trend) {
-    TrendStatus.SUCCESS -> MaterialTheme.colorScheme.primary
-    TrendStatus.WARNING -> Color(0xFFF9A825)
-    TrendStatus.ERROR -> MaterialTheme.colorScheme.error
+private fun trendColor(trend: TrendStatus): Color {
+    // Issue #120: success/warning have no first-class Material3 ColorScheme slot (see
+    // ChoresTheme's doc), so read them from the raw ThemeOption via LocalThemeOption instead of
+    // colorScheme.primary (wrong hue) / a hardcoded gold (ignores custom themes). Falls back to
+    // the old hardcoded values if no theme has resolved yet.
+    val themeOption = LocalThemeOption.current
+    return when (trend) {
+        TrendStatus.SUCCESS -> themeOption?.success?.let(::parseHexColor) ?: MaterialTheme.colorScheme.primary
+        TrendStatus.WARNING -> themeOption?.warning?.let(::parseHexColor) ?: Color(0xFFF9A825)
+        TrendStatus.ERROR -> MaterialTheme.colorScheme.error
+    }
+}
+
+/**
+ * Issue #126: Due Now/Due Soon counts render gold (the theme's warning color, reused as the
+ * "needs attention" gold web uses) when there's anything due, dimmed to a neutral color when the
+ * count is zero (nothing to draw the eye to), matching web.
+ */
+@Composable
+private fun dueCountColor(count: Int): Color {
+    if (count == 0) return MaterialTheme.colorScheme.onSurfaceVariant
+    val themeOption = LocalThemeOption.current
+    return themeOption?.warning?.let(::parseHexColor) ?: Color(0xFFF9A825)
 }
 
 private fun progressFraction(current: Int, goal: Int): Float =

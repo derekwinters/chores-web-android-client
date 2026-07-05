@@ -1,10 +1,12 @@
 package com.derekwinters.chores.ui.chores
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -20,7 +22,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -80,10 +84,37 @@ fun ChoresStatsPanelContent(
                 when (uiState) {
                     is UiState.Success -> {
                         val stats = uiState.data
-                        StatRow(stringResource(R.string.stat_total_chores), stats.totalEnabledChores.toString())
-                        StatRow(stringResource(R.string.stat_total_points), stats.totalPoints.toString())
-                        StatRow(stringResource(R.string.stat_completed_7_days), stats.completedLast7Days.toString())
-                        StatRow(stringResource(R.string.stat_due_7_days), stats.dueNext7DaysPoints.toString())
+                        // Issue #75: 2x2 grid of accent-colored stat tiles, matching web's
+                        // `.chore-stat-card` grid layout (previously stacked label/value rows).
+                        Column(modifier = Modifier.padding(top = 8.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                StatTile(
+                                    modifier = Modifier.weight(1f),
+                                    label = stringResource(R.string.stat_total_chores),
+                                    value = stats.totalEnabledChores.toString()
+                                )
+                                StatTile(
+                                    modifier = Modifier.weight(1f),
+                                    label = stringResource(R.string.stat_total_points),
+                                    value = stats.totalPoints.toString()
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                StatTile(
+                                    modifier = Modifier.weight(1f),
+                                    label = stringResource(R.string.stat_completed_7_days),
+                                    value = stats.completedLast7Days.toString()
+                                )
+                                StatTile(
+                                    modifier = Modifier.weight(1f),
+                                    label = stringResource(R.string.stat_due_7_days),
+                                    value = stats.dueNext7DaysPoints.toString()
+                                )
+                            }
+                        }
                     }
                     is UiState.Error -> Text(text = uiState.message, color = MaterialTheme.colorScheme.error)
                     else -> Text(text = stringResource(R.string.loading))
@@ -94,12 +125,24 @@ fun ChoresStatsPanelContent(
 }
 
 @Composable
-private fun StatRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+private fun StatTile(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium)
-        Text(text = value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onTertiaryContainer
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onTertiaryContainer
+        )
     }
 }

@@ -1,9 +1,11 @@
 package com.derekwinters.chores.ui.setup
 
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.ui.UiState
@@ -29,6 +31,15 @@ class SetupContentTest {
             SetupContent(uiState = UiState.Idle, onCreateAccount = { _, _, _ -> })
         }
 
+        // Issue #79: "Family Chores" app-branding heading above the "Create Admin Account" title.
+        composeTestRule.onNodeWithText("Family Chores").assertExists()
+        // Issue #85: footer disclaimer explaining this is the one-time first-run admin setup.
+        composeTestRule
+            .onNodeWithText(
+                "You are creating the first admin account for this household. You can add more users later from the Users screen.",
+                substring = true
+            )
+            .assertExists()
         composeTestRule.onNodeWithText("Username").performTextInput("admin")
         composeTestRule.onNodeWithText("Password").performTextInput("secret123")
         composeTestRule.onNodeWithText("Confirm Password").performTextInput("different")
@@ -50,8 +61,27 @@ class SetupContentTest {
         composeTestRule.onNodeWithText("Username").performTextInput("admin")
         composeTestRule.onNodeWithText("Password").performTextInput("secret123")
         composeTestRule.onNodeWithText("Confirm Password").performTextInput("secret123")
-        composeTestRule.onNodeWithText("Create Account").performClick()
+        // Issue #76: the form's Card is now wrapped in a scrollable Column (necessary so the
+        // submit button stays reachable on narrow/short viewports instead of overflowing past the
+        // Card's bounds) — performScrollTo() ensures the button is actually within the visible/
+        // hit-testable viewport before clicking, regardless of the test host's window size.
+        composeTestRule.onNodeWithText("Create Account").performScrollTo().performClick()
 
         assert(captured == Triple("admin", "secret123", true))
+    }
+
+    @Test
+    fun setupContent_requireAuthenticationHint_reflectsCheckboxState() {
+        composeTestRule.setContent {
+            SetupContent(uiState = UiState.Idle, onCreateAccount = { _, _, _ -> })
+        }
+
+        // Issue #83: dynamic hint text switches based on the Require-Authentication checkbox,
+        // which defaults to checked.
+        composeTestRule.onNodeWithText("Users will need to log in to access this household.").assertExists()
+
+        composeTestRule.onNode(isToggleable()).performClick()
+
+        composeTestRule.onNodeWithText("This household will be accessible without authentication.").assertExists()
     }
 }

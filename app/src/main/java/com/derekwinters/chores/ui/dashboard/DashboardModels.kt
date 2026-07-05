@@ -9,8 +9,9 @@ import java.time.format.DateTimeParseException
 /** Issue #12 trend coloring: "≥80% of goal = success, <50% = error/warning, else warning". */
 enum class TrendStatus { SUCCESS, WARNING, ERROR }
 
+/** Issue #123: a zero goal reads as "ahead"/success (nothing owed), matching web -- not warning. */
 fun trendStatus(current: Int, goal: Int): TrendStatus {
-    if (goal <= 0) return TrendStatus.WARNING
+    if (goal <= 0) return TrendStatus.SUCCESS
     val ratio = current.toDouble() / goal
     return when {
         ratio >= 0.8 -> TrendStatus.SUCCESS

@@ -1,26 +1,34 @@
 package com.derekwinters.chores.ui.chores
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -33,12 +41,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.R
 import com.derekwinters.chores.data.model.Chore
 import com.derekwinters.chores.ui.UiState
+import com.derekwinters.chores.ui.theme.LocalThemeOption
+import com.derekwinters.chores.ui.theme.parseHexColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -128,6 +142,15 @@ fun ChoreListContent(
     statsPanel: @Composable () -> Unit = {}
 ) {
     var choreAwaitingCompleter by remember { mutableStateOf<Chore?>(null) }
+    // Issue #74 CI fix: hoisted up from ChoreRow (a LazyColumn item composable) to match every
+    // other delete-confirmation dialog in this codebase (PointsLog, ThemeAdmin) and this same
+    // file's own CompleterPickerDialog below -- all of which keep their "awaiting confirmation"
+    // state as a sibling of the list, not owned by a list item itself. Owning it inside the
+    // LazyColumn item was the actual root cause of choreListContent_deleteAction_requiresConfirmation
+    // intermittently failing to find the dialog after the list's layout changed (issue #74):
+    // list-item-owned state is subject to that item's own composition lifecycle, which isn't
+    // guaranteed stable in the same way a parent-level remember is.
+    var choreAwaitingDelete by remember { mutableStateOf<Chore?>(null) }
     var showFiltersDialog by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -143,31 +166,58 @@ fun ChoreListContent(
                 value = filters.query,
                 onValueChange = onQueryChange,
                 label = { Text(stringResource(R.string.search_chores_label)) },
-                singleLine = true
+                singleLine = true,
+                // Issue #69: leading search icon + trailing clear ("x") button, matching web's
+                // search field.
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (filters.query.isNotEmpty()) {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.clear_search))
+                        }
+                    }
+                }
             )
-            IconButton(onClick = { showFiltersDialog = true }) {
-                Icon(Icons.Filled.FilterList, contentDescription = stringResource(R.string.filters_title))
+            // Issue #72: visible text label alongside the filter toggle's icon (previously
+            // icon-only), matching web's affordance.
+            TextButton(onClick = { showFiltersDialog = true }) {
+                Icon(Icons.Filled.FilterList, contentDescription = null)
+                Text(
+                    modifier = Modifier.padding(start = 4.dp),
+                    text = stringResource(R.string.filters_title)
+                )
             }
         }
 
-        if (filters.isActive) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val visibleCount = (uiState as? UiState.Success)?.data?.size ?: 0
-                Text(
-                    text = stringResource(R.string.showing_n_of_m_chores, visibleCount, totalCount),
-                    style = MaterialTheme.typography.bodySmall
-                )
+        // Issue #74: "Showing N of M chores" is now always visible (previously hidden unless
+        // filters were active), matching web's always-visible count. "Clear filters" remains
+        // conditional -- it wouldn't make sense to offer clearing filters that aren't active.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val visibleCount = (uiState as? UiState.Success)?.data?.size ?: 0
+            Text(
+                text = stringResource(R.string.showing_n_of_m_chores, visibleCount, totalCount),
+                style = MaterialTheme.typography.bodySmall
+            )
+            if (filters.isActive) {
                 TextButton(onClick = { onFiltersChange(ChoreFilters()) }) {
                     Text(stringResource(R.string.clear_filters))
                 }
             }
         }
 
-        Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+        // Issue #74 CI fix: real (not contentPadding) bottom padding matching the Add-Chore FAB's
+        // fixed footprint (56.dp ExtendedFloatingActionButton + 16.dp align/padding inset, plus
+        // margin), so the LazyColumn is actually MEASURED/LAID OUT within a smaller region that
+        // ends above the FAB's zone -- unlike LazyColumn's own contentPadding (which only adds
+        // trailing scrollable space and does nothing for an already-in-viewport, never-scrolled
+        // item), a real Modifier.padding here shrinks the box's real layout bounds, so even the
+        // very first row's content can never render underneath the fixed FAB (which sits on top
+        // in z-order and would otherwise intercept/steal those clicks).
+        Box(modifier = Modifier.weight(1f).fillMaxSize().padding(bottom = 88.dp)) {
             when (val state = uiState) {
                 is UiState.Idle, is UiState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -205,7 +255,7 @@ fun ChoreListContent(
                                     },
                                     onSkip = { onSkip(chore) },
                                     onMarkDue = { onMarkDue(chore) },
-                                    onDelete = { onDelete(chore) },
+                                    onDeleteClick = { choreAwaitingDelete = chore },
                                     onHistory = { onHistory(chore) },
                                     onEdit = { onEdit(chore) }
                                 )
@@ -217,12 +267,14 @@ fun ChoreListContent(
         }
     }
 
-        FloatingActionButton(
+        // Issue #70: extended FAB with an "Add Chore" text label alongside the icon, matching
+        // web's icon+text button treatment (previously icon-only).
+        ExtendedFloatingActionButton(
             onClick = onAddChore,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_chore))
-        }
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+            text = { Text(stringResource(R.string.add_chore)) }
+        )
     }
 
     if (showFiltersDialog) {
@@ -252,6 +304,23 @@ fun ChoreListContent(
             onDismiss = { choreAwaitingCompleter = null }
         )
     }
+
+    choreAwaitingDelete?.let { chore ->
+        AlertDialog(
+            onDismissRequest = { choreAwaitingDelete = null },
+            title = { Text(stringResource(R.string.chore_delete_confirm_title)) },
+            text = { Text(stringResource(R.string.chore_delete_confirmation)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    choreAwaitingDelete = null
+                    onDelete(chore)
+                }) { Text(stringResource(R.string.chore_delete_action)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { choreAwaitingDelete = null }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
 }
 
 @Composable
@@ -262,12 +331,11 @@ private fun ChoreRow(
     onCompleteClick: () -> Unit,
     onSkip: () -> Unit,
     onMarkDue: () -> Unit,
-    onDelete: () -> Unit,
+    onDeleteClick: () -> Unit,
     onHistory: () -> Unit,
     onEdit: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -275,7 +343,26 @@ private fun ChoreRow(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { expanded = !expanded }
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        // Issue #67: colored left accent bar + due-date color coding on the chore row, matching
+        // ChoreCard.css's `.accent-bar` rules (red while due, muted gray once complete, no bar
+        // otherwise). Uses drawBehind on this Column (not a sibling Box/IntrinsicSize.Min) since
+        // that's a draw-time-only effect against the already-resolved layout size, with no
+        // interaction with layout/semantics/click routing.
+        val accentColor = statusAccentColor(chore)
+        Column(
+            modifier = Modifier
+                .drawBehind {
+                    if (accentColor != null) {
+                        drawRect(color = accentColor, size = Size(4.dp.toPx(), size.height))
+                    }
+                }
+                .padding(
+                    start = if (accentColor != null) 20.dp else 16.dp,
+                    top = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                )
+        ) {
             Text(text = chore.name, style = MaterialTheme.typography.titleMedium)
 
             chore.currentAssignee?.let {
@@ -292,41 +379,89 @@ private fun ChoreRow(
             if (expanded) {
                 ChoreDetailSection(chore = chore)
 
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Start) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     if (isCompleting || isPendingAction) {
                         CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                     } else {
                         if (chore.isDue) {
-                            Button(onClick = onCompleteClick) { Text(stringResource(R.string.complete_chore_button)) }
-                            TextButton(onClick = onSkip) { Text(stringResource(R.string.chore_skip_action)) }
+                            // Issue #93 (step 2 of 3): success/green content color, sourced from
+                            // the theme's success color (no first-class Material3 ColorScheme
+                            // slot -- same LocalThemeOption pattern as Dashboard's trend coloring,
+                            // issue #120), falling back to colorScheme.primary if no theme has
+                            // resolved yet.
+                            val themeOption = LocalThemeOption.current
+                            ChoreActionButton(
+                                onClick = onCompleteClick,
+                                text = stringResource(R.string.complete_chore_button),
+                                contentColor = themeOption?.success?.let(::parseHexColor) ?: MaterialTheme.colorScheme.primary
+                            )
+                            ChoreActionButton(onClick = onSkip, text = stringResource(R.string.chore_skip_action))
                         } else {
-                            TextButton(onClick = onMarkDue) { Text(stringResource(R.string.chore_mark_due_action)) }
+                            ChoreActionButton(onClick = onMarkDue, text = stringResource(R.string.chore_mark_due_action))
                         }
-                        TextButton(onClick = onEdit) { Text(stringResource(R.string.chore_edit_action)) }
-                        TextButton(onClick = onHistory) { Text(stringResource(R.string.chore_history_action)) }
-                        TextButton(onClick = { showDeleteConfirm = true }) { Text(stringResource(R.string.chore_delete_action)) }
+                        ChoreActionButton(onClick = onEdit, text = stringResource(R.string.chore_edit_action))
+                        ChoreActionButton(onClick = onHistory, text = stringResource(R.string.chore_history_action))
+                        // Issue #93 (step 3 of 3): Delete as an equal-width outlined chip with
+                        // red/error content color, same LocalThemeOption pattern as Complete
+                        // (step 2). This is the one button whose onClick mutates ChoreRow's own
+                        // local `remember` state to conditionally render an AlertDialog -- the
+                        // exact shape that broke every prior attempt at this file, so it is
+                        // isolated as its own verified step per the issue's rollout plan. If this
+                        // breaks choreListContent_deleteAction_requiresConfirmation, the documented
+                        // fallback is a plain red TextButton (still weight(1f)-free, no outline).
+                        val deleteThemeOption = LocalThemeOption.current
+                        ChoreActionButton(
+                            onClick = onDeleteClick,
+                            text = stringResource(R.string.chore_delete_action),
+                            contentColor = deleteThemeOption?.error?.let(::parseHexColor) ?: MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
         }
     }
+}
 
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(stringResource(R.string.chore_delete_confirm_title)) },
-            text = { Text(stringResource(R.string.chore_delete_confirmation)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteConfirm = false
-                    onDelete()
-                }) { Text(stringResource(R.string.chore_delete_action)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel)) }
-            }
-        )
+/**
+ * Issue #93 (step 1 of 3): equal-width outlined chip button for the expanded row's action row --
+ * matches `ChoreCard.css`'s `.action-btn`. Rolled out first for Skip/Edit/History/Mark-Due-Now
+ * only (each routes through an external callback parameter with no local state), per this issue's
+ * incremental-rollout plan; Complete and Delete land in their own follow-up commits.
+ */
+@Composable
+private fun RowScope.ChoreActionButton(
+    onClick: () -> Unit,
+    text: String,
+    modifier: Modifier = Modifier,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    OutlinedButton(
+        onClick = onClick,
+        // Modifier.weight() is a RowScope extension -- ChoreActionButton is only ever called
+        // from within the expanded row's action-buttons Row, so it takes a RowScope receiver
+        // itself instead of accepting a plain Modifier and calling weight() on it (which doesn't
+        // resolve outside a Row/ColumnScope receiver).
+        modifier = modifier.weight(1f),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = contentColor)
+    ) {
+        Text(text)
     }
+}
+
+/**
+ * Issue #67/#80: matches `ChoreCard.css`'s `.accent-bar` rules exactly -- red while due, muted
+ * gray once complete (a distinct `state` value from "due"/"not_due"), no bar otherwise.
+ */
+@Composable
+private fun statusAccentColor(chore: Chore): Color? = when {
+    chore.isDue -> MaterialTheme.colorScheme.error
+    chore.state == "complete" -> MaterialTheme.colorScheme.onSurfaceVariant
+    else -> null
 }
 
 /**
@@ -342,26 +477,62 @@ private fun formatNextDue(raw: String): String {
     }
 }
 
+/**
+ * Issue #87: 2-column label/value grid (Status/Frequency, then Points/Assignee) framed by
+ * dividers, matching `ChoreCard.css`'s `.expanded-meta`/`.meta-item`/`.meta-label`/`.meta-value`
+ * -- replaces the single-column "Label: value" text stack. Deliberately uses
+ * `Modifier.fillMaxWidth(0.5f)` per cell rather than `Modifier.weight(1f)` (see this file's/
+ * issue #93's notes on this Row's history of unrelated Compose-testing fragility) -- same visual
+ * result, without engaging `Row`'s weight-distribution machinery.
+ */
 @Composable
 private fun ChoreDetailSection(chore: Chore) {
     Column(modifier = Modifier.padding(top = 8.dp)) {
-        Text(
-            text = stringResource(R.string.chore_detail_status_format, chore.state),
-            style = MaterialTheme.typography.bodySmall
-        )
-        chore.scheduleSummary?.let {
-            Text(text = stringResource(R.string.chore_detail_frequency_format, it), style = MaterialTheme.typography.bodySmall)
+        HorizontalDivider()
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            ChoreMetaItem(
+                modifier = Modifier.fillMaxWidth(0.5f),
+                label = stringResource(R.string.chore_detail_status_label),
+                value = chore.state
+            )
+            ChoreMetaItem(
+                modifier = Modifier.fillMaxWidth(0.5f),
+                label = stringResource(R.string.chore_detail_frequency_label),
+                value = chore.scheduleSummary ?: "—"
+            )
         }
+        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+            ChoreMetaItem(
+                modifier = Modifier.fillMaxWidth(0.5f),
+                label = stringResource(R.string.chore_detail_points_label),
+                value = chore.points.toString()
+            )
+            ChoreMetaItem(
+                modifier = Modifier.fillMaxWidth(0.5f),
+                label = stringResource(R.string.chore_detail_assignee_label),
+                value = chore.currentAssignee ?: stringResource(R.string.chore_completer_label)
+            )
+        }
+        HorizontalDivider()
+    }
+}
+
+/**
+ * Issue #87: one 2-column grid cell -- an uppercase muted label over its value, matching
+ * `ChoreCard.css`'s `.meta-label`/`.meta-value`.
+ */
+@Composable
+private fun ChoreMetaItem(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
         Text(
-            text = stringResource(R.string.chore_detail_points_format, chore.points),
-            style = MaterialTheme.typography.bodySmall
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = stringResource(
-                R.string.chore_detail_assignee_format,
-                chore.currentAssignee ?: stringResource(R.string.chore_completer_label)
-            ),
-            style = MaterialTheme.typography.bodySmall
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
         )
     }
 }

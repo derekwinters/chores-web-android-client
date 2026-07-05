@@ -29,8 +29,9 @@ class DashboardModelsTest {
     }
 
     @Test
-    fun trendStatus_zeroGoal_isWarning() {
-        assertEquals(TrendStatus.WARNING, trendStatus(current = 0, goal = 0))
+    fun trendStatus_zeroGoal_isSuccess() {
+        // Issue #123: a zero goal reads as "ahead"/success (nothing owed), matching web.
+        assertEquals(TrendStatus.SUCCESS, trendStatus(current = 0, goal = 0))
     }
 
     private fun chore(id: Int, state: String, nextDue: String?, assignee: String?) = Chore(

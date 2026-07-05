@@ -1,13 +1,21 @@
 package com.derekwinters.chores.ui.login
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -21,7 +29,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -82,75 +93,127 @@ fun LoginContent(
 
     val isLoading = uiState is UiState.Loading
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    // Issue #63: elevated, centered card container around the form, matching web's `.login-card`
+    // treatment (the screen previously rendered the form directly on the screen background with
+    // no card framing).
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = stringResource(R.string.login_screen_title),
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        OutlinedTextField(
+        Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 24.dp),
-            value = serverUrl,
-            onValueChange = { serverUrl = it },
-            label = { Text(stringResource(R.string.server_url_label)) },
-            placeholder = { Text(stringResource(R.string.server_url_placeholder)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-            enabled = !isLoading
-        )
-
-        OutlinedTextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            value = username,
-            onValueChange = { username = it },
-            label = { Text(stringResource(R.string.username_label)) },
-            singleLine = true,
-            enabled = !isLoading
-        )
-
-        OutlinedTextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            value = password,
-            onValueChange = { password = it },
-            label = { Text(stringResource(R.string.password_label)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            enabled = !isLoading
-        )
-
-        if (uiState is UiState.Error) {
-            Text(
-                modifier = Modifier.padding(top = 8.dp),
-                text = uiState.message,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-
-        Button(
-            modifier = Modifier.padding(top = 16.dp),
-            onClick = { onLogin(serverUrl, username, password) },
-            enabled = !isLoading && serverUrl.isNotBlank() && username.isNotBlank() && password.isNotBlank()
+                .widthIn(max = 400.dp)
+                .padding(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 8.dp))
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Issue #64: app-branding heading above the login title, matching web's branded
+                // header (and issue #58's nav-shell serif treatment, for visual consistency).
+                Text(
+                    text = stringResource(R.string.login_app_branding),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = stringResource(R.string.login_screen_title),
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp),
+                    value = serverUrl,
+                    onValueChange = { serverUrl = it },
+                    label = { Text(stringResource(R.string.server_url_label)) },
+                    placeholder = { Text(stringResource(R.string.server_url_placeholder)) },
+                    singleLine = true,
+                    // Issue #66: flat rectangular corners, matching web (default M3 shape is
+                    // more rounded).
+                    shape = LoginFieldShape,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    enabled = !isLoading
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text(stringResource(R.string.username_label)) },
+                    singleLine = true,
+                    shape = LoginFieldShape,
+                    enabled = !isLoading
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(stringResource(R.string.password_label)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    shape = LoginFieldShape,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    enabled = !isLoading
+                )
+
+                // Issue #65: bordered/tinted callout box instead of plain red text, matching
+                // web's error styling.
+                if (uiState is UiState.Error) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = uiState.message,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+
+                Button(
+                    modifier = Modifier.padding(top = 16.dp).fillMaxWidth(),
+                    onClick = { onLogin(serverUrl, username, password) },
+                    enabled = !isLoading && serverUrl.isNotBlank() && username.isNotBlank() && password.isNotBlank(),
+                    // Issue #66: flat rectangular shape + flat (no-elevation) blue button,
+                    // matching web (default M3 Button is a fully-rounded "stadium" shape with
+                    // elevation).
+                    shape = LoginFieldShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp,
+                        disabledElevation = 0.dp
+                    )
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 8.dp))
+                    }
+                    Text(stringResource(R.string.login_button))
+                }
             }
-            Text(stringResource(R.string.login_button))
         }
     }
 }
+
+/** Issue #66: shared flat rectangular shape for Login's input fields and submit button. */
+private val LoginFieldShape = RoundedCornerShape(4.dp)
 
 /**
  * Issue #11: shown instead of the normal login form when the backend returns a 403 with a

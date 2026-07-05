@@ -1,14 +1,20 @@
 package com.derekwinters.chores.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.People
@@ -18,9 +24,11 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -32,10 +40,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavType
@@ -127,13 +141,18 @@ private fun logRouteWithArgs(chore: String?, person: String?): String {
 private fun userDetailRoute(personId: Int, username: String): String =
     "users/$personId?username=${android.net.Uri.encode(username)}"
 
+/**
+ * Issue #59/#60: matches web's `PAGES` list (`App.jsx` lines 30-35) — order Board → Chores →
+ * Users(admin) → Log, with Settings and Preferences deliberately excluded from primary nav (they
+ * live only in the avatar dropdown, see [ChoresAuthenticatedScaffold]'s `TopAppBar` actions).
+ * [ChoresDestination.Notification] has no web equivalent to match order against, so it's kept
+ * last.
+ */
 private val drawerDestinations = listOf(
     ChoresDestination.Dashboard,
     ChoresDestination.Chores,
-    ChoresDestination.ActivityLog,
     ChoresDestination.Users,
-    ChoresDestination.Settings,
-    ChoresDestination.Preferences,
+    ChoresDestination.ActivityLog,
     ChoresDestination.Notification
 )
 
@@ -209,24 +228,45 @@ fun ChoresAppContent(
         val viewModel: AppThemeViewModel = hiltViewModel()
         val theme by viewModel.currentTheme.collectAsState()
         theme
+    },
+    /**
+     * Issue #58: the household/app title (`config.title`) shown as serif-branded nav-shell
+     * chrome, matching web's `.app-title`/`.topnav-title`. Null means "not yet loaded / fetch
+     * failed" — [ChoresAuthenticatedScaffold] falls back to `R.string.app_name` in that case.
+     */
+    currentTitleProvider: @Composable () -> String? = {
+        val viewModel: AppTitleViewModel = hiltViewModel()
+        val title by viewModel.appTitle.collectAsState()
+        title
     }
 ) {
-    if (!isAuthenticated) {
-        loginContent()
-        return
-    }
+    // Issue #62: ChoresTheme now wraps the unauthenticated screen graph (AuthGateScreen's
+    // server-check/Login/Setup states) too, not just the post-auth scaffold, so Login and Setup
+    // pick up the household's branded colors/typography instead of Compose's default M3 scheme.
+    // currentThemeProvider's AppThemeViewModel already treats a failed/unauthenticated theme
+    // fetch as null (ChoresTheme's hardcoded-fallback case), so this is a safe no-regression
+    // superset of the previous post-auth-only wrapping.
+    val currentTheme = currentThemeProvider()
 
-    val isDatabaseReady = isDatabaseReadyProvider()
+    ChoresTheme(themeOption = currentTheme) {
+        if (!isAuthenticated) {
+            loginContent()
+            return@ChoresTheme
+        }
 
-    DbReadinessGate(isReady = isDatabaseReady, modifier = modifier) {
-        val currentUserState = currentUserProvider()
-        val isAdmin = (currentUserState as? UiState.Success)?.data?.isAdmin == true
-        val currentTheme = currentThemeProvider()
+        val isDatabaseReady = isDatabaseReadyProvider()
 
-        ChoresTheme(themeOption = currentTheme) {
+        DbReadinessGate(isReady = isDatabaseReady, modifier = modifier) {
+            val currentUserState = currentUserProvider()
+            val isAdmin = (currentUserState as? UiState.Success)?.data?.isAdmin == true
+            val username = (currentUserState as? UiState.Success)?.data?.username
+            val appTitle = currentTitleProvider()
+
             ChoresAuthenticatedScaffold(
                 isAdmin = isAdmin,
+                username = username,
                 onLogout = onLogout,
+                appTitle = appTitle,
                 dashboardContent = dashboardContent,
                 choresContent = choresContent,
                 choreFormContent = choreFormContent,
@@ -249,7 +289,11 @@ fun ChoresAppContent(
 @Composable
 private fun ChoresAuthenticatedScaffold(
     isAdmin: Boolean,
+    /** Issue #59: shown as the avatar initial + name in the top bar's user menu. */
+    username: String?,
     onLogout: () -> Unit,
+    /** Issue #58: household/app title branding; null falls back to `R.string.app_name`. */
+    appTitle: String?,
     modifier: Modifier = Modifier,
     dashboardContent: @Composable (DashboardNavActions) -> Unit,
     choresContent: @Composable (assignee: String?, dueWithin: String?, navActions: ChoresNavActions) -> Unit,
@@ -277,7 +321,11 @@ private fun ChoresAuthenticatedScaffold(
     // matching by prefix keeps drawer highlighting/title working whether or not args are present.
     fun isCurrent(dest: ChoresDestination) =
         currentDestination?.hierarchy?.any { it.route?.startsWith(dest.route) == true } == true
-    val currentLabel = visibleDestinations
+    // Issue #59: Settings/Preferences label lookup uses every destination (not just the drawer's
+    // visibleDestinations, which they were removed from) so the TopAppBar subtitle still reads
+    // "Settings"/"Preferences" rather than falling back to the app title when navigated there via
+    // the avatar dropdown.
+    val currentLabel = (visibleDestinations + ChoresDestination.Settings + ChoresDestination.Preferences)
         .firstOrNull(::isCurrent)
         ?.labelRes
         ?.let { stringResource(it) }
@@ -301,7 +349,26 @@ private fun ChoresAuthenticatedScaffold(
                                 restoreState = true
                             }
                         },
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        // Issue #61: web's `.nav-active` (App.css lines 115-127) keeps the same
+                        // background as an unselected item (`--surface`) — only the text/icon
+                        // color brightens (`--text-muted` -> `--text`). Material3's default
+                        // selected-item colors draw a secondaryContainer pill, a much stronger
+                        // highlight than web's; this overrides it to a transparent container with
+                        // only a text/icon color change.
+                        colors = NavigationDrawerItemDefaults.colors(
+                            selectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                            unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                            selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        // Issue #60 test fix: disambiguates drawer items from the TopAppBar
+                        // subtitle, which can show the same label text (e.g. both "Board" when
+                        // Dashboard is current) since drawer labels now match web's PAGES copy.
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                            .testTag("navItem_${destination.route}")
                     )
                 }
             }
@@ -311,17 +378,77 @@ private fun ChoresAuthenticatedScaffold(
             modifier = modifier,
             topBar = {
                 TopAppBar(
-                    title = { Text(currentLabel) },
+                    title = {
+                        Column {
+                            // Issue #58: household/app title branding, matching web's
+                            // `.app-title`/`.topnav-title` (Playfair Display serif, 1.3rem/700/-0.5px).
+                            Text(
+                                text = appTitle ?: stringResource(R.string.app_name),
+                                fontFamily = FontFamily.Serif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.8.sp,
+                                letterSpacing = (-0.5).sp,
+                                modifier = Modifier.testTag("appTitleBranding")
+                            )
+                            Text(currentLabel, style = MaterialTheme.typography.bodySmall)
+                        }
+                    },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.open_navigation_menu))
                         }
                     },
                     actions = {
-                        IconButton(onClick = { userMenuExpanded = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.user_menu))
+                        // Issue #59: restores web's user identity treatment (`UserAvatarMenu.jsx`
+                        // lines 45-51) — a colored circle with the user's initial plus their name —
+                        // in place of the generic MoreVert icon.
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .testTag("userMenuTrigger")
+                                .clickable { userMenuExpanded = true }
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.tertiary)
+                            ) {
+                                Text(
+                                    text = username?.take(1)?.uppercase().orEmpty(),
+                                    color = MaterialTheme.colorScheme.onTertiary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            if (username != null) {
+                                Text(
+                                    text = username,
+                                    modifier = Modifier.padding(start = 8.dp),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
                         DropdownMenu(expanded = userMenuExpanded, onDismissRequest = { userMenuExpanded = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.nav_preferences)) },
+                                leadingIcon = { Icon(Icons.Filled.Palette, contentDescription = null) },
+                                onClick = {
+                                    userMenuExpanded = false
+                                    navController.navigate(ChoresDestination.Preferences.route)
+                                }
+                            )
+                            if (isAdmin) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.nav_settings)) },
+                                    leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                                    onClick = {
+                                        userMenuExpanded = false
+                                        navController.navigate(ChoresDestination.Settings.route)
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.logout)) },
                                 leadingIcon = { Icon(Icons.Filled.Logout, contentDescription = null) },
