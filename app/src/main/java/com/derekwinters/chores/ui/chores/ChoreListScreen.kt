@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -406,7 +407,7 @@ private fun ChoreRow(
  * incremental-rollout plan; Complete and Delete land in their own follow-up commits.
  */
 @Composable
-private fun ChoreActionButton(
+private fun RowScope.ChoreActionButton(
     onClick: () -> Unit,
     text: String,
     modifier: Modifier = Modifier,
@@ -414,6 +415,10 @@ private fun ChoreActionButton(
 ) {
     OutlinedButton(
         onClick = onClick,
+        // Modifier.weight() is a RowScope extension -- ChoreActionButton is only ever called
+        // from within the expanded row's action-buttons Row, so it takes a RowScope receiver
+        // itself instead of accepting a plain Modifier and calling weight() on it (which doesn't
+        // resolve outside a Row/ColumnScope receiver).
         modifier = modifier.weight(1f),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
