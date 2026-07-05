@@ -19,7 +19,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -232,12 +232,14 @@ fun ChoreListContent(
         }
     }
 
-        FloatingActionButton(
+        // Issue #70: extended FAB with an "Add Chore" text label alongside the icon, matching
+        // web's icon+text button treatment (previously icon-only).
+        ExtendedFloatingActionButton(
             onClick = onAddChore,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_chore))
-        }
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+            text = { Text(stringResource(R.string.add_chore)) }
+        )
     }
 
     if (showFiltersDialog) {

@@ -47,6 +47,24 @@ class ChoreListContentTest {
     )
 
     @Test
+    fun choreListContent_addChoreFab_showsTextLabelAndInvokesCallback() {
+        // Issue #70: extended FAB with an "Add Chore" text label, not icon-only.
+        var added = false
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                onAddChore = { added = true }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Add Chore").performClick()
+
+        assert(added)
+    }
+
+    @Test
     fun choreListContent_rendersCollapsedNameAssigneeNextDue() {
         composeTestRule.setContent {
             ChoreListContent(
