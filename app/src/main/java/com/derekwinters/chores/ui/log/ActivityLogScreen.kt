@@ -167,7 +167,10 @@ private fun LogRow(entry: LogEntry) {
                     Text(
                         "${entry.person} · ${formatRelativeTimestamp(entry.timestamp)}",
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp)
+                        color = agedTimestampColor(entry.timestamp),
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .testTag("logRowTimestamp")
                     )
                 }
                 // Issue #77: chevron affordance signaling the row is expandable, matching web's
@@ -286,4 +289,35 @@ private fun formatRelativeTimestamp(raw: String): String {
     } catch (e: DateTimeParseException) {
         raw
     }
+}
+
+/**
+ * Issue #81: mirrors chores-web's Activity Log behavior of flagging stale entries by coloring
+ * timestamps 24h+ old in a muted-red tone; unparsable timestamps are treated as not-aged (same
+ * fail-safe stance as [formatRelativeTimestamp] falling back to the raw string) rather than
+ * risking a false "stale" flag on bad data.
+ */
+private fun isAgedTimestamp(raw: String): Boolean {
+    return try {
+        Duration.between(Instant.parse(raw), Instant.now()).toHours() >= 24
+    } catch (e: DateTimeParseException) {
+        false
+    }
+}
+
+/**
+ * Issue #81: returns the muted-red color for timestamps [isAgedTimestamp], or [Color.Unspecified]
+ * otherwise so the `Text` falls back to its normal default color. Reuses the same
+ * [LocalThemeOption]/`error`/`parseHexColor` lookup (falling back to
+ * `MaterialTheme.colorScheme.error`) already established by #71's `actionBadgeColor` for the
+ * "deleted" action, rather than inventing a new red -- a reduced-alpha (0.7f) variant of that
+ * color gives the "muted" (lower-emphasis) treatment web uses instead of a full-strength,
+ * alarm-toned red.
+ */
+@Composable
+private fun agedTimestampColor(raw: String): Color {
+    if (!isAgedTimestamp(raw)) return Color.Unspecified
+    val themeOption = LocalThemeOption.current
+    val errorColor = themeOption?.error?.let(::parseHexColor) ?: MaterialTheme.colorScheme.error
+    return errorColor.copy(alpha = 0.7f)
 }

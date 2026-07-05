@@ -1,13 +1,19 @@
 package com.derekwinters.chores.ui.log
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
 import com.derekwinters.chores.data.model.LogEntry
 import com.derekwinters.chores.ui.UiState
 import com.derekwinters.chores.ui.common.formatDateTime
@@ -16,6 +22,17 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+
+/**
+ * Reads the resolved text color directly off the node's text layout result -- same
+ * `GetTextLayoutResult`-based approach as `ChoresStatsPanelContentTest.textFontSizeSp()`, since
+ * Robolectric's headless rendering doesn't support pixel-sampling (`captureToImage`) reliably.
+ */
+private fun SemanticsNodeInteraction.textColor(): Color {
+    val results = mutableListOf<TextLayoutResult>()
+    performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
+    return results.first().layoutInput.style.color
+}
 
 /**
  * Issue #19 behaviors: row expand shows amendment diffs, pagination controls (area: ui, android).
@@ -236,6 +253,59 @@ class ActivityLogContentTest {
         }
 
         composeTestRule.onNodeWithText("alice · just now").assertExists()
+    }
+
+    /**
+     * Issue #81: entries 24h+ old get a muted-red timestamp (mirroring chores-web's stale-entry
+     * treatment), while entries under 24h keep the default color. Asserted by comparing the two
+     * resolved colors rather than pinning to an exact color value/alpha, since the "muted red"
+     * comes from `MaterialTheme.colorScheme.error` (no `ChoresTheme` wrapper is present in this
+     * test, so the M3 default light error color resolves) -- the color's red channel should
+     * dominate green/blue and its alpha should be reduced below fully opaque.
+     */
+    @Test
+    fun activityLogContent_agedTimestamp_rendersInMutedRed() {
+        val agedEntry = amendment.copy(timestamp = java.time.Instant.now().minus(java.time.Duration.ofHours(48)).toString())
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(agedEntry), total = 1, page = 1)),
+                filters = LogFilters(),
+                onFiltersChange = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        val color = composeTestRule.onNodeWithTag("logRowTimestamp", useUnmergedTree = true).textColor()
+
+        assert(color.alpha < 1f) { "expected a muted (reduced-alpha) color, got alpha=${color.alpha}" }
+        assert(color.red > color.green && color.red > color.blue) {
+            "expected a reddish color, got r=${color.red} g=${color.green} b=${color.blue}"
+        }
+    }
+
+    /** Issue #81: entries under 24h old keep the default (non-error) timestamp color. */
+    @Test
+    fun activityLogContent_recentTimestamp_keepsDefaultColor() {
+        val recentEntry = amendment.copy(timestamp = java.time.Instant.now().minus(java.time.Duration.ofHours(1)).toString())
+        val agedEntry = amendment.copy(id = 2, timestamp = java.time.Instant.now().minus(java.time.Duration.ofHours(48)).toString())
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(recentEntry, agedEntry), total = 2, page = 1)),
+                filters = LogFilters(),
+                onFiltersChange = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        val timestampNodes = composeTestRule.onAllNodesWithTag("logRowTimestamp", useUnmergedTree = true)
+        val recentColor = timestampNodes[0].textColor()
+        val agedColor = timestampNodes[1].textColor()
+
+        assert(recentColor != agedColor) {
+            "expected recent and aged timestamps to render in different colors, both were $recentColor"
+        }
     }
 
     /**
