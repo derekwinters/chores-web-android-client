@@ -59,7 +59,10 @@ class ChoreListContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Add Chore").performClick()
+        // ExtendedFloatingActionButton's icon+text don't merge into a single semantics node by
+        // default, so the merged-tree finder can't locate the text node -- useUnmergedNode is
+        // required here.
+        composeTestRule.onNodeWithText("Add Chore", useUnmergedNode = true).performClick()
 
         assert(added)
     }
