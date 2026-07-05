@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -223,7 +224,17 @@ fun ChoreListContent(
                             text = stringResource(R.string.chore_list_empty)
                         )
                     } else {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        // Bottom content padding matching the Add-Chore FAB's fixed footprint
+                        // (56.dp ExtendedFloatingActionButton + 16.dp align/padding inset, plus
+                        // margin) so list content -- including an expanded row's action buttons
+                        // -- never renders underneath the FAB, which sits on top in z-order and
+                        // would otherwise intercept/steal those clicks (real bug: the FAB was
+                        // stealing clicks meant for History/Delete once issue #74's always-visible
+                        // count row shrank the LazyColumn's available height).
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 88.dp)
+                        ) {
                             items(state.data, key = { it.id }) { chore ->
                                 ChoreRow(
                                     chore = chore,
