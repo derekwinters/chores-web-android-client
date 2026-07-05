@@ -85,7 +85,7 @@ class ActivityLogContentTest {
 
         // Not onNodeWithText("Chore") -- the filters row also has a "Chore" text-field label.
         composeTestRule.onNodeWithTag("targetTypeChip").assertTextEquals("Chore")
-        composeTestRule.onNodeWithText("updated").assertExists()
+        composeTestRule.onNodeWithText("Updated").assertExists()
         composeTestRule.onNodeWithText("Dishes").assertExists()
     }
 
@@ -102,8 +102,45 @@ class ActivityLogContentTest {
         }
 
         composeTestRule.onNodeWithTag("targetTypeChip").assertTextEquals("User")
-        composeTestRule.onNodeWithText("password_changed").assertExists()
+        composeTestRule.onNodeWithText("Password Changed").assertExists()
         composeTestRule.onNodeWithText("bob").assertExists()
+    }
+
+    /**
+     * Issue #73: raw action values are mapped to humanized labels, e.g. "completed" ->
+     * "Completed", mirroring chores-web and the Auth Log's (#91) humanization.
+     */
+    @Test
+    fun activityLogContent_humanizesCompletedAction() {
+        val entry = amendment.copy(action = "completed", fieldName = null, oldValue = null, newValue = null)
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(entry), total = 1, page = 1)),
+                filters = LogFilters(),
+                onFiltersChange = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Completed").assertExists()
+    }
+
+    /** Issue #73: unmapped/unknown action values fall back to a title-cased transform. */
+    @Test
+    fun activityLogContent_unmappedAction_fallsBackToTitleCasedTransform() {
+        val entry = amendment.copy(action = "some_new_event", fieldName = null, oldValue = null, newValue = null)
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(entry), total = 1, page = 1)),
+                filters = LogFilters(),
+                onFiltersChange = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Some New Event").assertExists()
     }
 
     @Test

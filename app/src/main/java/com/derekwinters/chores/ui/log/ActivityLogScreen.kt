@@ -31,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.data.model.LogEntry
 import com.derekwinters.chores.ui.UiState
 import com.derekwinters.chores.ui.common.formatDateTime
+import com.derekwinters.chores.ui.common.humanizeActionLabel
 import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeParseException
@@ -138,7 +139,7 @@ private fun LogRow(entry: LogEntry) {
                 onClick = {},
                 label = { Text(if (isPersonTarget) "User" else "Chore") }
             )
-            Text(entry.action, style = MaterialTheme.typography.titleSmall)
+            Text(humanizeActionLabel(entry.action), style = MaterialTheme.typography.titleSmall)
             Text(targetName, style = MaterialTheme.typography.titleSmall)
             Text(
                 "${entry.person} · ${formatRelativeTimestamp(entry.timestamp)}",
