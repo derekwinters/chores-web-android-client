@@ -70,10 +70,12 @@
     <string name="chore_delete_action">Delete</string>
     <string name="chore_delete_confirm_title">Delete this chore?</string>
     <string name="chore_delete_confirmation">This also removes all points history for this chore and cannot be undone.</string>
-    <string name="chore_detail_status_format">Status: %1$s</string>
-    <string name="chore_detail_frequency_format">Frequency: %1$s</string>
-    <string name="chore_detail_points_format">Points: %1$d</string>
-    <string name="chore_detail_assignee_format">Assignee: %1$s</string>
+    <!-- Issue #87: standalone labels for the 2-column detail grid's cells (label rendered
+         uppercase in code via .uppercase(), over its value). -->
+    <string name="chore_detail_status_label">Status</string>
+    <string name="chore_detail_frequency_label">Frequency</string>
+    <string name="chore_detail_points_label">Points</string>
+    <string name="chore_detail_assignee_label">Assignee</string>
 
     <!-- Chores screen: search, filters, sorting (issue #13) -->
     <string name="search_chores_label">Search chores</string>

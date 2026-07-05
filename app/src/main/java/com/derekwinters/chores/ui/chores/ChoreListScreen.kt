@@ -20,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -414,26 +415,62 @@ private fun formatNextDue(raw: String): String {
     }
 }
 
+/**
+ * Issue #87: 2-column label/value grid (Status/Frequency, then Points/Assignee) framed by
+ * dividers, matching `ChoreCard.css`'s `.expanded-meta`/`.meta-item`/`.meta-label`/`.meta-value`
+ * -- replaces the single-column "Label: value" text stack. Deliberately uses
+ * `Modifier.fillMaxWidth(0.5f)` per cell rather than `Modifier.weight(1f)` (see this file's/
+ * issue #93's notes on this Row's history of unrelated Compose-testing fragility) -- same visual
+ * result, without engaging `Row`'s weight-distribution machinery.
+ */
 @Composable
 private fun ChoreDetailSection(chore: Chore) {
     Column(modifier = Modifier.padding(top = 8.dp)) {
-        Text(
-            text = stringResource(R.string.chore_detail_status_format, chore.state),
-            style = MaterialTheme.typography.bodySmall
-        )
-        chore.scheduleSummary?.let {
-            Text(text = stringResource(R.string.chore_detail_frequency_format, it), style = MaterialTheme.typography.bodySmall)
+        HorizontalDivider()
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            ChoreMetaItem(
+                modifier = Modifier.fillMaxWidth(0.5f),
+                label = stringResource(R.string.chore_detail_status_label),
+                value = chore.state
+            )
+            ChoreMetaItem(
+                modifier = Modifier.fillMaxWidth(0.5f),
+                label = stringResource(R.string.chore_detail_frequency_label),
+                value = chore.scheduleSummary ?: "—"
+            )
         }
+        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+            ChoreMetaItem(
+                modifier = Modifier.fillMaxWidth(0.5f),
+                label = stringResource(R.string.chore_detail_points_label),
+                value = chore.points.toString()
+            )
+            ChoreMetaItem(
+                modifier = Modifier.fillMaxWidth(0.5f),
+                label = stringResource(R.string.chore_detail_assignee_label),
+                value = chore.currentAssignee ?: stringResource(R.string.chore_completer_label)
+            )
+        }
+        HorizontalDivider()
+    }
+}
+
+/**
+ * Issue #87: one 2-column grid cell -- an uppercase muted label over its value, matching
+ * `ChoreCard.css`'s `.meta-label`/`.meta-value`.
+ */
+@Composable
+private fun ChoreMetaItem(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
         Text(
-            text = stringResource(R.string.chore_detail_points_format, chore.points),
-            style = MaterialTheme.typography.bodySmall
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = stringResource(
-                R.string.chore_detail_assignee_format,
-                chore.currentAssignee ?: stringResource(R.string.chore_completer_label)
-            ),
-            style = MaterialTheme.typography.bodySmall
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
         )
     }
 }

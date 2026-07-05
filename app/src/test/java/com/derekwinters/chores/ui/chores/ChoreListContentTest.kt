@@ -111,8 +111,12 @@ class ChoreListContentTest {
 
         composeTestRule.onNodeWithText("Dishes").performClick()
 
-        composeTestRule.onNodeWithText("Points: 5").assertExists()
-        composeTestRule.onNodeWithText("Status: due").assertExists()
+        // Issue #87: 2-column detail grid renders each label/value as separate Text nodes now
+        // (label uppercase, e.g. "POINTS"/"STATUS"), replacing the old combined "Points: 5" text.
+        composeTestRule.onNodeWithText("POINTS").assertExists()
+        composeTestRule.onNodeWithText("5").assertExists()
+        composeTestRule.onNodeWithText("STATUS").assertExists()
+        composeTestRule.onNodeWithText("due").assertExists()
     }
 
     @Test
@@ -140,7 +144,9 @@ class ChoreListContentTest {
 
         composeTestRule.onNodeWithText("Trash").performClick()
 
-        composeTestRule.onNodeWithText("Assignee: Completer").assertExists()
+        // Issue #87: label/value are separate Text nodes now ("ASSIGNEE" label + "Completer" value).
+        composeTestRule.onNodeWithText("ASSIGNEE").assertExists()
+        composeTestRule.onNodeWithText("Completer").assertExists()
     }
 
     @Test
