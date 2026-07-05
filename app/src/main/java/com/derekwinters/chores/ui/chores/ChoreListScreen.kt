@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -201,7 +200,15 @@ fun ChoreListContent(
             }
         }
 
-        Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+        // Issue #74 CI fix: real (not contentPadding) bottom padding matching the Add-Chore FAB's
+        // fixed footprint (56.dp ExtendedFloatingActionButton + 16.dp align/padding inset, plus
+        // margin), so the LazyColumn is actually MEASURED/LAID OUT within a smaller region that
+        // ends above the FAB's zone -- unlike LazyColumn's own contentPadding (which only adds
+        // trailing scrollable space and does nothing for an already-in-viewport, never-scrolled
+        // item), a real Modifier.padding here shrinks the box's real layout bounds, so even the
+        // very first row's content can never render underneath the fixed FAB (which sits on top
+        // in z-order and would otherwise intercept/steal those clicks).
+        Box(modifier = Modifier.weight(1f).fillMaxSize().padding(bottom = 88.dp)) {
             when (val state = uiState) {
                 is UiState.Idle, is UiState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -224,17 +231,7 @@ fun ChoreListContent(
                             text = stringResource(R.string.chore_list_empty)
                         )
                     } else {
-                        // Bottom content padding matching the Add-Chore FAB's fixed footprint
-                        // (56.dp ExtendedFloatingActionButton + 16.dp align/padding inset, plus
-                        // margin) so list content -- including an expanded row's action buttons
-                        // -- never renders underneath the FAB, which sits on top in z-order and
-                        // would otherwise intercept/steal those clicks (real bug: the FAB was
-                        // stealing clicks meant for History/Delete once issue #74's always-visible
-                        // count row shrank the LazyColumn's available height).
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 88.dp)
-                        ) {
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
                             items(state.data, key = { it.id }) { chore ->
                                 ChoreRow(
                                     chore = chore,
