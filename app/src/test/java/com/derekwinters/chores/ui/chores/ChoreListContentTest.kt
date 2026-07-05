@@ -8,7 +8,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.printToLog
+import androidx.compose.ui.test.printToString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.Chore
 import com.derekwinters.chores.ui.UiState
@@ -372,9 +372,17 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        composeTestRule.onRoot().printToLog("CHOREDEBUG")
+        val treeAfterExpand = composeTestRule.onRoot().printToString()
         composeTestRule.onNodeWithText("Delete").performScrollTo().performClick()
-        composeTestRule.onRoot().printToLog("CHOREDEBUG")
+        val treeAfterDeleteClick = composeTestRule.onRoot().printToString()
+        // DEBUG: printToLog() output wasn't captured by CI (Robolectric's ShadowLog likely isn't
+        // routed to stdout), so force both tree dumps into a thrown error's message instead --
+        // that reliably lands in the CI job's test failure output. Remove once root-caused.
+        error(
+            "DEBUG tree after expanding 'Dishes':\n$treeAfterExpand\n\n" +
+                "DEBUG tree after clicking row 'Delete':\n$treeAfterDeleteClick"
+        )
+
         composeTestRule.onNodeWithText("This also removes all points history for this chore and cannot be undone.").assertExists()
 
         composeTestRule.onAllNodesWithText("Delete")[1].performClick()
