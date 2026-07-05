@@ -11,8 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -138,28 +142,47 @@ private fun LogRow(entry: LogEntry) {
             .clickable { expanded = !expanded }
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            PillBadge(
-                text = if (isPersonTarget) "User" else "Chore",
-                color = targetBadgeColor(isPersonTarget),
-                testTag = "targetTypeChip"
-            )
-            PillBadge(
-                modifier = Modifier.padding(top = 4.dp),
-                text = humanizeActionLabel(entry.action),
-                color = actionBadgeColor(entry.action),
-                testTag = "actionBadge"
-            )
-            PillBadge(
-                modifier = Modifier.padding(top = 4.dp),
-                text = targetName,
-                color = targetBadgeColor(isPersonTarget),
-                testTag = "targetBadge"
-            )
-            Text(
-                "${entry.person} · ${formatRelativeTimestamp(entry.timestamp)}",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    PillBadge(
+                        text = if (isPersonTarget) "User" else "Chore",
+                        color = targetBadgeColor(isPersonTarget),
+                        testTag = "targetTypeChip"
+                    )
+                    PillBadge(
+                        modifier = Modifier.padding(top = 4.dp),
+                        text = humanizeActionLabel(entry.action),
+                        color = actionBadgeColor(entry.action),
+                        testTag = "actionBadge"
+                    )
+                    PillBadge(
+                        modifier = Modifier.padding(top = 4.dp),
+                        text = targetName,
+                        color = targetBadgeColor(isPersonTarget),
+                        testTag = "targetBadge"
+                    )
+                    Text(
+                        "${entry.person} · ${formatRelativeTimestamp(entry.timestamp)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                // Issue #77: chevron affordance signaling the row is expandable, matching web's
+                // indicator -- Android otherwise gave no visual signal that tapping a row does
+                // anything. Not wrapped in an IconButton: the enclosing Card is already the
+                // clickable element (toggling `expanded` on tap anywhere in the row), so this is
+                // a plain non-interactive Icon that just reflects the current state, reusing the
+                // same ExpandMore/ExpandLess pair as the Chores stats panel's collapsible header
+                // (issue #14) rather than introducing a new chevron icon convention.
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = if (expanded) "Collapse entry" else "Expand entry",
+                    modifier = Modifier.testTag("expandChevron")
+                )
+            }
 
             if (expanded) {
                 Text("Timestamp: ${formatDateTime(entry.timestamp)}", style = MaterialTheme.typography.bodySmall)

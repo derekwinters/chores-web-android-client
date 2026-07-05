@@ -1,7 +1,9 @@
 package com.derekwinters.chores.ui.log
 
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -234,6 +236,34 @@ class ActivityLogContentTest {
         }
 
         composeTestRule.onNodeWithText("alice · just now").assertExists()
+    }
+
+    /**
+     * Issue #77: a chevron icon signals the row is expandable (Android otherwise gave no visual
+     * cue, unlike web's chevron affordance) and it flips between ExpandMore/ExpandLess as
+     * `expanded` toggles. useUnmergedTree is required here too, same reason as
+     * targetTypeChip/actionBadge/targetBadge above: the Icon lives inside LogRow's clickable
+     * Card, and TestTag doesn't propagate upward through that merge boundary.
+     */
+    @Test
+    fun activityLogContent_chevron_reflectsExpandedState() {
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(amendment), total = 1, page = 1)),
+                filters = LogFilters(),
+                onFiltersChange = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("expandChevron", useUnmergedTree = true)
+            .assert(hasContentDescription("Expand entry"))
+
+        composeTestRule.onNodeWithText("Dishes").performClick()
+
+        composeTestRule.onNodeWithTag("expandChevron", useUnmergedTree = true)
+            .assert(hasContentDescription("Collapse entry"))
     }
 
     @Test
