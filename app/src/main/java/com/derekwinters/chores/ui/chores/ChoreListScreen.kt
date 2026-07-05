@@ -404,7 +404,20 @@ private fun ChoreRow(
                         }
                         ChoreActionButton(onClick = onEdit, text = stringResource(R.string.chore_edit_action))
                         ChoreActionButton(onClick = onHistory, text = stringResource(R.string.chore_history_action))
-                        TextButton(onClick = onDeleteClick) { Text(stringResource(R.string.chore_delete_action)) }
+                        // Issue #93 (step 3 of 3): Delete as an equal-width outlined chip with
+                        // red/error content color, same LocalThemeOption pattern as Complete
+                        // (step 2). This is the one button whose onClick mutates ChoreRow's own
+                        // local `remember` state to conditionally render an AlertDialog -- the
+                        // exact shape that broke every prior attempt at this file, so it is
+                        // isolated as its own verified step per the issue's rollout plan. If this
+                        // breaks choreListContent_deleteAction_requiresConfirmation, the documented
+                        // fallback is a plain red TextButton (still weight(1f)-free, no outline).
+                        val deleteThemeOption = LocalThemeOption.current
+                        ChoreActionButton(
+                            onClick = onDeleteClick,
+                            text = stringResource(R.string.chore_delete_action),
+                            contentColor = deleteThemeOption?.error?.let(::parseHexColor) ?: MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
