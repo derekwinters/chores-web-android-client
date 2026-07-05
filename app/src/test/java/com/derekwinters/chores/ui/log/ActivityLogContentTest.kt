@@ -4,11 +4,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -107,7 +109,9 @@ class ActivityLogContentTest {
         // TestTag isn't propagated upward through a merge boundary -- it stays on the exact node
         // (PillBadge's inner Text) it was set on. Same pattern as ChoreListContentTest.
         composeTestRule.onNodeWithTag("targetTypeChip", useUnmergedTree = true).assertTextEquals("Chore")
-        composeTestRule.onNodeWithText("Updated").assertExists()
+        // Not onNodeWithText("Updated") -- issue #68's action-type filter chip row also has an
+        // "Updated" option with the same humanized label, so asserting by tag disambiguates.
+        composeTestRule.onNodeWithTag("actionBadge", useUnmergedTree = true).assertTextEquals("Updated")
         composeTestRule.onNodeWithText("Dishes").assertExists()
     }
 
@@ -124,7 +128,9 @@ class ActivityLogContentTest {
         }
 
         composeTestRule.onNodeWithTag("targetTypeChip", useUnmergedTree = true).assertTextEquals("User")
-        composeTestRule.onNodeWithText("Password Changed").assertExists()
+        // Not onNodeWithText("Password Changed") -- issue #68's action-type filter chip row also
+        // has a "Password Changed" option with the same humanized label.
+        composeTestRule.onNodeWithTag("actionBadge", useUnmergedTree = true).assertTextEquals("Password Changed")
         composeTestRule.onNodeWithText("bob").assertExists()
     }
 
@@ -145,7 +151,9 @@ class ActivityLogContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Completed").assertExists()
+        // Not onNodeWithText("Completed") -- issue #68's action-type filter chip row also has a
+        // "Completed" option with the same humanized label.
+        composeTestRule.onNodeWithTag("actionBadge", useUnmergedTree = true).assertTextEquals("Completed")
     }
 
     /** Issue #73: unmapped/unknown action values fall back to a title-cased transform. */
@@ -349,5 +357,141 @@ class ActivityLogContentTest {
         }
 
         composeTestRule.onNodeWithText("Previous").assertIsNotEnabled()
+    }
+
+    // Issue #68 behaviors: action-type filter, start/end date-range filters, "Clear filters".
+
+    /** Selecting an action-type chip updates [LogFilters.action] to that raw action value. */
+    @Test
+    fun activityLogContent_actionFilterChip_selectingUpdatesFilters() {
+        var latest = LogFilters()
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(amendment), total = 1, page = 1)),
+                filters = latest,
+                onFiltersChange = { updated -> latest = updated },
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        // "Skipped" only appears as a filter chip label here -- amendment's own action badge
+        // reads "Updated", so there's no ambiguity with onNodeWithText.
+        composeTestRule.onNodeWithText("Skipped").performClick()
+
+        assert(latest.action == "skipped") { "expected action=skipped, got ${latest.action}" }
+    }
+
+    /** Re-selecting "All" clears just the action filter, leaving other filters untouched. */
+    @Test
+    fun activityLogContent_actionFilterChip_selectingAllClearsActionFilter() {
+        var latest = LogFilters(action = "completed", person = "alice")
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(amendment), total = 1, page = 1)),
+                filters = latest,
+                onFiltersChange = { updated -> latest = updated },
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("All").performClick()
+
+        assert(latest.action == null) { "expected action=null, got ${latest.action}" }
+        assert(latest.person == "alice") { "expected person to be untouched, got ${latest.person}" }
+    }
+
+    /** Tapping the Start Date field's calendar icon opens a DatePickerDialog. */
+    @Test
+    fun activityLogContent_startDateField_tapIconOpensDatePicker() {
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(amendment), total = 1, page = 1)),
+                filters = LogFilters(start = "2026-07-01"),
+                onFiltersChange = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Start Date").performClick()
+
+        composeTestRule.onNodeWithText("OK").assertExists()
+    }
+
+    /** Confirming the Start Date picker with its pre-selected value keeps the ISO date string. */
+    @Test
+    fun activityLogContent_startDateDatePicker_confirmingPreSelectedValue_keepsIsoDate() {
+        var latest = LogFilters(start = "2026-07-01")
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(amendment), total = 1, page = 1)),
+                filters = latest,
+                onFiltersChange = { updated -> latest = updated },
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Start Date").performClick()
+        composeTestRule.onNodeWithText("OK").performClick()
+
+        assert(latest.start == "2026-07-01") { "expected start=2026-07-01, got ${latest.start}" }
+    }
+
+    /** Confirming the End Date picker updates [LogFilters.end], independent of Start Date. */
+    @Test
+    fun activityLogContent_endDateDatePicker_confirmingPreSelectedValue_keepsIsoDate() {
+        var latest = LogFilters(end = "2026-07-05")
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(amendment), total = 1, page = 1)),
+                filters = latest,
+                onFiltersChange = { updated -> latest = updated },
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("End Date").performClick()
+        composeTestRule.onNodeWithText("OK").performClick()
+
+        assert(latest.end == "2026-07-05") { "expected end=2026-07-05, got ${latest.end}" }
+    }
+
+    /** No active filters -- "Clear filters" wouldn't make sense to offer, so it's hidden. */
+    @Test
+    fun activityLogContent_clearFiltersButton_hiddenWhenNoFiltersActive() {
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(amendment), total = 1, page = 1)),
+                filters = LogFilters(),
+                onFiltersChange = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("clearFiltersButton").assertDoesNotExist()
+    }
+
+    /** Clicking "Clear filters" resets person/chore/action/date-range together. */
+    @Test
+    fun activityLogContent_clearFiltersButton_resetsAllFilters() {
+        var latest = LogFilters(person = "alice", chore = "Dishes", action = "completed", start = "2026-07-01", end = "2026-07-05")
+        composeTestRule.setContent {
+            ActivityLogContent(
+                uiState = UiState.Success(ActivityLogPageState(listOf(amendment), total = 1, page = 1)),
+                filters = latest,
+                onFiltersChange = { updated -> latest = updated },
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("clearFiltersButton").performClick()
+
+        assert(latest == LogFilters()) { "expected all filters cleared, got $latest" }
     }
 }

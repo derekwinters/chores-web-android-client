@@ -1,6 +1,7 @@
 package com.derekwinters.chores.ui.log
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,18 +11,26 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,6 +51,8 @@ import com.derekwinters.chores.ui.theme.LocalThemeOption
 import com.derekwinters.chores.ui.theme.parseHexColor
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
 
 /**
@@ -68,6 +79,7 @@ fun ActivityLogScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityLogContent(
     uiState: UiState<ActivityLogPageState>,
@@ -93,6 +105,63 @@ fun ActivityLogContent(
                 label = { Text("Chore") },
                 singleLine = true
             )
+        }
+
+        // Issue #68: date-range filters, same read-only-field + trailing-icon DatePickerDialog
+        // convention as the Chore form's "Next Due" date picker (issue #16) rather than inventing
+        // new date-input UI.
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+            DateFilterField(
+                modifier = Modifier.weight(1f).padding(end = 4.dp).testTag("startDateFilter"),
+                label = "Start Date",
+                value = filters.start,
+                onValueChange = { date -> onFiltersChange(filters.copy(start = date)) }
+            )
+            DateFilterField(
+                modifier = Modifier.weight(1f).padding(start = 4.dp).testTag("endDateFilter"),
+                label = "End Date",
+                value = filters.end,
+                onValueChange = { date -> onFiltersChange(filters.copy(end = date)) }
+            )
+        }
+
+        // Issue #68: action-type filter -- a scrollable FilterChip row (same selection widget as
+        // the Chore form's point-value picker, issue #16's CHORE_POINT_OPTIONS row) rather than a
+        // dropdown/menu, since this app has no existing dropdown-menu precedent and FilterChip is
+        // both an established pattern here and straightforward to drive in Compose UI tests.
+        // Option labels reuse [humanizeActionLabel] so they match the row display text established
+        // by issue #73, rather than showing raw snake_case action values.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState())
+            ) {
+                FilterChip(
+                    modifier = Modifier.padding(end = 4.dp),
+                    selected = filters.action == null,
+                    onClick = { onFiltersChange(filters.copy(action = null)) },
+                    label = { Text("All") }
+                )
+                LOG_ACTION_TYPES.forEach { action ->
+                    FilterChip(
+                        modifier = Modifier.padding(end = 4.dp),
+                        selected = filters.action == action,
+                        onClick = { onFiltersChange(filters.copy(action = action)) },
+                        label = { Text(humanizeActionLabel(action)) }
+                    )
+                }
+            }
+
+            // Issue #68: "Clear filters" resets person/chore/action/date-range together, same
+            // conditional-on-isActive convention as Chores' "Clear filters" (issue #74).
+            if (filters.isActive) {
+                TextButton(
+                    modifier = Modifier.testTag("clearFiltersButton"),
+                    onClick = { onFiltersChange(LogFilters()) }
+                ) { Text("Clear filters") }
+            }
         }
 
         Box(modifier = Modifier.weight(1f).fillMaxSize()) {
@@ -125,6 +194,85 @@ fun ActivityLogContent(
                 Text("Page ${uiState.data.page} of ${uiState.data.totalPages} (${uiState.data.total} total)")
                 TextButton(onClick = onNextPage, enabled = uiState.data.page < uiState.data.totalPages) { Text("Next") }
             }
+        }
+    }
+}
+
+/**
+ * Issue #68: known Activity Log action values offered by the action-type filter, mirroring the
+ * vocabulary [actionBadgeColor] already recognizes plus "created"/"updated" (both appear on real
+ * rows but aren't singled out for special badge coloring). A fixed list rather than one derived
+ * from the currently-loaded page: the filter should offer every action type regardless of what
+ * happens to be on the current (already-filtered/paged) result set.
+ */
+private val LOG_ACTION_TYPES = listOf(
+    "completed",
+    "created",
+    "updated",
+    "skipped",
+    "reassigned",
+    "deleted",
+    "password_changed",
+    "password_reset"
+)
+
+/**
+ * Issue #68: a single date-range filter field -- read-only [OutlinedTextField] showing the
+ * `yyyy-MM-dd` value (or blank) with a [DatePickerDialog] behind its trailing calendar icon,
+ * exactly mirroring the Chore form's "Next Due" date picker (issue #16) rather than inventing new
+ * date-input UI. Extracted into its own composable since the Activity Log needs two independent
+ * instances (start/end) where the Chore form only ever needed one.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateFilterField(
+    label: String,
+    value: String?,
+    onValueChange: (String?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    OutlinedTextField(
+        modifier = modifier,
+        value = value.orEmpty(),
+        onValueChange = {},
+        label = { Text(label) },
+        singleLine = true,
+        readOnly = true,
+        trailingIcon = {
+            IconButton(onClick = { showDatePicker = true }) {
+                Icon(Icons.Filled.DateRange, contentDescription = label)
+            }
+        }
+    )
+
+    if (showDatePicker) {
+        val initialSelectedMillis = value?.let { raw ->
+            try {
+                LocalDate.parse(raw).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+            } catch (e: DateTimeParseException) {
+                null
+            }
+        }
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialSelectedMillis)
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val selectedDate = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
+                        onValueChange(selectedDate.toString())
+                    }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }
