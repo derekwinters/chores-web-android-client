@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.chores
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -17,6 +19,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -24,6 +27,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -372,23 +376,50 @@ private fun ChoreRow(
             if (expanded) {
                 ChoreDetailSection(chore = chore)
 
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Start) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     if (isCompleting || isPendingAction) {
                         CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                     } else {
                         if (chore.isDue) {
                             Button(onClick = onCompleteClick) { Text(stringResource(R.string.complete_chore_button)) }
-                            TextButton(onClick = onSkip) { Text(stringResource(R.string.chore_skip_action)) }
+                            ChoreActionButton(onClick = onSkip, text = stringResource(R.string.chore_skip_action))
                         } else {
-                            TextButton(onClick = onMarkDue) { Text(stringResource(R.string.chore_mark_due_action)) }
+                            ChoreActionButton(onClick = onMarkDue, text = stringResource(R.string.chore_mark_due_action))
                         }
-                        TextButton(onClick = onEdit) { Text(stringResource(R.string.chore_edit_action)) }
-                        TextButton(onClick = onHistory) { Text(stringResource(R.string.chore_history_action)) }
+                        ChoreActionButton(onClick = onEdit, text = stringResource(R.string.chore_edit_action))
+                        ChoreActionButton(onClick = onHistory, text = stringResource(R.string.chore_history_action))
                         TextButton(onClick = onDeleteClick) { Text(stringResource(R.string.chore_delete_action)) }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * Issue #93 (step 1 of 3): equal-width outlined chip button for the expanded row's action row --
+ * matches `ChoreCard.css`'s `.action-btn`. Rolled out first for Skip/Edit/History/Mark-Due-Now
+ * only (each routes through an external callback parameter with no local state), per this issue's
+ * incremental-rollout plan; Complete and Delete land in their own follow-up commits.
+ */
+@Composable
+private fun ChoreActionButton(
+    onClick: () -> Unit,
+    text: String,
+    modifier: Modifier = Modifier,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.weight(1f),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = contentColor)
+    ) {
+        Text(text)
     }
 }
 
