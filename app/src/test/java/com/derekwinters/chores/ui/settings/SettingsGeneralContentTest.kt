@@ -60,6 +60,25 @@ class SettingsGeneralContentTest {
         composeTestRule.onNodeWithTag("TimezoneField").assertExists()
     }
 
+    /**
+     * Issue #102: Each settings section's divider appears above its heading and content, not
+     * after. The General screen has two subsections (App Title, Timezone) — verify the Timezone
+     * subsection has its own divider separating it from the App Title subsection above it.
+     */
+    @Test
+    fun settingsGeneralContent_timezoneSection_hasDividerAboveHeading() {
+        composeTestRule.setContent {
+            SettingsGeneralContent(
+                uiState = UiState.Success(ConfigDto(title = "Chores", timezone = "UTC").toDomain()),
+                saveState = UiState.Idle,
+                onSave = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("AppTitleSectionDivider").assertExists()
+        composeTestRule.onNodeWithTag("TimezoneSectionDivider").assertExists()
+    }
+
     @Test
     fun settingsGeneralContent_displaysSaveButton() {
         composeTestRule.setContent {
