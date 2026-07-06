@@ -2,8 +2,11 @@ package com.derekwinters.chores.ui.users
 
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
@@ -58,9 +61,10 @@ class UserManagementContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Administrators").assertExists()
+        // Issue #90: section headers render uppercase ("ADMINISTRATORS"/"MEMBERS").
+        composeTestRule.onNodeWithText("ADMINISTRATORS").assertExists()
         composeTestRule.onNodeWithText("Admin").assertExists()
-        composeTestRule.onNodeWithText("Members").assertExists()
+        composeTestRule.onNodeWithText("MEMBERS").assertExists()
         composeTestRule.onNodeWithText("Alice").assertExists()
     }
 
@@ -79,7 +83,9 @@ class UserManagementContentTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Add user").performClick()
+        // Issue #94: FAB is now an extended FAB labeled "Add User" (icon has no contentDescription
+        // of its own since the visible text label conveys purpose).
+        composeTestRule.onNodeWithText("Add User", useUnmergedTree = true).performClick()
         composeTestRule.onNodeWithText("Display Name").performTextInput("Bob")
         composeTestRule.onNodeWithText("Password").performTextInput("secret123")
         composeTestRule.onNodeWithText("Create").performClick()
@@ -107,6 +113,49 @@ class UserManagementContentTest {
         assert(historyUsername == "admin")
     }
 
+    /** Issue #86 behavior: user row shows a visible Edit action (area: ui). */
+    @Test
+    fun userManagementContent_editIcon_opensEditDialog() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("personEdit_${admin.id}").performClick()
+
+        composeTestRule.onNodeWithText("Edit User").assertExists()
+    }
+
+    /** Issue #86 behavior: user row shows a visible Delete action styled in red (area: ui). */
+    @Test
+    fun userManagementContent_deleteIcon_confirmThenInvokesCallback() {
+        var deletedId: Int? = null
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = { deletedId = it },
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("personDelete_${admin.id}").performClick()
+        composeTestRule.onNodeWithText("Delete this user?").assertExists()
+        composeTestRule.onNodeWithText("Delete").performClick()
+
+        assert(deletedId == admin.id)
+    }
+
     @Test
     fun userManagementContent_displayName_usesLargerTypographyThanUsername() {
         composeTestRule.setContent {
@@ -121,9 +170,89 @@ class UserManagementContentTest {
             )
         }
 
-        val nameFontSize = composeTestRule.onNodeWithText("Admin", useUnmergedTree = true).textFontSizeSp()
+        // Issue #82 added a role pill whose label ("Admin") collides with this fixture's display
+        // name, so the display-name node is looked up by its dedicated test tag rather than text.
+        val nameFontSize = composeTestRule.onNodeWithTag("personDisplayName_${admin.id}", useUnmergedTree = true).textFontSizeSp()
         val usernameFontSize = composeTestRule.onNodeWithText("admin", useUnmergedTree = true).textFontSizeSp()
 
         assert(nameFontSize > usernameFontSize)
+    }
+
+    /** Issue #82 behavior: each user row displays an admin/member role pill badge (area: ui). */
+    @Test
+    fun userManagementContent_personRow_showsRolePillBadge() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin, member)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("personRolePill_${admin.id}", useUnmergedTree = true).assertTextEquals("Admin")
+        composeTestRule.onNodeWithTag("personRolePill_${member.id}", useUnmergedTree = true).assertTextEquals("Member")
+    }
+
+    /** Issue #78 behavior: each user row displays an avatar circle with the name's initial (area: ui). */
+    @Test
+    fun userManagementContent_personRow_showsAvatarInitial() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin, member)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        // Both "Admin" and "Alice" start with "A", so both rows' avatars render "A".
+        composeTestRule.onAllNodesWithText("A", useUnmergedTree = true).assertCountEquals(2)
+    }
+
+    /** Issue #90 behavior: section headers render uppercase (area: ui). */
+    @Test
+    fun userManagementContent_sectionHeaders_renderUppercase() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin, member)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("ADMINISTRATORS").assertExists()
+        composeTestRule.onNodeWithText("MEMBERS").assertExists()
+        // Lowercase/title-case originals must not appear verbatim as the header text.
+        composeTestRule.onNodeWithText("Administrators").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Members").assertDoesNotExist()
+    }
+
+    /** Issue #94 behavior: Add-User FAB renders as an extended FAB with the "Add User" label (area: ui). */
+    @Test
+    fun userManagementContent_addUserFab_showsTextLabel() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Add User", useUnmergedTree = true).assertExists()
     }
 }
