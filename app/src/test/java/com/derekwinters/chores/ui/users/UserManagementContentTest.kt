@@ -6,7 +6,6 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -84,7 +83,9 @@ class UserManagementContentTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Add user").performClick()
+        // Issue #94: FAB is now an extended FAB labeled "Add User" (icon has no contentDescription
+        // of its own since the visible text label conveys purpose).
+        composeTestRule.onNodeWithText("Add User", useUnmergedTree = true).performClick()
         composeTestRule.onNodeWithText("Display Name").performTextInput("Bob")
         composeTestRule.onNodeWithText("Password").performTextInput("secret123")
         composeTestRule.onNodeWithText("Create").performClick()
@@ -235,5 +236,23 @@ class UserManagementContentTest {
         // Lowercase/title-case originals must not appear verbatim as the header text.
         composeTestRule.onNodeWithText("Administrators").assertDoesNotExist()
         composeTestRule.onNodeWithText("Members").assertDoesNotExist()
+    }
+
+    /** Issue #94 behavior: Add-User FAB renders as an extended FAB with the "Add User" label (area: ui). */
+    @Test
+    fun userManagementContent_addUserFab_showsTextLabel() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Add User", useUnmergedTree = true).assertExists()
     }
 }
