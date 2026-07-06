@@ -67,6 +67,9 @@
     <!-- Chore card actions: skip, mark due now, delete, expand/collapse (issue #15) -->
     <string name="chore_edit_action">Edit</string>
     <string name="add_chore">Add Chore</string>
+    <!-- Issue #94: extended FAB label on User Management, consistent with the Chores List's
+         labeled "Add Chore" FAB (issue #70). -->
+    <string name="add_user">Add User</string>
     <string name="chore_history_action">History</string>
     <string name="chore_skip_action">Skip</string>
     <string name="chore_mark_due_action">Mark Due Now</string>

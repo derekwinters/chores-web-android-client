@@ -23,7 +23,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,10 +42,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.derekwinters.chores.R
 import com.derekwinters.chores.data.model.Person
 import com.derekwinters.chores.ui.UiState
 
@@ -130,10 +132,14 @@ fun UserManagementContent(
                     }
                 }
 
-                FloatingActionButton(
+                // Issue #94: extended FAB with an "Add User" text label alongside the icon,
+                // consistent with the Chores List's labeled "Add Chore" FAB (issue #70).
+                ExtendedFloatingActionButton(
                     onClick = { showCreateDialog = true },
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-                ) { Icon(Icons.Filled.Add, contentDescription = "Add user") }
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.add_user)) }
+                )
             }
         }
     }
