@@ -324,6 +324,96 @@ class ChoreFormContentTest {
         composeTestRule.onAllNodesWithText("Wed").assertCountEquals(1)
     }
 
+    // Issue #105: Constraints section exposes a control to choose the condition-not-met
+    // behavior (skip vs. delay), matching web. Single-select RadioButton pair, direct-set
+    // pattern (like the even/odd constraint), not a Set-membership toggle.
+
+    @Test
+    fun choreFormContent_constraintsSection_showsSkipDelayControl_defaultingToSkip() {
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = ChoreFormState(scheduleType = ScheduleType.MONTHLY),
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = {},
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("If constraint isn't met").assertExists()
+        composeTestRule.onNodeWithText("Skip").assertExists()
+        composeTestRule.onNodeWithText("Delay").assertExists()
+    }
+
+    @Test
+    fun choreFormContent_tappingDelay_setsConstraintNotMetBehaviorToDelay() {
+        var latest = ChoreFormState(scheduleType = ScheduleType.MONTHLY)
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Delay").performScrollTo().performClick()
+
+        assert(latest.constraintNotMetBehavior == ConstraintBehavior.DELAY)
+    }
+
+    @Test
+    fun choreFormContent_tappingSkip_setsConstraintNotMetBehaviorBackToSkip() {
+        var latest = ChoreFormState(scheduleType = ScheduleType.MONTHLY, constraintNotMetBehavior = ConstraintBehavior.DELAY)
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Skip").performScrollTo().performClick()
+
+        assert(latest.constraintNotMetBehavior == ConstraintBehavior.SKIP)
+    }
+
+    @Test
+    fun choreFormContent_weeklySchedule_showsSkipDelayControlWithNoLabelCollision() {
+        // Regression guard for the #103 class of bug: WEEKLY renders the most other stuff in
+        // this area (the main "Days of week" picker higher up, plus the Constraints section's
+        // even/odd control), so assert the new Skip/Delay control's labels each match exactly
+        // once and don't collide with anything already on screen under WEEKLY specifically.
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = ChoreFormState(scheduleType = ScheduleType.WEEKLY),
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = {},
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onAllNodesWithText("Skip").assertCountEquals(1)
+        composeTestRule.onAllNodesWithText("Delay").assertCountEquals(1)
+        composeTestRule.onNodeWithText("If constraint isn't met").assertExists()
+        // The weekdays-only sub-picker stays hidden under WEEKLY (issue #103), and the new
+        // control doesn't reintroduce the Mon..Sun collision it was hidden to avoid.
+        composeTestRule.onNodeWithText("Weekdays only").assertDoesNotExist()
+        composeTestRule.onAllNodesWithText("Wed").assertCountEquals(1)
+    }
+
     @Test
     fun choreFormContent_yearlySchedule_hidesConstraintsSectionEntirely() {
         composeTestRule.setContent {
@@ -339,5 +429,6 @@ class ChoreFormContentTest {
         }
 
         composeTestRule.onNodeWithText("Weekdays only").assertDoesNotExist()
+        composeTestRule.onNodeWithText("If constraint isn't met").assertDoesNotExist()
     }
 }

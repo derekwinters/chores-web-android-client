@@ -340,6 +340,33 @@ fun ChoreFormContent(
                     Text("Odd days only")
                 }
 
+                // Issue #105: condition-not-met behavior choice (skip vs. delay), web parity.
+                // Single-select RadioButton pair following the same direct-set pattern as the
+                // even/odd constraint above (not a Set-membership toggle like the weekday
+                // pickers) -- each button sets `constraintNotMetBehavior` to a fixed target
+                // value. Labels "Skip"/"Delay" don't collide with any other label in this
+                // section (or the WEEKLY schedule's separate "Days of week" picker) under any
+                // schedule type.
+                Text(
+                    text = "If constraint isn't met",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = formState.constraintNotMetBehavior == ConstraintBehavior.SKIP,
+                        onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.SKIP) } },
+                        enabled = !isSaving
+                    )
+                    Text("Skip")
+                    RadioButton(
+                        selected = formState.constraintNotMetBehavior == ConstraintBehavior.DELAY,
+                        onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.DELAY) } },
+                        enabled = !isSaving
+                    )
+                    Text("Delay")
+                }
+
                 // Issue #103: "weekdays only" sub-picker, web parity -- reuses the same
                 // day-abbreviation-pill row as the weekly schedule's "Days of week" picker
                 // (issue #100), but backed by `weekdayConstraint` instead of `weeklyDays`.
