@@ -3,6 +3,7 @@ package com.derekwinters.chores.ui.chores
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -191,11 +192,11 @@ fun ChoreFormContent(
         }
 
         SectionLabel("Assignment")
-        AssignmentType.ALL.forEach { type ->
-            RadioRow(type.replaceFirstChar { it.uppercase() }, formState.assignmentType == type, !isSaving) {
-                onFormChange { it.copy(assignmentType = type) }
-            }
-        }
+        RadioGrid(
+            options = AssignmentType.ALL,
+            selected = formState.assignmentType,
+            enabled = !isSaving
+        ) { type -> onFormChange { it.copy(assignmentType = type) } }
         when (formState.assignmentType) {
             AssignmentType.FIXED -> {
                 SectionLabel("Assignee")
@@ -228,11 +229,11 @@ fun ChoreFormContent(
         }
 
         SectionLabel("Schedule")
-        ScheduleType.ALL.forEach { type ->
-            RadioRow(type.replaceFirstChar { it.uppercase() }, formState.scheduleType == type, !isSaving) {
-                onFormChange { it.copy(scheduleType = type) }
-            }
-        }
+        RadioGrid(
+            options = ScheduleType.ALL,
+            selected = formState.scheduleType,
+            enabled = !isSaving
+        ) { type -> onFormChange { it.copy(scheduleType = type) } }
         when (formState.scheduleType) {
             ScheduleType.WEEKLY -> {
                 SectionLabel("Days of week (0=Sun ... 6=Sat)")
@@ -340,6 +341,56 @@ private fun RadioRow(label: String, selected: Boolean, enabled: Boolean, onClick
     ) {
         RadioButton(selected = selected, onClick = onClick, enabled = enabled)
         Text(text = label, modifier = Modifier.padding(start = 8.dp))
+    }
+}
+
+/**
+ * Issue #97: assignment-type/schedule-type radio options laid out in a 3-column grid
+ * (matching web) instead of a vertical stack. Options wrap into rows of 3; a short final row
+ * is padded with empty [Spacer]s so cells stay aligned to the 3-column grid.
+ */
+@Composable
+private fun RadioGrid(
+    options: List<String>,
+    selected: String,
+    enabled: Boolean,
+    labelFor: (String) -> String = { it.replaceFirstChar(Char::uppercase) },
+    onSelect: (String) -> Unit
+) {
+    options.chunked(3).forEach { rowOptions ->
+        Row(modifier = Modifier.fillMaxWidth()) {
+            rowOptions.forEach { option ->
+                RadioGridCell(
+                    modifier = Modifier.weight(1f),
+                    label = labelFor(option),
+                    selected = selected == option,
+                    enabled = enabled,
+                    onClick = { onSelect(option) }
+                )
+            }
+            repeat(3 - rowOptions.size) {
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RadioGridCell(
+    label: String,
+    selected: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .selectable(selected = selected, enabled = enabled, onClick = onClick)
+            .padding(vertical = 2.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(selected = selected, onClick = onClick, enabled = enabled)
+        Text(text = label, modifier = Modifier.padding(start = 4.dp))
     }
 }
 
