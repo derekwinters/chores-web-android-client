@@ -18,11 +18,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -104,7 +107,12 @@ fun UserManagementContent(
                         item { Text("No administrators") }
                     } else {
                         items(admins, key = { it.id }) { person ->
-                            PersonRow(person, onClick = { editingPerson = person }, onHistoryClick = { onHistoryClick(person.username) })
+                            PersonRow(
+                                person,
+                                onEditClick = { editingPerson = person },
+                                onDeleteClick = { onDelete(person.id) },
+                                onHistoryClick = { onHistoryClick(person.username) }
+                            )
                         }
                     }
                     item { SectionHeader("Members", modifier = Modifier.padding(top = 16.dp)) }
@@ -112,7 +120,12 @@ fun UserManagementContent(
                         item { Text("No members") }
                     } else {
                         items(members, key = { it.id }) { person ->
-                            PersonRow(person, onClick = { editingPerson = person }, onHistoryClick = { onHistoryClick(person.username) })
+                            PersonRow(
+                                person,
+                                onEditClick = { editingPerson = person },
+                                onDeleteClick = { onDelete(person.id) },
+                                onHistoryClick = { onHistoryClick(person.username) }
+                            )
                         }
                     }
                 }
@@ -188,14 +201,23 @@ private fun SectionHeader(title: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun PersonRow(person: Person, onClick: () -> Unit, onHistoryClick: () -> Unit) {
+private fun PersonRow(
+    person: Person,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onHistoryClick: () -> Unit
+) {
+    // Issue #86: a per-row delete confirmation, independent of the Edit dialog's own delete
+    // flow, so Delete is a directly visible/actionable row control rather than buried in a dialog.
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(modifier = Modifier.clickableRow(onClick), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.clickableRow(onEditClick), verticalAlignment = Alignment.CenterVertically) {
                 PersonAvatar(person)
                 Column(modifier = Modifier.padding(start = 12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -214,8 +236,38 @@ private fun PersonRow(person: Person, onClick: () -> Unit, onHistoryClick: () ->
                     Text(person.username, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            TextButton(onClick = onHistoryClick) { Text("History") }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onHistoryClick) { Text("History") }
+                IconButton(onClick = onEditClick, modifier = Modifier.testTag("personEdit_${person.id}")) {
+                    Icon(Icons.Filled.Edit, contentDescription = "Edit ${person.displayName}")
+                }
+                IconButton(
+                    onClick = { showDeleteConfirm = true },
+                    modifier = Modifier.testTag("personDelete_${person.id}")
+                ) {
+                    Icon(
+                        Icons.Filled.Delete,
+                        contentDescription = "Delete ${person.displayName}",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete this user?") },
+            text = { Text("History, points, and log entries are not deleted.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteClick()
+                    showDeleteConfirm = false
+                }) { Text("Delete") }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } }
+        )
     }
 }
 

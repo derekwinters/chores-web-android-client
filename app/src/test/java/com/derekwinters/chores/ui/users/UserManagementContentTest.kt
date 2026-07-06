@@ -112,6 +112,49 @@ class UserManagementContentTest {
         assert(historyUsername == "admin")
     }
 
+    /** Issue #86 behavior: user row shows a visible Edit action (area: ui). */
+    @Test
+    fun userManagementContent_editIcon_opensEditDialog() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("personEdit_${admin.id}").performClick()
+
+        composeTestRule.onNodeWithText("Edit User").assertExists()
+    }
+
+    /** Issue #86 behavior: user row shows a visible Delete action styled in red (area: ui). */
+    @Test
+    fun userManagementContent_deleteIcon_confirmThenInvokesCallback() {
+        var deletedId: Int? = null
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = { deletedId = it },
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("personDelete_${admin.id}").performClick()
+        composeTestRule.onNodeWithText("Delete this user?").assertExists()
+        composeTestRule.onNodeWithText("Delete").performClick()
+
+        assert(deletedId == admin.id)
+    }
+
     @Test
     fun userManagementContent_displayName_usesLargerTypographyThanUsername() {
         composeTestRule.setContent {
