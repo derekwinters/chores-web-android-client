@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.users
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,7 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -32,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.data.model.Person
 import com.derekwinters.chores.ui.UiState
@@ -89,7 +93,7 @@ fun UserManagementContent(
                 val admins = uiState.data.filter { it.isAdmin }
                 val members = uiState.data.filter { !it.isAdmin }
                 LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                    item { Text("Administrators", style = MaterialTheme.typography.titleMedium) }
+                    item { SectionHeader("Administrators") }
                     if (admins.isEmpty()) {
                         item { Text("No administrators") }
                     } else {
@@ -97,7 +101,7 @@ fun UserManagementContent(
                             PersonRow(person, onClick = { editingPerson = person }, onHistoryClick = { onHistoryClick(person.username) })
                         }
                     }
-                    item { Text("Members", modifier = Modifier.padding(top = 16.dp), style = MaterialTheme.typography.titleMedium) }
+                    item { SectionHeader("Members", modifier = Modifier.padding(top = 16.dp)) }
                     if (members.isEmpty()) {
                         item { Text("No members") }
                     } else {
@@ -148,6 +152,31 @@ fun UserManagementContent(
             title = { Text("Action failed") },
             text = { Text(actionState.message) },
             confirmButton = { TextButton(onClick = onDismissActionError) { Text("OK") } }
+        )
+    }
+}
+
+/**
+ * Issue #90: section headers ("Administrators" / "Members") render uppercase with a short
+ * accent-colored underline beneath, matching web's section-header treatment. The underlying
+ * string passed to [Text] is uppercased directly (Compose has no CSS-style text-transform), so
+ * the semantics tree reflects exactly what's rendered.
+ */
+@Composable
+private fun SectionHeader(title: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(
+            text = title.uppercase(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
+        )
+        Box(
+            modifier = Modifier
+                .padding(top = 4.dp)
+                .width(32.dp)
+                .height(2.dp)
+                .background(MaterialTheme.colorScheme.primary)
         )
     }
 }

@@ -58,9 +58,10 @@ class UserManagementContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Administrators").assertExists()
+        // Issue #90: section headers render uppercase ("ADMINISTRATORS"/"MEMBERS").
+        composeTestRule.onNodeWithText("ADMINISTRATORS").assertExists()
         composeTestRule.onNodeWithText("Admin").assertExists()
-        composeTestRule.onNodeWithText("Members").assertExists()
+        composeTestRule.onNodeWithText("MEMBERS").assertExists()
         composeTestRule.onNodeWithText("Alice").assertExists()
     }
 
@@ -125,5 +126,27 @@ class UserManagementContentTest {
         val usernameFontSize = composeTestRule.onNodeWithText("admin", useUnmergedTree = true).textFontSizeSp()
 
         assert(nameFontSize > usernameFontSize)
+    }
+
+    /** Issue #90 behavior: section headers render uppercase (area: ui). */
+    @Test
+    fun userManagementContent_sectionHeaders_renderUppercase() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin, member)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("ADMINISTRATORS").assertExists()
+        composeTestRule.onNodeWithText("MEMBERS").assertExists()
+        // Lowercase/title-case originals must not appear verbatim as the header text.
+        composeTestRule.onNodeWithText("Administrators").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Members").assertDoesNotExist()
     }
 }
