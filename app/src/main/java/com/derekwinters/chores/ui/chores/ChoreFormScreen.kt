@@ -353,18 +353,38 @@ fun ChoreFormContent(
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = formState.constraintNotMetBehavior == ConstraintBehavior.SKIP,
-                        onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.SKIP) } },
-                        enabled = !isSaving
-                    )
-                    Text("Skip")
-                    RadioButton(
-                        selected = formState.constraintNotMetBehavior == ConstraintBehavior.DELAY,
-                        onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.DELAY) } },
-                        enabled = !isSaving
-                    )
-                    Text("Delay")
+                    Row(
+                        modifier = Modifier
+                            .selectable(
+                                selected = formState.constraintNotMetBehavior == ConstraintBehavior.SKIP,
+                                enabled = !isSaving,
+                                onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.SKIP) } }
+                            )
+                            .padding(end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = formState.constraintNotMetBehavior == ConstraintBehavior.SKIP,
+                            onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.SKIP) } },
+                            enabled = !isSaving
+                        )
+                        Text("Skip")
+                    }
+                    Row(
+                        modifier = Modifier.selectable(
+                            selected = formState.constraintNotMetBehavior == ConstraintBehavior.DELAY,
+                            enabled = !isSaving,
+                            onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.DELAY) } }
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = formState.constraintNotMetBehavior == ConstraintBehavior.DELAY,
+                            onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.DELAY) } },
+                            enabled = !isSaving
+                        )
+                        Text("Delay")
+                    }
                 }
 
                 // Issue #103: "weekdays only" sub-picker, web parity -- reuses the same
