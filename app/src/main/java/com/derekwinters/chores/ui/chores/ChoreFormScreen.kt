@@ -46,6 +46,13 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
 
 /**
+ * Issue #100: named day-abbreviation labels for the weekly-schedule day picker, indexed to match
+ * the existing `weeklyDays` data model (0=Sun ... 6=Sat) — display-only, no change to the
+ * underlying weekday indices.
+ */
+private val WEEKDAY_ABBREVIATIONS = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+/**
  * Issue #16: chore create/edit form, chores-web's `ChoreForm.jsx` equivalent — the richest
  * screen in this app. Field/validation rules live in [ChoreFormState]/ChoreFormState.validate();
  * this composable is "dumb" UI over that state.
@@ -236,14 +243,22 @@ fun ChoreFormContent(
         ) { type -> onFormChange { it.copy(scheduleType = type) } }
         when (formState.scheduleType) {
             ScheduleType.WEEKLY -> {
-                SectionLabel("Days of week (0=Sun ... 6=Sat)")
-                Row {
-                    (0..6).forEach { day ->
-                        CheckboxRow(day.toString(), day in formState.weeklyDays, !isSaving) { checked ->
-                            onFormChange {
-                                it.copy(weeklyDays = if (checked) it.weeklyDays + day else it.weeklyDays - day)
-                            }
-                        }
+                SectionLabel("Days of week")
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    WEEKDAY_ABBREVIATIONS.forEachIndexed { day, abbreviation ->
+                        val selected = day in formState.weeklyDays
+                        FilterChip(
+                            modifier = Modifier.padding(end = 4.dp),
+                            selected = selected,
+                            onClick = {
+                                val checked = !selected
+                                onFormChange {
+                                    it.copy(weeklyDays = if (checked) it.weeklyDays + day else it.weeklyDays - day)
+                                }
+                            },
+                            label = { Text(abbreviation) },
+                            enabled = !isSaving
+                        )
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {

@@ -147,4 +147,67 @@ class ChoreFormContentTest {
 
         assert(latest.nextDue == null)
     }
+
+    // Issue #100: weekly day picker uses named day-abbreviation pills (Mon..Sun) instead of
+    // numeric 0-6 checkboxes; the underlying weeklyDays indices are unchanged.
+
+    @Test
+    fun choreFormContent_weeklySchedule_showsNamedDayPillsInsteadOfNumericLabels() {
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = ChoreFormState(scheduleType = ScheduleType.WEEKLY),
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = {},
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Mon").assertExists()
+        composeTestRule.onNodeWithText("Wed").assertExists()
+        composeTestRule.onNodeWithText("Sun").assertExists()
+    }
+
+    @Test
+    fun choreFormContent_weeklySchedule_tappingUnselectedDayPill_addsUnderlyingWeekdayIndex() {
+        var latest = ChoreFormState(scheduleType = ScheduleType.WEEKLY)
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        // "Wed" is index 3 in the 0=Sun..6=Sat data model the pills display over.
+        composeTestRule.onNodeWithText("Wed").performClick()
+
+        assert(latest.weeklyDays == setOf(3))
+    }
+
+    @Test
+    fun choreFormContent_weeklySchedule_tappingSelectedDayPill_removesUnderlyingWeekdayIndex() {
+        var latest = ChoreFormState(scheduleType = ScheduleType.WEEKLY, weeklyDays = setOf(3))
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Wed").performClick()
+
+        assert(latest.weeklyDays == emptySet<Int>())
+    }
 }
