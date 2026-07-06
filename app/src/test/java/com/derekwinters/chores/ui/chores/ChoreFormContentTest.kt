@@ -210,4 +210,108 @@ class ChoreFormContentTest {
 
         assert(latest.weeklyDays == emptySet<Int>())
     }
+
+    // Issue #103: Constraints section gains a collapsible header (chevron toggle, matching
+    // ChoresStatsPanel/ActivityLogScreen's expand/collapse convention) and a "weekdays only"
+    // sub-picker backed by `weekdayConstraint`. These tests use ScheduleType.MONTHLY (not
+    // WEEKLY) so the only "Mon".."Sun" day pills on screen are this sub-picker's -- with
+    // WEEKLY selected, the "Days of week" picker higher up the form would also render pills
+    // with the same text, making onNodeWithText ambiguous.
+
+    @Test
+    fun choreFormContent_constraintsSection_defaultsExpanded_showingEvenOddAndWeekdaysOnlyControls() {
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = ChoreFormState(scheduleType = ScheduleType.MONTHLY),
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = {},
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Even days only").assertExists()
+        composeTestRule.onNodeWithText("Weekdays only").assertExists()
+        composeTestRule.onNodeWithText("Wed").assertExists()
+    }
+
+    @Test
+    fun choreFormContent_constraintsHeader_tappingChevron_collapsesSectionHidingWeekdaysOnlyPicker() {
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = ChoreFormState(scheduleType = ScheduleType.MONTHLY),
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = {},
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Collapse constraints").performScrollTo().performClick()
+
+        composeTestRule.onNodeWithText("Weekdays only").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Expand constraints").assertExists()
+    }
+
+    @Test
+    fun choreFormContent_weekdaysOnlyPicker_tappingUnselectedDayPill_addsToWeekdayConstraint() {
+        var latest = ChoreFormState(scheduleType = ScheduleType.MONTHLY)
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        // "Wed" is index 3 in the 0=Sun..6=Sat data model, same indexing as weeklyDays.
+        composeTestRule.onNodeWithText("Wed").performScrollTo().performClick()
+
+        assert(latest.weekdayConstraint == setOf(3))
+    }
+
+    @Test
+    fun choreFormContent_weekdaysOnlyPicker_tappingSelectedDayPill_removesFromWeekdayConstraint() {
+        var latest = ChoreFormState(scheduleType = ScheduleType.MONTHLY, weekdayConstraint = setOf(3))
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Wed").performScrollTo().performClick()
+
+        assert(latest.weekdayConstraint == emptySet<Int>())
+    }
+
+    @Test
+    fun choreFormContent_yearlySchedule_hidesConstraintsSectionEntirely() {
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = ChoreFormState(scheduleType = ScheduleType.YEARLY),
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = {},
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Weekdays only").assertDoesNotExist()
+    }
 }

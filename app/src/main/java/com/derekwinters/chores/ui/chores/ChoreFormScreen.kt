@@ -1,5 +1,6 @@
 package com.derekwinters.chores.ui.chores
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -244,27 +247,21 @@ fun ChoreFormContent(
         when (formState.scheduleType) {
             ScheduleType.WEEKLY -> {
                 SectionLabel("Days of week")
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    WEEKDAY_ABBREVIATIONS.forEachIndexed { day, abbreviation ->
-                        FilterChip(
-                            modifier = Modifier.padding(end = 4.dp),
-                            selected = day in formState.weeklyDays,
-                            onClick = {
-                                // Derive the toggle from the state passed into the updater (`it`),
-                                // not from a boolean captured at composition time -- FilterChip's
-                                // onClick (unlike Checkbox's onCheckedChange) has no built-in
-                                // "new value" parameter, so we must compute membership ourselves;
-                                // reading it fresh off `it.weeklyDays` here avoids ever toggling
-                                // against a stale/composition-time snapshot of selection state.
-                                onFormChange {
-                                    it.copy(weeklyDays = if (day in it.weeklyDays) it.weeklyDays - day else it.weeklyDays + day)
-                                }
-                            },
-                            label = { Text(abbreviation) },
-                            enabled = !isSaving
-                        )
+                WeekdayPillRow(
+                    selectedDays = formState.weeklyDays,
+                    enabled = !isSaving,
+                    onToggleDay = { day ->
+                        // Derive the toggle from the state passed into the updater (`it`),
+                        // not from a boolean captured at composition time -- FilterChip's
+                        // onClick (unlike Checkbox's onCheckedChange) has no built-in
+                        // "new value" parameter, so we must compute membership ourselves;
+                        // reading it fresh off `it.weeklyDays` here avoids ever toggling
+                        // against a stale/composition-time snapshot of selection state.
+                        onFormChange {
+                            it.copy(weeklyDays = if (day in it.weeklyDays) it.weeklyDays - day else it.weeklyDays + day)
+                        }
                     }
-                }
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = formState.everyOtherWeek,
@@ -307,20 +304,68 @@ fun ChoreFormContent(
         }
 
         if (formState.scheduleType != ScheduleType.YEARLY) {
-            SectionLabel("Constraints")
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = formState.evenOddConstraint == "even",
-                    onClick = { onFormChange { it.copy(evenOddConstraint = if (it.evenOddConstraint == "even") null else "even") } },
-                    enabled = !isSaving
+            // Issue #103: collapsible section header, matching the expand/collapse chevron
+            // pattern already used by ChoresStatsPanel's stats header and ActivityLogScreen's
+            // row-expand affordance -- whole-row clickable (bigger tap target) rather than just
+            // an icon button, matching ActivityLogScreen's LogRow convention.
+            var constraintsExpanded by remember { mutableStateOf(true) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, bottom = 4.dp)
+                    .clickable { constraintsExpanded = !constraintsExpanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Constraints", style = MaterialTheme.typography.titleSmall)
+                Icon(
+                    imageVector = if (constraintsExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = if (constraintsExpanded) "Collapse constraints" else "Expand constraints"
                 )
-                Text("Even days only")
-                RadioButton(
-                    selected = formState.evenOddConstraint == "odd",
-                    onClick = { onFormChange { it.copy(evenOddConstraint = if (it.evenOddConstraint == "odd") null else "odd") } },
-                    enabled = !isSaving
+            }
+
+            if (constraintsExpanded) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = formState.evenOddConstraint == "even",
+                        onClick = { onFormChange { it.copy(evenOddConstraint = if (it.evenOddConstraint == "even") null else "even") } },
+                        enabled = !isSaving
+                    )
+                    Text("Even days only")
+                    RadioButton(
+                        selected = formState.evenOddConstraint == "odd",
+                        onClick = { onFormChange { it.copy(evenOddConstraint = if (it.evenOddConstraint == "odd") null else "odd") } },
+                        enabled = !isSaving
+                    )
+                    Text("Odd days only")
+                }
+
+                // Issue #103: "weekdays only" sub-picker, web parity -- reuses the same
+                // day-abbreviation-pill row as the weekly schedule's "Days of week" picker
+                // (issue #100), but backed by `weekdayConstraint` instead of `weeklyDays`.
+                Text(
+                    text = "Weekdays only",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                 )
-                Text("Odd days only")
+                WeekdayPillRow(
+                    selectedDays = formState.weekdayConstraint,
+                    enabled = !isSaving,
+                    onToggleDay = { day ->
+                        // Same convention as the weekly Days-of-week pills and the #100 fix:
+                        // derive membership from the state passed into the transform (`it`), not
+                        // from a value captured at composition time.
+                        onFormChange {
+                            it.copy(
+                                weekdayConstraint = if (day in it.weekdayConstraint) {
+                                    it.weekdayConstraint - day
+                                } else {
+                                    it.weekdayConstraint + day
+                                }
+                            )
+                        }
+                    }
+                )
             }
         }
 
@@ -347,6 +392,27 @@ fun ChoreFormContent(
 @Composable
 private fun SectionLabel(text: String) {
     Text(text = text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
+}
+
+/**
+ * Issue #103: shared row of weekday-abbreviation [FilterChip] pills, extracted from issue #100's
+ * weekly-schedule "Days of week" picker so the Constraints section's "weekdays only" sub-picker
+ * can reuse the same look/interaction instead of duplicating it. Callers own the backing
+ * `Set<Int>` (`weeklyDays` or `weekdayConstraint`) and how toggling is applied to form state.
+ */
+@Composable
+private fun WeekdayPillRow(selectedDays: Set<Int>, enabled: Boolean, onToggleDay: (Int) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        WEEKDAY_ABBREVIATIONS.forEachIndexed { day, abbreviation ->
+            FilterChip(
+                modifier = Modifier.padding(end = 4.dp),
+                selected = day in selectedDays,
+                onClick = { onToggleDay(day) },
+                label = { Text(abbreviation) },
+                enabled = enabled
+            )
+        }
+    }
 }
 
 @Composable
