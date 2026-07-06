@@ -1,6 +1,8 @@
 package com.derekwinters.chores.ui.chores
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -296,6 +298,30 @@ class ChoreFormContentTest {
         composeTestRule.onNodeWithText("Wed").performScrollTo().performClick()
 
         assert(latest.weekdayConstraint == emptySet<Int>())
+    }
+
+    @Test
+    fun choreFormContent_weeklySchedule_hidesWeekdaysOnlySubPicker_toAvoidRedundantDayPicker() {
+        // Regression test for a real collision, not just a test-authoring issue: under WEEKLY,
+        // the main "Days of week" picker (issue #100) and the Constraints "weekdays only"
+        // sub-picker (issue #103) both back onto weekday selection, so showing both at once is
+        // a redundant, confusing pair of controls -- and, concretely, renders two sets of
+        // identically-labeled Mon..Sun pills on screen simultaneously.
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = ChoreFormState(scheduleType = ScheduleType.WEEKLY),
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = {},
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Even days only").assertExists()
+        composeTestRule.onNodeWithText("Weekdays only").assertDoesNotExist()
+        composeTestRule.onAllNodesWithText("Wed").assertCountEquals(1)
     }
 
     @Test

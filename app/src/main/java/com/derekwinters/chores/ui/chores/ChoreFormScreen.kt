@@ -343,29 +343,35 @@ fun ChoreFormContent(
                 // Issue #103: "weekdays only" sub-picker, web parity -- reuses the same
                 // day-abbreviation-pill row as the weekly schedule's "Days of week" picker
                 // (issue #100), but backed by `weekdayConstraint` instead of `weeklyDays`.
-                Text(
-                    text = "Weekdays only",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                )
-                WeekdayPillRow(
-                    selectedDays = formState.weekdayConstraint,
-                    enabled = !isSaving,
-                    onToggleDay = { day ->
-                        // Same convention as the weekly Days-of-week pills and the #100 fix:
-                        // derive membership from the state passed into the transform (`it`), not
-                        // from a value captured at composition time.
-                        onFormChange {
-                            it.copy(
-                                weekdayConstraint = if (day in it.weekdayConstraint) {
-                                    it.weekdayConstraint - day
-                                } else {
-                                    it.weekdayConstraint + day
-                                }
-                            )
+                // Hidden for WEEKLY schedules: the weekly "Days of week" picker higher up the
+                // form already lets the user pick specific weekdays, so showing this sub-picker
+                // too would be a redundant, overlapping "pick your weekdays" control (and would
+                // render two sets of identically-labeled Mon..Sun pills on screen at once).
+                if (formState.scheduleType != ScheduleType.WEEKLY) {
+                    Text(
+                        text = "Weekdays only",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                    WeekdayPillRow(
+                        selectedDays = formState.weekdayConstraint,
+                        enabled = !isSaving,
+                        onToggleDay = { day ->
+                            // Same convention as the weekly Days-of-week pills and the #100 fix:
+                            // derive membership from the state passed into the transform (`it`),
+                            // not from a value captured at composition time.
+                            onFormChange {
+                                it.copy(
+                                    weekdayConstraint = if (day in it.weekdayConstraint) {
+                                        it.weekdayConstraint - day
+                                    } else {
+                                        it.weekdayConstraint + day
+                                    }
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
 
