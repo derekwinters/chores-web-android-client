@@ -207,7 +207,8 @@ private fun PersonRow(person: Person, onClick: () -> Unit, onHistoryClick: () ->
                         )
                         RolePill(
                             isAdmin = person.isAdmin,
-                            modifier = Modifier.padding(start = 8.dp).testTag("personRolePill_${person.id}")
+                            modifier = Modifier.padding(start = 8.dp),
+                            textTestTag = "personRolePill_${person.id}"
                         )
                     }
                     Text(person.username, style = MaterialTheme.typography.bodySmall)
@@ -243,9 +244,13 @@ private fun PersonAvatar(person: Person, modifier: Modifier = Modifier) {
  * Issue #82: admin/member role pill badge shown next to each row's display name, so role is
  * visible per-row rather than relying solely on which section (Administrators/Members) a user
  * appears under.
+ *
+ * [textTestTag], if provided, is applied to the inner [Text] rather than the outer [Box] — the
+ * text semantics live on the Text node itself, so tagging the Box (a separate, un-merged node)
+ * would leave the tagged node with no text of its own and break text-based test assertions.
  */
 @Composable
-private fun RolePill(isAdmin: Boolean, modifier: Modifier = Modifier) {
+private fun RolePill(isAdmin: Boolean, modifier: Modifier = Modifier, textTestTag: String? = null) {
     val containerColor: Color
     val contentColor: Color
     val label: String
@@ -264,7 +269,13 @@ private fun RolePill(isAdmin: Boolean, modifier: Modifier = Modifier) {
             .background(containerColor)
             .padding(horizontal = 8.dp, vertical = 2.dp)
     ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor, fontWeight = FontWeight.Bold)
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = contentColor,
+            fontWeight = FontWeight.Bold,
+            modifier = if (textTestTag != null) Modifier.testTag(textTestTag) else Modifier
+        )
     }
 }
 
