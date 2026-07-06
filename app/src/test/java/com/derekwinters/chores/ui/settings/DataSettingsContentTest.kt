@@ -110,6 +110,45 @@ class DataSettingsContentTest {
         composeTestRule.onNodeWithText("Data Management").assertExists()
     }
 
+    /**
+     * Issue #114: Export & Import, Log Retention, and Data Management each carry their own
+     * descriptive copy, not just a bare section heading.
+     */
+    @Test
+    fun dataSettingsContent_eachSection_hasDescriptionText() {
+        composeTestRule.setContent {
+            DataSettingsContent(
+                logRetentionDays = 90,
+                logRetentionInput = "90",
+                logRetentionState = UiState.Idle,
+                importPreview = null,
+                importState = UiState.Idle,
+                selectedImportFilename = null,
+                exportFilename = null,
+                exportState = UiState.Idle,
+                onExportClick = {},
+                onImportClick = {},
+                onLogRetentionChange = {},
+                onSaveLogRetention = {},
+                onClearLogRetentionState = {},
+                onConfirmImport = {},
+                onCancelImport = {},
+                onDismissImportResult = {},
+                onNavigateToPointsLog = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText(
+            "Back up your data by exporting to a file, or restore from a previous backup by importing."
+        ).assertExists()
+        composeTestRule.onNodeWithText(
+            "Control how long activity logs are kept. Older entries will be automatically deleted."
+        ).assertExists()
+        composeTestRule.onNodeWithText(
+            "Access detailed information about your activity logs."
+        ).assertExists()
+    }
+
     @Test
     fun dataSettingsContent_logRetentionSave_buttonExists() {
         composeTestRule.setContent {
