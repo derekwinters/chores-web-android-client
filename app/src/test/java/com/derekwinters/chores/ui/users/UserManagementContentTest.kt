@@ -3,9 +3,11 @@ package com.derekwinters.chores.ui.users
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
@@ -124,10 +126,31 @@ class UserManagementContentTest {
             )
         }
 
-        val nameFontSize = composeTestRule.onNodeWithText("Admin", useUnmergedTree = true).textFontSizeSp()
+        // Issue #82 added a role pill whose label ("Admin") collides with this fixture's display
+        // name, so the display-name node is looked up by its dedicated test tag rather than text.
+        val nameFontSize = composeTestRule.onNodeWithTag("personDisplayName_${admin.id}", useUnmergedTree = true).textFontSizeSp()
         val usernameFontSize = composeTestRule.onNodeWithText("admin", useUnmergedTree = true).textFontSizeSp()
 
         assert(nameFontSize > usernameFontSize)
+    }
+
+    /** Issue #82 behavior: each user row displays an admin/member role pill badge (area: ui). */
+    @Test
+    fun userManagementContent_personRow_showsRolePillBadge() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin, member)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("personRolePill_${admin.id}", useUnmergedTree = true).assertTextEquals("Admin")
+        composeTestRule.onNodeWithTag("personRolePill_${member.id}", useUnmergedTree = true).assertTextEquals("Member")
     }
 
     /** Issue #78 behavior: each user row displays an avatar circle with the name's initial (area: ui). */

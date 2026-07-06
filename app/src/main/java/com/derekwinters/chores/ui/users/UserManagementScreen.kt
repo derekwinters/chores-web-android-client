@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -36,6 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -195,7 +198,18 @@ private fun PersonRow(person: Person, onClick: () -> Unit, onHistoryClick: () ->
             Row(modifier = Modifier.clickableRow(onClick), verticalAlignment = Alignment.CenterVertically) {
                 PersonAvatar(person)
                 Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text(person.displayName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            person.displayName,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.testTag("personDisplayName_${person.id}")
+                        )
+                        RolePill(
+                            isAdmin = person.isAdmin,
+                            modifier = Modifier.padding(start = 8.dp).testTag("personRolePill_${person.id}")
+                        )
+                    }
                     Text(person.username, style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -222,6 +236,35 @@ private fun PersonAvatar(person: Person, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onTertiary,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+/**
+ * Issue #82: admin/member role pill badge shown next to each row's display name, so role is
+ * visible per-row rather than relying solely on which section (Administrators/Members) a user
+ * appears under.
+ */
+@Composable
+private fun RolePill(isAdmin: Boolean, modifier: Modifier = Modifier) {
+    val containerColor: Color
+    val contentColor: Color
+    val label: String
+    if (isAdmin) {
+        containerColor = MaterialTheme.colorScheme.primaryContainer
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        label = "Admin"
+    } else {
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        label = "Member"
+    }
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(containerColor)
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor, fontWeight = FontWeight.Bold)
     }
 }
 
