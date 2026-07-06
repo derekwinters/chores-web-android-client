@@ -96,4 +96,21 @@ class SettingsChoresContentTest {
 
         composeTestRule.onNodeWithTag("DueHourField").assertTextContains("1:00 PM")
     }
+
+    /**
+     * Issue #116: Save errors render as a bordered/tinted [SettingsBanner], not plain text.
+     */
+    @Test
+    fun settingsChoresContent_saveError_rendersStyledBanner() {
+        composeTestRule.setContent {
+            SettingsChoresContent(
+                uiState = UiState.Success(ConfigDto().toDomain()),
+                saveState = UiState.Error("Save failed"),
+                onSave = {},
+                onNavigateToData = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("ErrorBanner").assertExists()
+    }
 }

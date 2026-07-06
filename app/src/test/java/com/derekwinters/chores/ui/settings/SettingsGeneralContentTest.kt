@@ -98,6 +98,22 @@ class SettingsGeneralContentTest {
         composeTestRule.onNodeWithTag("TimezoneField").assertTextContains("UTC", substring = true)
     }
 
+    /**
+     * Issue #116: Save errors render as a bordered/tinted [SettingsBanner], not plain text.
+     */
+    @Test
+    fun settingsGeneralContent_saveError_rendersStyledBanner() {
+        composeTestRule.setContent {
+            SettingsGeneralContent(
+                uiState = UiState.Success(ConfigDto(title = "Chores").toDomain()),
+                saveState = UiState.Error("Save failed"),
+                onSave = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag("ErrorBanner").assertExists()
+    }
+
     @Test
     fun settingsGeneralContent_displaysSaveButton() {
         composeTestRule.setContent {
