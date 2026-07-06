@@ -386,7 +386,7 @@ private fun RadioGridCell(
     Row(
         modifier = modifier
             .selectable(selected = selected, enabled = enabled, onClick = onClick)
-            .padding(vertical = 2.dp, end = 4.dp),
+            .padding(top = 2.dp, bottom = 2.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         RadioButton(selected = selected, onClick = onClick, enabled = enabled)
