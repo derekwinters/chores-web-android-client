@@ -246,14 +246,18 @@ fun ChoreFormContent(
                 SectionLabel("Days of week")
                 Row(modifier = Modifier.fillMaxWidth()) {
                     WEEKDAY_ABBREVIATIONS.forEachIndexed { day, abbreviation ->
-                        val selected = day in formState.weeklyDays
                         FilterChip(
                             modifier = Modifier.padding(end = 4.dp),
-                            selected = selected,
+                            selected = day in formState.weeklyDays,
                             onClick = {
-                                val checked = !selected
+                                // Derive the toggle from the state passed into the updater (`it`),
+                                // not from a boolean captured at composition time -- FilterChip's
+                                // onClick (unlike Checkbox's onCheckedChange) has no built-in
+                                // "new value" parameter, so we must compute membership ourselves;
+                                // reading it fresh off `it.weeklyDays` here avoids ever toggling
+                                // against a stale/composition-time snapshot of selection state.
                                 onFormChange {
-                                    it.copy(weeklyDays = if (checked) it.weeklyDays + day else it.weeklyDays - day)
+                                    it.copy(weeklyDays = if (day in it.weeklyDays) it.weeklyDays - day else it.weeklyDays + day)
                                 }
                             },
                             label = { Text(abbreviation) },
