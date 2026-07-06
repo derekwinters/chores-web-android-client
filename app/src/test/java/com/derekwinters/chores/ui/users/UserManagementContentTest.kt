@@ -2,7 +2,9 @@ package com.derekwinters.chores.ui.users
 
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -126,6 +128,25 @@ class UserManagementContentTest {
         val usernameFontSize = composeTestRule.onNodeWithText("admin", useUnmergedTree = true).textFontSizeSp()
 
         assert(nameFontSize > usernameFontSize)
+    }
+
+    /** Issue #78 behavior: each user row displays an avatar circle with the name's initial (area: ui). */
+    @Test
+    fun userManagementContent_personRow_showsAvatarInitial() {
+        composeTestRule.setContent {
+            UserManagementContent(
+                uiState = UiState.Success(listOf(admin, member)),
+                actionState = UiState.Idle,
+                onCreate = { _, _ -> },
+                onUpdate = { _, _, _, _, _, _, _ -> },
+                onDelete = {},
+                onDismissActionError = {},
+                onHistoryClick = {}
+            )
+        }
+
+        // Both "Admin" and "Alice" start with "A", so both rows' avatars render "A".
+        composeTestRule.onAllNodesWithText("A", useUnmergedTree = true).assertCountEquals(2)
     }
 
     /** Issue #90 behavior: section headers render uppercase (area: ui). */
