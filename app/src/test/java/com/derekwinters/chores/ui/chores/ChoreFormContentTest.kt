@@ -431,4 +431,109 @@ class ChoreFormContentTest {
         composeTestRule.onNodeWithText("Weekdays only").assertDoesNotExist()
         composeTestRule.onNodeWithText("If constraint isn't met").assertDoesNotExist()
     }
+
+    // Issue #108: points selector and eligible-people picker restyled as pill toggle buttons.
+    // The points selector was already a FilterChip (a Material3 pill-shaped toggle) and keeps
+    // that widget, just with a fuller pill shape -- these tests are a functional regression
+    // check. The eligible-people picker moves from CheckboxRow to FilterChip-based pills, so its
+    // tests exercise the new Set-membership toggle wiring for both AssignmentType.OPEN and
+    // AssignmentType.ROTATING (both use the shared EligiblePeoplePillRow).
+
+    @Test
+    fun choreFormContent_tappingUnselectedPointOption_setsPoints() {
+        var latest = ChoreFormState(points = 1)
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("5").performScrollTo().performClick()
+
+        assert(latest.points == 5)
+    }
+
+    @Test
+    fun choreFormContent_openAssignment_tappingUnselectedPersonPill_addsToEligiblePeople() {
+        var latest = ChoreFormState(assignmentType = AssignmentType.OPEN)
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = listOf("alice", "bob"),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("alice").performScrollTo().performClick()
+
+        assert(latest.eligiblePeople == setOf("alice"))
+    }
+
+    @Test
+    fun choreFormContent_openAssignment_tappingSelectedPersonPill_removesFromEligiblePeople() {
+        var latest = ChoreFormState(assignmentType = AssignmentType.OPEN, eligiblePeople = setOf("alice"))
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = listOf("alice", "bob"),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("alice").performScrollTo().performClick()
+
+        assert(latest.eligiblePeople == emptySet<String>())
+    }
+
+    @Test
+    fun choreFormContent_rotatingAssignment_tappingUnselectedPersonPill_addsToEligiblePeople() {
+        var latest = ChoreFormState(assignmentType = AssignmentType.ROTATING)
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = listOf("alice", "bob"),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("bob").performScrollTo().performClick()
+
+        assert(latest.eligiblePeople == setOf("bob"))
+    }
+
+    @Test
+    fun choreFormContent_fixedAssignment_doesNotRenderEligiblePeoplePills() {
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = ChoreFormState(assignmentType = AssignmentType.FIXED),
+                availablePeople = listOf("alice", "bob"),
+                saveState = UiState.Idle,
+                isEditMode = false,
+                onFormChange = {},
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Eligible people (optional)").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Rotation (2+ people)").assertDoesNotExist()
+    }
 }

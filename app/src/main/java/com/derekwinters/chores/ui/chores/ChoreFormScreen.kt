@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -54,6 +55,14 @@ import java.time.format.DateTimeParseException
  * underlying weekday indices.
  */
 private val WEEKDAY_ABBREVIATIONS = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+/**
+ * Issue #108: fully-rounded "pill" shape applied to the Points selector and eligible-people
+ * picker's [FilterChip]s. Material3's default `FilterChip` shape is a small (8dp) corner radius
+ * rounded-rectangle, not a true stadium/pill shape -- this closes that styling gap so these two
+ * pickers read as pill toggle buttons matching web, per issue #108's ask.
+ */
+private val PILL_SHAPE = RoundedCornerShape(percent = 50)
 
 /**
  * Issue #16: chore create/edit form, chores-web's `ChoreForm.jsx` equivalent — the richest
@@ -135,7 +144,8 @@ fun ChoreFormContent(
                     selected = formState.points == option,
                     onClick = { onFormChange { it.copy(points = option) } },
                     label = { Text(option.toString()) },
-                    enabled = !isSaving
+                    enabled = !isSaving,
+                    shape = PILL_SHAPE
                 )
             }
         }
@@ -218,23 +228,41 @@ fun ChoreFormContent(
             }
             AssignmentType.OPEN -> {
                 SectionLabel("Eligible people (optional)")
-                availablePeople.forEach { person ->
-                    CheckboxRow(person, person in formState.eligiblePeople, !isSaving) { checked ->
+                EligiblePeoplePillRow(
+                    people = availablePeople,
+                    selectedPeople = formState.eligiblePeople,
+                    enabled = !isSaving,
+                    onTogglePerson = { person ->
                         onFormChange {
-                            it.copy(eligiblePeople = if (checked) it.eligiblePeople + person else it.eligiblePeople - person)
+                            it.copy(
+                                eligiblePeople = if (person in it.eligiblePeople) {
+                                    it.eligiblePeople - person
+                                } else {
+                                    it.eligiblePeople + person
+                                }
+                            )
                         }
                     }
-                }
+                )
             }
             AssignmentType.ROTATING -> {
                 SectionLabel("Rotation (2+ people)")
-                availablePeople.forEach { person ->
-                    CheckboxRow(person, person in formState.eligiblePeople, !isSaving) { checked ->
+                EligiblePeoplePillRow(
+                    people = availablePeople,
+                    selectedPeople = formState.eligiblePeople,
+                    enabled = !isSaving,
+                    onTogglePerson = { person ->
                         onFormChange {
-                            it.copy(eligiblePeople = if (checked) it.eligiblePeople + person else it.eligiblePeople - person)
+                            it.copy(
+                                eligiblePeople = if (person in it.eligiblePeople) {
+                                    it.eligiblePeople - person
+                                } else {
+                                    it.eligiblePeople + person
+                                }
+                            )
                         }
                     }
-                }
+                )
             }
         }
 
@@ -468,6 +496,39 @@ private fun WeekdayPillRow(selectedDays: Set<Int>, enabled: Boolean, onToggleDay
     }
 }
 
+/**
+ * Issue #108: shared row of per-person [FilterChip] pills backing the eligible-people picker,
+ * replacing the previous `CheckboxRow`-per-person layout for both `AssignmentType.OPEN`
+ * ("Eligible people") and `AssignmentType.ROTATING` ("Rotation") branches, which duplicated the
+ * same checkbox-row call. Follows the same Set-membership toggle convention established by
+ * [WeekdayPillRow]/issue #100's fix: membership is derived from the state passed into the
+ * `onTogglePerson` caller's `onFormChange` transform, not a value captured at composition time.
+ *
+ * Only one of OPEN/ROTATING is ever rendered at a time (mutually exclusive `when` branches on
+ * `assignmentType`), so these person-name pills never appear on screen alongside `RadioRow`'s
+ * person-name rows from the FIXED branch -- no label collision.
+ */
+@Composable
+private fun EligiblePeoplePillRow(
+    people: List<String>,
+    selectedPeople: Set<String>,
+    enabled: Boolean,
+    onTogglePerson: (String) -> Unit
+) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        people.forEach { person ->
+            FilterChip(
+                modifier = Modifier.padding(end = 4.dp),
+                selected = person in selectedPeople,
+                onClick = { onTogglePerson(person) },
+                label = { Text(person) },
+                enabled = enabled,
+                shape = PILL_SHAPE
+            )
+        }
+    }
+}
+
 @Composable
 private fun RadioRow(label: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     Row(
@@ -528,19 +589,6 @@ private fun RadioGridCell(
         verticalAlignment = Alignment.CenterVertically
     ) {
         RadioButton(selected = selected, onClick = onClick, enabled = enabled)
-        Text(text = label, modifier = Modifier.padding(start = 4.dp))
-    }
-}
-
-@Composable
-private fun CheckboxRow(label: String, checked: Boolean, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier
-            .selectable(selected = checked, enabled = enabled, onClick = { onCheckedChange(!checked) })
-            .padding(vertical = 2.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
         Text(text = label, modifier = Modifier.padding(start = 4.dp))
     }
 }
