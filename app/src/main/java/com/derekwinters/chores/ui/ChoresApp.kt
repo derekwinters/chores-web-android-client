@@ -325,11 +325,17 @@ private fun ChoresAuthenticatedScaffold(
     // visibleDestinations, which they were removed from) so the TopAppBar subtitle still reads
     // "Settings"/"Preferences" rather than falling back to the app title when navigated there via
     // the avatar dropdown.
-    val currentLabel = (visibleDestinations + ChoresDestination.Settings + ChoresDestination.Preferences)
-        .firstOrNull(::isCurrent)
-        ?.labelRes
-        ?.let { stringResource(it) }
-        ?: stringResource(R.string.app_name)
+    val currentLabel = if (isCurrent(ChoresDestination.Users)) {
+        // Issue #98: the page title reads "Manage Users" (web parity) while the drawer item
+        // above keeps the shorter "Users" label — these are intentionally decoupled.
+        stringResource(R.string.user_management_screen_title)
+    } else {
+        (visibleDestinations + ChoresDestination.Settings + ChoresDestination.Preferences)
+            .firstOrNull(::isCurrent)
+            ?.labelRes
+            ?.let { stringResource(it) }
+            ?: stringResource(R.string.app_name)
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
