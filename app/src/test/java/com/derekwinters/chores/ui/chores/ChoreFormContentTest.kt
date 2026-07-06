@@ -186,7 +186,7 @@ class ChoreFormContentTest {
         }
 
         // "Wed" is index 3 in the 0=Sun..6=Sat data model the pills display over.
-        composeTestRule.onNodeWithText("Wed").performClick()
+        composeTestRule.onNodeWithText("Wed").performScrollTo().performClick()
 
         assert(latest.weeklyDays == setOf(3))
     }
@@ -206,7 +206,7 @@ class ChoreFormContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Wed").performClick()
+        composeTestRule.onNodeWithText("Wed").performScrollTo().performClick()
 
         assert(latest.weeklyDays == emptySet<Int>())
     }
