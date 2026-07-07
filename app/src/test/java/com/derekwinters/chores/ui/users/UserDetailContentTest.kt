@@ -1,7 +1,11 @@
 package com.derekwinters.chores.ui.users
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNode
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -52,6 +56,34 @@ class UserDetailContentTest {
         composeTestRule.onNodeWithText("25").assertExists()
         composeTestRule.onNodeWithText("Total points earned").assertDoesNotExist()
         composeTestRule.onNodeWithText("Skipped count").assertDoesNotExist()
+    }
+
+    /**
+     * Issue #101: Available Points gets a hero/elevated treatment, distinct from every other
+     * equal-weight stat. Marked as a semantic heading (see [HeroStat]), so we assert on that
+     * rather than color/font-size, which aren't inspectable through Compose UI test semantics.
+     */
+    @Test
+    fun userDetailContent_availablePoints_rendersAsHeroHeading_distinctFromOtherStats() {
+        val isHeading = SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)
+
+        composeTestRule.setContent {
+            UserDetailContent(
+                uiState = UiState.Success(data),
+                redeemState = UiState.Idle,
+                isAdmin = false,
+                onValidateAmount = { null },
+                onRedeem = {},
+                onDismissRedeemResult = {},
+                onHistoryClick = {}
+            )
+        }
+
+        // The hero value ("20") is marked as a heading; the label and every other stat's value
+        // (e.g. "10" for 7-day total) are not. onNode() fails if more than one match exists, so
+        // this also confirms exactly one heading node is present, and it's the hero figure.
+        composeTestRule.onNodeWithText("Available points").assertExists()
+        composeTestRule.onNode(isHeading).assertTextEquals("20")
     }
 
     @Test

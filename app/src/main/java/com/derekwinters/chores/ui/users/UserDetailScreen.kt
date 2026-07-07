@@ -25,6 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.data.model.CurrentUser
@@ -91,7 +93,7 @@ fun UserDetailContent(
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                StatLine("Available points", data.stats.availablePoints)
+                                HeroStat("Available points", data.stats.availablePoints)
                                 StatLine("7-day total", data.stats.points7d)
                                 StatLine("30-day total", data.stats.points30d)
                                 StatLine("Redeemed", data.stats.redeemed)
@@ -191,6 +193,30 @@ private fun StatLine(label: String, value: Int) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label)
         Text(value.toString())
+    }
+}
+
+/**
+ * Issue #101: "Available points" is User Detail's headline figure — chores-web renders it with a
+ * hero/elevated treatment, visually distinct from every other equal-weight [StatLine]. Mirrors
+ * that here with a large, accent-colored (`colorScheme.tertiary`, this app's mapped "accent" slot
+ * — see [com.derekwinters.chores.ui.theme.ChoresTheme]) display number, marked as a semantic
+ * heading so assistive tech and tests can tell it apart from the plain stat rows.
+ */
+@Composable
+private fun HeroStat(label: String, value: Int) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value.toString(),
+            style = MaterialTheme.typography.displaySmall,
+            color = MaterialTheme.colorScheme.tertiary,
+            modifier = Modifier.semantics { heading() }
+        )
     }
 }
 
