@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -89,7 +90,7 @@ fun UserDetailContent(
             )
             is UiState.Success -> {
                 val data = uiState.data
-                LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp).testTag("userDetailList")) {
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.padding(16.dp)) {

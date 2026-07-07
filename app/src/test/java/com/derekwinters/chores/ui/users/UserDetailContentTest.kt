@@ -3,10 +3,13 @@ package com.derekwinters.chores.ui.users
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.LogEntry
@@ -35,6 +38,17 @@ class UserDetailContentTest {
         redemptions = emptyList(),
         activity = emptyList()
     )
+
+    /**
+     * Issue #101's hero-sized Available Points stat makes the card taller, which can push
+     * later list rows (redemption/activity history) outside Robolectric's test viewport —
+     * LazyColumn only composes items actually in view, so a plain onNodeWithText can miss an
+     * item that's offscreen. Scroll the list to the node first so these assertions hold
+     * regardless of how much vertical space the stat card takes up.
+     */
+    private fun scrollToText(text: String) {
+        composeTestRule.onNodeWithTag("userDetailList").performScrollToNode(hasText(text))
+    }
 
     /** Issue #104: User Detail's stat set should match web's (Available, 7d, 30d, Redeemed, Completed). */
     @Test
@@ -156,13 +170,16 @@ class UserDetailContentTest {
             )
         }
 
-        // Chore Activity row: chore name -> capitalized action -> date-only formatted timestamp.
-        composeTestRule.onNodeWithText("Dishes").assertExists()
-        composeTestRule.onNodeWithText("Completed").assertExists()
-
-        // Redemption row: amount -> redeemedBy -> date-only formatted timestamp.
+        // Redemption row (appears above Chore Activity): amount -> redeemedBy -> date-only
+        // formatted timestamp.
+        scrollToText("10 pts")
         composeTestRule.onNodeWithText("10 pts").assertExists()
         composeTestRule.onNodeWithText("by alice").assertExists()
+
+        // Chore Activity row: chore name -> capitalized action -> date-only formatted timestamp.
+        scrollToText("Dishes")
+        composeTestRule.onNodeWithText("Dishes").assertExists()
+        composeTestRule.onNodeWithText("Completed").assertExists()
 
         composeTestRule.onAllNodesWithText(formatDate("2026-07-02T22:40:54.326377Z"))[0].assertExists()
     }
@@ -196,6 +213,7 @@ class UserDetailContentTest {
             )
         }
 
+        scrollToText("not-a-timestamp")
         composeTestRule.onNodeWithText("not-a-timestamp").assertExists()
     }
 }
