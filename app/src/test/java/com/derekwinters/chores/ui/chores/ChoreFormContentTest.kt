@@ -8,6 +8,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.ui.UiState
 import org.junit.Rule
@@ -170,6 +172,17 @@ class ChoreFormContentTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Next Due").performScrollTo().performClick()
+
+        // Temporary diagnostic (see ChoreFormScreen.kt's "Today" onClick, which also prints):
+        // confirm exactly one "Today" node exists and that it actually carries a click action,
+        // before relying on performClick() to invoke it.
+        val todayNodes = composeTestRule.onAllNodesWithText("Today").fetchSemanticsNodes()
+        println("TODAY_NODE_COUNT=${todayNodes.size}")
+        todayNodes.forEachIndexed { index, node ->
+            val hasOnClick = node.config.getOrNull(SemanticsActions.OnClick) != null
+            println("TODAY_NODE_$index hasOnClickAction=$hasOnClick")
+        }
+
         composeTestRule.onNodeWithText("Today").performClick()
 
         // Match production's UTC-based "today" (see ChoreFormScreen.kt's Today button), not the
