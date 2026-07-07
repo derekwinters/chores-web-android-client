@@ -258,8 +258,10 @@ class UserDetailContentTest {
         composeTestRule.onNodeWithText("Next").performClick()
         composeTestRule.onNodeWithText("Back").performClick()
 
-        // Back rewinds to the amount step without submitting.
-        composeTestRule.onNodeWithText("Redeem Points").assertExists()
+        // Back rewinds to the amount step (its "Next" action reappears) without submitting.
+        // Note: "Redeem Points" itself is ambiguous here — it matches both the dialog's title
+        // and the always-rendered button underneath it once the dialog is back on this step.
+        composeTestRule.onNodeWithText("Next").assertExists()
         assert(redeemed == null)
     }
 
