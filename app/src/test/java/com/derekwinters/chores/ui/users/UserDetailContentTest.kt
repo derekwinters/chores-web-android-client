@@ -28,10 +28,31 @@ class UserDetailContentTest {
     val composeTestRule = createComposeRule()
 
     private val data = UserDetailData(
-        stats = PersonStats(availablePoints = 20, points7d = 10, points30d = 40, totalPoints = 45, completedCount = 8),
+        stats = PersonStats(availablePoints = 20, points7d = 10, points30d = 40, totalPoints = 45, completedCount = 8, redeemed = 25),
         redemptions = emptyList(),
         activity = emptyList()
     )
+
+    /** Issue #104: User Detail's stat set should match web's (Available, 7d, 30d, Redeemed, Completed). */
+    @Test
+    fun userDetailContent_showsRedeemedStat_andHidesExtraStatsNotOnWeb() {
+        composeTestRule.setContent {
+            UserDetailContent(
+                uiState = UiState.Success(data),
+                redeemState = UiState.Idle,
+                isAdmin = false,
+                onValidateAmount = { null },
+                onRedeem = {},
+                onDismissRedeemResult = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Redeemed").assertExists()
+        composeTestRule.onNodeWithText("25").assertExists()
+        composeTestRule.onNodeWithText("Total points earned").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Skipped count").assertDoesNotExist()
+    }
 
     @Test
     fun userDetailContent_nonAdmin_hidesRedeemButton() {
