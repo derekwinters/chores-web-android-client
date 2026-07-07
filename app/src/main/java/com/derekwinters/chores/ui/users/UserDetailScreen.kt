@@ -221,6 +221,15 @@ private fun HeroStat(label: String, value: Int) {
     }
 }
 
+/**
+ * Issue #110: redeeming points is hard to undo, so it gets a two-step confirm mirroring
+ * chores-web — matching #107's admin/positive-balance gating on the button that opens this
+ * dialog. The first step collects and validates the amount; only advancing to an explicit
+ * second step, which restates the amount and the available-points balance in the same accent
+ * color as [HeroStat] (`colorScheme.tertiary`), actually submits via [onConfirm]. Dismissing the
+ * dialog (scrim tap / system back) at either step, or tapping "Back" at the confirm step, closes
+ * or rewinds without ever calling [onConfirm].
+ */
 @Composable
 private fun RedeemDialog(
     availablePoints: Int,
@@ -229,33 +238,56 @@ private fun RedeemDialog(
     onDismiss: () -> Unit
 ) {
     var amountText by remember { mutableStateOf("") }
+    var confirmStep by remember { mutableStateOf(false) }
     val error = if (amountText.isNotBlank()) onValidateAmount(amountText) else null
     val amount = amountText.toIntOrNull()
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Redeem Points") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = amountText,
-                    onValueChange = { amountText = it },
-                    label = { Text("Amount") },
-                    singleLine = true
-                )
-                if (error != null) {
-                    Text(error, color = MaterialTheme.colorScheme.error)
-                } else if (amount != null) {
-                    Text("Before: $availablePoints -> After: ${availablePoints - amount}")
+    if (!confirmStep) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Redeem Points") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = amountText,
+                        onValueChange = { amountText = it },
+                        label = { Text("Amount") },
+                        singleLine = true
+                    )
+                    if (error != null) {
+                        Text(error, color = MaterialTheme.colorScheme.error)
+                    } else if (amount != null) {
+                        Text("Before: $availablePoints -> After: ${availablePoints - amount}")
+                    }
                 }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { amount?.let(onConfirm) },
-                enabled = amount != null && error == null
-            ) { Text("Confirm") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { confirmStep = true },
+                    enabled = amount != null && error == null
+                ) { Text("Next") }
+            },
+            dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        )
+    } else {
+        val confirmedAmount = amount ?: 0
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Confirm Redemption") },
+            text = {
+                Column {
+                    Text("Redeem $confirmedAmount points?")
+                    Text(
+                        text = "Available points: $availablePoints",
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.testTag("redeemConfirmAvailablePoints")
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onConfirm(confirmedAmount) }) { Text("Confirm") }
+            },
+            dismissButton = { TextButton(onClick = { confirmStep = false }) { Text("Back") } }
+        )
+    }
 }

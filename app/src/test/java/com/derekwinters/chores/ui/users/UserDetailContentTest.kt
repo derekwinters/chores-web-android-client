@@ -173,9 +173,94 @@ class UserDetailContentTest {
         composeTestRule.onNodeWithText("Amount").performTextInput("5")
         composeTestRule.onNodeWithText("Before: 20 -> After: 15").assertExists()
 
+        composeTestRule.onNodeWithText("Next").performClick()
         composeTestRule.onNodeWithText("Confirm").performClick()
 
         assert(redeemed == 5)
+    }
+
+    /**
+     * Issue #110: redeem is a two-step confirm — tapping the first step's action ("Next") must
+     * only advance to the confirm step, and the redeem call must not fire until the second,
+     * explicit "Confirm" tap.
+     */
+    @Test
+    fun userDetailContent_admin_redeemFlow_doesNotSubmit_untilSecondConfirmStep() {
+        var redeemed: Int? = null
+        composeTestRule.setContent {
+            UserDetailContent(
+                uiState = UiState.Success(data),
+                redeemState = UiState.Idle,
+                isAdmin = true,
+                onValidateAmount = { text -> if (text.toIntOrNull() in 1..20) null else "invalid" },
+                onRedeem = { redeemed = it },
+                onDismissRedeemResult = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Redeem Points").performClick()
+        composeTestRule.onNodeWithText("Amount").performTextInput("5")
+        composeTestRule.onNodeWithText("Next").performClick()
+
+        // First step's action only advances to the confirm step; nothing submitted yet.
+        assert(redeemed == null)
+        composeTestRule.onNodeWithText("Confirm Redemption").assertExists()
+
+        composeTestRule.onNodeWithText("Confirm").performClick()
+        assert(redeemed == 5)
+    }
+
+    /** Issue #110: the confirm step must show the available-points amount in color-coded text. */
+    @Test
+    fun userDetailContent_admin_redeemConfirmStep_showsAvailablePoints_inColorCodedText() {
+        composeTestRule.setContent {
+            UserDetailContent(
+                uiState = UiState.Success(data),
+                redeemState = UiState.Idle,
+                isAdmin = true,
+                onValidateAmount = { text -> if (text.toIntOrNull() in 1..20) null else "invalid" },
+                onRedeem = {},
+                onDismissRedeemResult = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Redeem Points").performClick()
+        composeTestRule.onNodeWithText("Amount").performTextInput("5")
+        composeTestRule.onNodeWithText("Next").performClick()
+
+        // Marked with a dedicated tag (rather than semantics heading, see HeroStat) since the
+        // hero stat already owns the sole heading node on this screen; actual color isn't
+        // inspectable through Compose UI test semantics, so this asserts presence/content of the
+        // tertiary-colored node the implementation renders (see RedeemDialog).
+        composeTestRule.onNodeWithTag("redeemConfirmAvailablePoints").assertTextEquals("Available points: 20")
+    }
+
+    /** Issue #110: cancelling/backing out at the confirm step must never submit the redemption. */
+    @Test
+    fun userDetailContent_admin_redeemConfirmStep_back_doesNotSubmit() {
+        var redeemed: Int? = null
+        composeTestRule.setContent {
+            UserDetailContent(
+                uiState = UiState.Success(data),
+                redeemState = UiState.Idle,
+                isAdmin = true,
+                onValidateAmount = { text -> if (text.toIntOrNull() in 1..20) null else "invalid" },
+                onRedeem = { redeemed = it },
+                onDismissRedeemResult = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Redeem Points").performClick()
+        composeTestRule.onNodeWithText("Amount").performTextInput("5")
+        composeTestRule.onNodeWithText("Next").performClick()
+        composeTestRule.onNodeWithText("Back").performClick()
+
+        // Back rewinds to the amount step without submitting.
+        composeTestRule.onNodeWithText("Redeem Points").assertExists()
+        assert(redeemed == null)
     }
 
     @Test
