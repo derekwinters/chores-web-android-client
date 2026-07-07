@@ -116,6 +116,44 @@ class UserDetailContentTest {
         composeTestRule.onNodeWithText("Redeem Points").assertDoesNotExist()
     }
 
+    /** Issue #107: Redeem button should only render when the user has available points to redeem. */
+    @Test
+    fun userDetailContent_admin_hidesRedeemButton_whenAvailablePointsIsZero() {
+        val dataWithNoPoints = data.copy(stats = data.stats.copy(availablePoints = 0))
+
+        composeTestRule.setContent {
+            UserDetailContent(
+                uiState = UiState.Success(dataWithNoPoints),
+                redeemState = UiState.Idle,
+                isAdmin = true,
+                onValidateAmount = { null },
+                onRedeem = {},
+                onDismissRedeemResult = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Redeem Points").assertDoesNotExist()
+    }
+
+    /** Issue #107: admins with a positive balance should still see the Redeem button. */
+    @Test
+    fun userDetailContent_admin_showsRedeemButton_whenAvailablePointsIsPositive() {
+        composeTestRule.setContent {
+            UserDetailContent(
+                uiState = UiState.Success(data),
+                redeemState = UiState.Idle,
+                isAdmin = true,
+                onValidateAmount = { null },
+                onRedeem = {},
+                onDismissRedeemResult = {},
+                onHistoryClick = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Redeem Points").assertExists()
+    }
+
     @Test
     fun userDetailContent_admin_redeemFlow_showsBeforeAfterBalance() {
         var redeemed: Int? = null

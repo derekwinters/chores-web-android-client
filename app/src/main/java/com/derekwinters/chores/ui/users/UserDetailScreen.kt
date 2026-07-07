@@ -100,7 +100,7 @@ fun UserDetailContent(
                                 StatLine("Redeemed", data.stats.redeemed)
                                 StatLine("Completed count", data.stats.completedCount)
 
-                                if (isAdmin) {
+                                if (isAdmin && data.stats.availablePoints > 0) {
                                     Button(
                                         modifier = Modifier.padding(top = 12.dp),
                                         onClick = { showRedeemDialog = true }
