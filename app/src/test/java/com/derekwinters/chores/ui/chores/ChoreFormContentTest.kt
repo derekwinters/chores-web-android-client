@@ -14,6 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import java.time.LocalDate
 
 /**
  * Issue #16 behavior: chore create/edit form fields + Save/Cancel actions (area: ui, android).
@@ -148,6 +149,29 @@ class ChoreFormContentTest {
         composeTestRule.onNodeWithText("OK").performClick()
 
         assert(latest.nextDue == null)
+    }
+
+    // Issue #111: date picker includes a "Today" shortcut that immediately commits today's date.
+
+    @Test
+    fun choreFormContent_nextDueDatePicker_tapToday_setsNextDueToToday() {
+        var latest = ChoreFormState(nextDue = "2020-01-01")
+        composeTestRule.setContent {
+            ChoreFormContent(
+                formState = latest,
+                availablePeople = emptyList(),
+                saveState = UiState.Idle,
+                isEditMode = true,
+                onFormChange = { update -> latest = update(latest) },
+                onSave = {},
+                onCancel = {}
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Next Due").performScrollTo().performClick()
+        composeTestRule.onNodeWithText("Today").performClick()
+
+        assert(latest.nextDue == LocalDate.now().toString())
     }
 
     // Issue #100: weekly day picker uses named day-abbreviation pills (Mon..Sun) instead of

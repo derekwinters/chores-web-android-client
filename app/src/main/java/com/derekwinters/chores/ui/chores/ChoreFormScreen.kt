@@ -203,7 +203,13 @@ fun ChoreFormContent(
                         }) { Text("OK") }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                        Row {
+                            TextButton(onClick = {
+                                onFormChange { it.copy(nextDue = LocalDate.now().toString()) }
+                                showDatePicker = false
+                            }) { Text("Today") }
+                            TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                        }
                     }
                 ) {
                     DatePicker(state = datePickerState)
