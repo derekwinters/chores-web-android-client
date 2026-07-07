@@ -1,15 +1,20 @@
 package com.derekwinters.chores.ui.chores
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +48,21 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
+
+/**
+ * Issue #100: named day-abbreviation labels for the weekly-schedule day picker, indexed to match
+ * the existing `weeklyDays` data model (0=Sun ... 6=Sat) — display-only, no change to the
+ * underlying weekday indices.
+ */
+private val WEEKDAY_ABBREVIATIONS = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+/**
+ * Issue #108: fully-rounded "pill" shape applied to the Points selector and eligible-people
+ * picker's [FilterChip]s. Material3's default `FilterChip` shape is a small (8dp) corner radius
+ * rounded-rectangle, not a true stadium/pill shape -- this closes that styling gap so these two
+ * pickers read as pill toggle buttons matching web, per issue #108's ask.
+ */
+private val PILL_SHAPE = RoundedCornerShape(percent = 50)
 
 /**
  * Issue #16: chore create/edit form, chores-web's `ChoreForm.jsx` equivalent — the richest
@@ -124,7 +144,8 @@ fun ChoreFormContent(
                     selected = formState.points == option,
                     onClick = { onFormChange { it.copy(points = option) } },
                     label = { Text(option.toString()) },
-                    enabled = !isSaving
+                    enabled = !isSaving,
+                    shape = PILL_SHAPE
                 )
             }
         }
@@ -182,7 +203,18 @@ fun ChoreFormContent(
                         }) { Text("OK") }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                        Row {
+                            TextButton(onClick = {
+                                // Use the same UTC-based "today" as the OK path's interpretation
+                                // of DatePickerState.selectedDateMillis (documented as a
+                                // UTC-midnight instant) rather than the system-default-zone
+                                // LocalDate.now(), so "Today" always matches whatever date the
+                                // calendar grid itself would show as today.
+                                onFormChange { it.copy(nextDue = LocalDate.now(ZoneOffset.UTC).toString()) }
+                                showDatePicker = false
+                            }) { Text("Today") }
+                            TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                        }
                     }
                 ) {
                     DatePicker(state = datePickerState)
@@ -191,11 +223,11 @@ fun ChoreFormContent(
         }
 
         SectionLabel("Assignment")
-        AssignmentType.ALL.forEach { type ->
-            RadioRow(type.replaceFirstChar { it.uppercase() }, formState.assignmentType == type, !isSaving) {
-                onFormChange { it.copy(assignmentType = type) }
-            }
-        }
+        RadioGrid(
+            options = AssignmentType.ALL,
+            selected = formState.assignmentType,
+            enabled = !isSaving
+        ) { type -> onFormChange { it.copy(assignmentType = type) } }
         when (formState.assignmentType) {
             AssignmentType.FIXED -> {
                 SectionLabel("Assignee")
@@ -207,44 +239,68 @@ fun ChoreFormContent(
             }
             AssignmentType.OPEN -> {
                 SectionLabel("Eligible people (optional)")
-                availablePeople.forEach { person ->
-                    CheckboxRow(person, person in formState.eligiblePeople, !isSaving) { checked ->
+                EligiblePeoplePillRow(
+                    people = availablePeople,
+                    selectedPeople = formState.eligiblePeople,
+                    enabled = !isSaving,
+                    onTogglePerson = { person ->
                         onFormChange {
-                            it.copy(eligiblePeople = if (checked) it.eligiblePeople + person else it.eligiblePeople - person)
+                            it.copy(
+                                eligiblePeople = if (person in it.eligiblePeople) {
+                                    it.eligiblePeople - person
+                                } else {
+                                    it.eligiblePeople + person
+                                }
+                            )
                         }
                     }
-                }
+                )
             }
             AssignmentType.ROTATING -> {
                 SectionLabel("Rotation (2+ people)")
-                availablePeople.forEach { person ->
-                    CheckboxRow(person, person in formState.eligiblePeople, !isSaving) { checked ->
+                EligiblePeoplePillRow(
+                    people = availablePeople,
+                    selectedPeople = formState.eligiblePeople,
+                    enabled = !isSaving,
+                    onTogglePerson = { person ->
                         onFormChange {
-                            it.copy(eligiblePeople = if (checked) it.eligiblePeople + person else it.eligiblePeople - person)
+                            it.copy(
+                                eligiblePeople = if (person in it.eligiblePeople) {
+                                    it.eligiblePeople - person
+                                } else {
+                                    it.eligiblePeople + person
+                                }
+                            )
                         }
                     }
-                }
+                )
             }
         }
 
         SectionLabel("Schedule")
-        ScheduleType.ALL.forEach { type ->
-            RadioRow(type.replaceFirstChar { it.uppercase() }, formState.scheduleType == type, !isSaving) {
-                onFormChange { it.copy(scheduleType = type) }
-            }
-        }
+        RadioGrid(
+            options = ScheduleType.ALL,
+            selected = formState.scheduleType,
+            enabled = !isSaving
+        ) { type -> onFormChange { it.copy(scheduleType = type) } }
         when (formState.scheduleType) {
             ScheduleType.WEEKLY -> {
-                SectionLabel("Days of week (0=Sun ... 6=Sat)")
-                Row {
-                    (0..6).forEach { day ->
-                        CheckboxRow(day.toString(), day in formState.weeklyDays, !isSaving) { checked ->
-                            onFormChange {
-                                it.copy(weeklyDays = if (checked) it.weeklyDays + day else it.weeklyDays - day)
-                            }
+                SectionLabel("Days of week")
+                WeekdayPillRow(
+                    selectedDays = formState.weeklyDays,
+                    enabled = !isSaving,
+                    onToggleDay = { day ->
+                        // Derive the toggle from the state passed into the updater (`it`),
+                        // not from a boolean captured at composition time -- FilterChip's
+                        // onClick (unlike Checkbox's onCheckedChange) has no built-in
+                        // "new value" parameter, so we must compute membership ourselves;
+                        // reading it fresh off `it.weeklyDays` here avoids ever toggling
+                        // against a stale/composition-time snapshot of selection state.
+                        onFormChange {
+                            it.copy(weeklyDays = if (day in it.weeklyDays) it.weeklyDays - day else it.weeklyDays + day)
                         }
                     }
-                }
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = formState.everyOtherWeek,
@@ -287,20 +343,121 @@ fun ChoreFormContent(
         }
 
         if (formState.scheduleType != ScheduleType.YEARLY) {
-            SectionLabel("Constraints")
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = formState.evenOddConstraint == "even",
-                    onClick = { onFormChange { it.copy(evenOddConstraint = if (it.evenOddConstraint == "even") null else "even") } },
-                    enabled = !isSaving
+            // Issue #103: collapsible section header, matching the expand/collapse chevron
+            // pattern already used by ChoresStatsPanel's stats header and ActivityLogScreen's
+            // row-expand affordance -- whole-row clickable (bigger tap target) rather than just
+            // an icon button, matching ActivityLogScreen's LogRow convention.
+            var constraintsExpanded by remember { mutableStateOf(true) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, bottom = 4.dp)
+                    .clickable { constraintsExpanded = !constraintsExpanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Constraints", style = MaterialTheme.typography.titleSmall)
+                Icon(
+                    imageVector = if (constraintsExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = if (constraintsExpanded) "Collapse constraints" else "Expand constraints"
                 )
-                Text("Even days only")
-                RadioButton(
-                    selected = formState.evenOddConstraint == "odd",
-                    onClick = { onFormChange { it.copy(evenOddConstraint = if (it.evenOddConstraint == "odd") null else "odd") } },
-                    enabled = !isSaving
+            }
+
+            if (constraintsExpanded) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = formState.evenOddConstraint == "even",
+                        onClick = { onFormChange { it.copy(evenOddConstraint = if (it.evenOddConstraint == "even") null else "even") } },
+                        enabled = !isSaving
+                    )
+                    Text("Even days only")
+                    RadioButton(
+                        selected = formState.evenOddConstraint == "odd",
+                        onClick = { onFormChange { it.copy(evenOddConstraint = if (it.evenOddConstraint == "odd") null else "odd") } },
+                        enabled = !isSaving
+                    )
+                    Text("Odd days only")
+                }
+
+                // Issue #105: condition-not-met behavior choice (skip vs. delay), web parity.
+                // Single-select RadioButton pair following the same direct-set pattern as the
+                // even/odd constraint above (not a Set-membership toggle like the weekday
+                // pickers) -- each button sets `constraintNotMetBehavior` to a fixed target
+                // value. Labels "Skip"/"Delay" don't collide with any other label in this
+                // section (or the WEEKLY schedule's separate "Days of week" picker) under any
+                // schedule type.
+                Text(
+                    text = "If constraint isn't met",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                 )
-                Text("Odd days only")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier
+                            .selectable(
+                                selected = formState.constraintNotMetBehavior == ConstraintBehavior.SKIP,
+                                enabled = !isSaving,
+                                onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.SKIP) } }
+                            )
+                            .padding(end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = formState.constraintNotMetBehavior == ConstraintBehavior.SKIP,
+                            onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.SKIP) } },
+                            enabled = !isSaving
+                        )
+                        Text("Skip")
+                    }
+                    Row(
+                        modifier = Modifier.selectable(
+                            selected = formState.constraintNotMetBehavior == ConstraintBehavior.DELAY,
+                            enabled = !isSaving,
+                            onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.DELAY) } }
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = formState.constraintNotMetBehavior == ConstraintBehavior.DELAY,
+                            onClick = { onFormChange { it.copy(constraintNotMetBehavior = ConstraintBehavior.DELAY) } },
+                            enabled = !isSaving
+                        )
+                        Text("Delay")
+                    }
+                }
+
+                // Issue #103: "weekdays only" sub-picker, web parity -- reuses the same
+                // day-abbreviation-pill row as the weekly schedule's "Days of week" picker
+                // (issue #100), but backed by `weekdayConstraint` instead of `weeklyDays`.
+                // Hidden for WEEKLY schedules: the weekly "Days of week" picker higher up the
+                // form already lets the user pick specific weekdays, so showing this sub-picker
+                // too would be a redundant, overlapping "pick your weekdays" control (and would
+                // render two sets of identically-labeled Mon..Sun pills on screen at once).
+                if (formState.scheduleType != ScheduleType.WEEKLY) {
+                    Text(
+                        text = "Weekdays only",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                    WeekdayPillRow(
+                        selectedDays = formState.weekdayConstraint,
+                        enabled = !isSaving,
+                        onToggleDay = { day ->
+                            // Same convention as the weekly Days-of-week pills and the #100 fix:
+                            // derive membership from the state passed into the transform (`it`),
+                            // not from a value captured at composition time.
+                            onFormChange {
+                                it.copy(
+                                    weekdayConstraint = if (day in it.weekdayConstraint) {
+                                        it.weekdayConstraint - day
+                                    } else {
+                                        it.weekdayConstraint + day
+                                    }
+                                )
+                            }
+                        }
+                    )
+                }
             }
         }
 
@@ -329,6 +486,60 @@ private fun SectionLabel(text: String) {
     Text(text = text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
 }
 
+/**
+ * Issue #103: shared row of weekday-abbreviation [FilterChip] pills, extracted from issue #100's
+ * weekly-schedule "Days of week" picker so the Constraints section's "weekdays only" sub-picker
+ * can reuse the same look/interaction instead of duplicating it. Callers own the backing
+ * `Set<Int>` (`weeklyDays` or `weekdayConstraint`) and how toggling is applied to form state.
+ */
+@Composable
+private fun WeekdayPillRow(selectedDays: Set<Int>, enabled: Boolean, onToggleDay: (Int) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        WEEKDAY_ABBREVIATIONS.forEachIndexed { day, abbreviation ->
+            FilterChip(
+                modifier = Modifier.padding(end = 4.dp),
+                selected = day in selectedDays,
+                onClick = { onToggleDay(day) },
+                label = { Text(abbreviation) },
+                enabled = enabled
+            )
+        }
+    }
+}
+
+/**
+ * Issue #108: shared row of per-person [FilterChip] pills backing the eligible-people picker,
+ * replacing the previous `CheckboxRow`-per-person layout for both `AssignmentType.OPEN`
+ * ("Eligible people") and `AssignmentType.ROTATING` ("Rotation") branches, which duplicated the
+ * same checkbox-row call. Follows the same Set-membership toggle convention established by
+ * [WeekdayPillRow]/issue #100's fix: membership is derived from the state passed into the
+ * `onTogglePerson` caller's `onFormChange` transform, not a value captured at composition time.
+ *
+ * Only one of OPEN/ROTATING is ever rendered at a time (mutually exclusive `when` branches on
+ * `assignmentType`), so these person-name pills never appear on screen alongside `RadioRow`'s
+ * person-name rows from the FIXED branch -- no label collision.
+ */
+@Composable
+private fun EligiblePeoplePillRow(
+    people: List<String>,
+    selectedPeople: Set<String>,
+    enabled: Boolean,
+    onTogglePerson: (String) -> Unit
+) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        people.forEach { person ->
+            FilterChip(
+                modifier = Modifier.padding(end = 4.dp),
+                selected = person in selectedPeople,
+                onClick = { onTogglePerson(person) },
+                label = { Text(person) },
+                enabled = enabled,
+                shape = PILL_SHAPE
+            )
+        }
+    }
+}
+
 @Composable
 private fun RadioRow(label: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     Row(
@@ -343,15 +554,52 @@ private fun RadioRow(label: String, selected: Boolean, enabled: Boolean, onClick
     }
 }
 
+/**
+ * Issue #97: assignment-type/schedule-type radio options laid out in a 3-column grid
+ * (matching web) instead of a vertical stack. Options wrap into rows of 3; a short final row
+ * is padded with empty [Spacer]s so cells stay aligned to the 3-column grid.
+ */
 @Composable
-private fun CheckboxRow(label: String, checked: Boolean, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun RadioGrid(
+    options: List<String>,
+    selected: String,
+    enabled: Boolean,
+    labelFor: (String) -> String = { it.replaceFirstChar(Char::uppercase) },
+    onSelect: (String) -> Unit
+) {
+    options.chunked(3).forEach { rowOptions ->
+        Row(modifier = Modifier.fillMaxWidth()) {
+            rowOptions.forEach { option ->
+                RadioGridCell(
+                    modifier = Modifier.weight(1f),
+                    label = labelFor(option),
+                    selected = selected == option,
+                    enabled = enabled,
+                    onClick = { onSelect(option) }
+                )
+            }
+            repeat(3 - rowOptions.size) {
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RadioGridCell(
+    label: String,
+    selected: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Row(
-        modifier = Modifier
-            .selectable(selected = checked, enabled = enabled, onClick = { onCheckedChange(!checked) })
-            .padding(vertical = 2.dp, horizontal = 4.dp),
+        modifier = modifier
+            .selectable(selected = selected, enabled = enabled, onClick = onClick)
+            .padding(top = 2.dp, bottom = 2.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+        RadioButton(selected = selected, onClick = onClick, enabled = enabled)
         Text(text = label, modifier = Modifier.padding(start = 4.dp))
     }
 }
