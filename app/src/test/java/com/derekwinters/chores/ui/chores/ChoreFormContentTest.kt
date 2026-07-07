@@ -173,14 +173,16 @@ class ChoreFormContentTest {
 
         composeTestRule.onNodeWithContentDescription("Next Due").performScrollTo().performClick()
 
-        // Temporary diagnostic (see ChoreFormScreen.kt's "Today" onClick, which also prints):
-        // confirm exactly one "Today" node exists and that it actually carries a click action,
-        // before relying on performClick() to invoke it.
+        // Temporary diagnostic: this repo's build.gradle.kts testLogging only captures test
+        // lifecycle events (not standard output), so println() is silently swallowed in CI --
+        // bake the node-count/click-action info into an assertion message instead, since that
+        // DOES surface via the "failed" event's FULL exception format. Confirms exactly one
+        // "Today" node exists and that it actually carries a click action, before relying on
+        // performClick() to invoke it.
         val todayNodes = composeTestRule.onAllNodesWithText("Today").fetchSemanticsNodes()
-        println("TODAY_NODE_COUNT=${todayNodes.size}")
-        todayNodes.forEachIndexed { index, node ->
-            val hasOnClick = node.config.getOrNull(SemanticsActions.OnClick) != null
-            println("TODAY_NODE_$index hasOnClickAction=$hasOnClick")
+        val hasClickAction = todayNodes.singleOrNull()?.config?.getOrNull(SemanticsActions.OnClick) != null
+        assert(todayNodes.size == 1 && hasClickAction) {
+            "Today node count=${todayNodes.size}, hasOnClickAction=$hasClickAction"
         }
 
         composeTestRule.onNodeWithText("Today").performClick()

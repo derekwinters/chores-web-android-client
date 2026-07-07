@@ -205,7 +205,6 @@ fun ChoreFormContent(
                     dismissButton = {
                         Row {
                             TextButton(onClick = {
-                                println("TODAY_CLICKED")
                                 // Use the same UTC-based "today" as the OK path's interpretation
                                 // of DatePickerState.selectedDateMillis (documented as a
                                 // UTC-midnight instant) rather than the system-default-zone
