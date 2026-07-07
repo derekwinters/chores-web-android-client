@@ -15,6 +15,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 /**
  * Issue #16 behavior: chore create/edit form fields + Save/Cancel actions (area: ui, android).
@@ -171,7 +172,16 @@ class ChoreFormContentTest {
         composeTestRule.onNodeWithContentDescription("Next Due").performScrollTo().performClick()
         composeTestRule.onNodeWithText("Today").performClick()
 
-        assert(latest.nextDue == LocalDate.now().toString())
+        // Match production's UTC-based "today" (see ChoreFormScreen.kt's Today button), not the
+        // system-default-zone LocalDate.now(), so this assertion can't drift from what the button
+        // actually computes. The explicit failure message is a temporary diagnostic: it will show
+        // the actual latest.nextDue value in CI output if this still fails, telling us whether the
+        // click didn't register at all (nextDue still "2020-01-01") or computed a different date
+        // than expected (a real zone/logic mismatch) -- remove once the root cause is confirmed.
+        val expectedToday = LocalDate.now(ZoneOffset.UTC).toString()
+        assert(latest.nextDue == expectedToday) {
+            "expected nextDue=$expectedToday (UTC today), got ${latest.nextDue}"
+        }
     }
 
     // Issue #100: weekly day picker uses named day-abbreviation pills (Mon..Sun) instead of

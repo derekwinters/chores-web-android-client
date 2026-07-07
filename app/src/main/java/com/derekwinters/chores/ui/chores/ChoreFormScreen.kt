@@ -205,7 +205,12 @@ fun ChoreFormContent(
                     dismissButton = {
                         Row {
                             TextButton(onClick = {
-                                onFormChange { it.copy(nextDue = LocalDate.now().toString()) }
+                                // Use the same UTC-based "today" as the OK path's interpretation
+                                // of DatePickerState.selectedDateMillis (documented as a
+                                // UTC-midnight instant) rather than the system-default-zone
+                                // LocalDate.now(), so "Today" always matches whatever date the
+                                // calendar grid itself would show as today.
+                                onFormChange { it.copy(nextDue = LocalDate.now(ZoneOffset.UTC).toString()) }
                                 showDatePicker = false
                             }) { Text("Today") }
                             TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
