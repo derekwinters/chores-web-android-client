@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -92,9 +93,14 @@ fun PointsLogContent(
 
         if (uiState is UiState.Success) {
             val page = uiState.data
+            // Issue #124: show the currently displayed range ("Showing X–Y of Z", matching web)
+            // instead of only the total count. The range end is clamped to the total for a short
+            // final page; an empty log reads "Showing 0–0 of 0".
+            val rangeStart = if (page.total == 0) 0 else page.offset + 1
+            val rangeEnd = minOf(page.offset + page.limit, page.total)
             Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(onClick = onPreviousPage, enabled = page.offset > 0) { Text("Previous") }
-                Text("${page.total} total")
+                Text("Showing $rangeStart–$rangeEnd of ${page.total}")
                 TextButton(onClick = onNextPage, enabled = page.offset + page.limit < page.total) { Text("Next") }
             }
         }
@@ -127,7 +133,9 @@ private fun PointsLogRow(entry: PointsLogEntry, onClick: () -> Unit) {
         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
                 Text(entry.person, style = MaterialTheme.typography.titleSmall)
-                Text("Chore #${entry.choreId} · ${formatDateTime(entry.completedAt)}", style = MaterialTheme.typography.bodySmall)
+                // Issue #121: web's data-correction table shows each entry's ID so admins can
+                // correlate rows during data correction — mirror it in the row metadata line.
+                Text("ID ${entry.id} · Chore #${entry.choreId} · ${formatDateTime(entry.completedAt)}", style = MaterialTheme.typography.bodySmall)
             }
             Text("${entry.points} pts")
         }
@@ -155,7 +163,12 @@ private fun EditPointsLogDialog(
                 // matches that directly without needing a separate id lookup.
                 OutlinedTextField(value = person, onValueChange = { person = it }, label = { Text("Person (username)") })
                 OutlinedTextField(value = pointsText, onValueChange = { pointsText = it }, label = { Text("Points") })
-                TextButton(onClick = { showDeleteConfirm = true }) { Text("Delete Entry") }
+                // Issue #122: destructive Delete action styled in the error color, consistent
+                // with User Management's red-Delete treatment.
+                TextButton(
+                    onClick = { showDeleteConfirm = true },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Delete Entry") }
             }
         },
         confirmButton = {
@@ -167,9 +180,17 @@ private fun EditPointsLogDialog(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete this entry?") },
+            // Issue #121: include the entry ID so admins can confirm they are deleting the
+            // intended row, matching web's delete-confirmation copy.
+            title = { Text("Delete entry #${entry.id}?") },
             text = { Text("This will reverse the points on the person, floored at 0, and cannot be undone.") },
-            confirmButton = { TextButton(onClick = onDelete) { Text("Delete") } },
+            // Issue #122: confirming the delete is the destructive step — same red treatment.
+            confirmButton = {
+                TextButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Delete") }
+            },
             dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } }
         )
     }
