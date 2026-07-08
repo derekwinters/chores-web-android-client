@@ -101,6 +101,10 @@ tasks.withType<Test>().configureEach {
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
         showStackTraces = true
         showCauses = true
+        // TEMP DIAGNOSTIC (issue #177 CI investigation): surface printToLog() output for
+        // ChoreListContentTest.choreListContent_deleteAction_requiresConfirmation's semantics
+        // tree dump. To be reverted once the cause is confirmed.
+        showStandardStreams = true
     }
 }
 
