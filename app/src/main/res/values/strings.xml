@@ -1,12 +1,5 @@
 <resources>
     <string name="app_name">Chores</string>
-    <string name="nav_notification">Notification</string>
-    <string name="notification_screen_title">Notifications</string>
-    <string name="send_test_notification">Send Test Notification</string>
-    <string name="notification_channel_name">Test Notifications</string>
-    <string name="notification_channel_description">Channel used for test notifications triggered from the Notification screen</string>
-    <string name="test_notification_title">Test Notification</string>
-    <string name="test_notification_body">This is a test notification from Chores.</string>
 
     <!-- Navigation shell (issue #10). Issue #60: labels "Board"/"Log" match web's PAGES copy
          (App.jsx lines 30-35) rather than "Dashboard"/"Activity Log". -->

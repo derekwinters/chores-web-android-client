@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
@@ -109,7 +108,6 @@ sealed class ChoresDestination(
     data object Users : ChoresDestination("users", R.string.nav_users, Icons.Filled.People, adminOnly = true)
     data object Settings : ChoresDestination("settings", R.string.nav_settings, Icons.Filled.Settings, adminOnly = true)
     data object Preferences : ChoresDestination("preferences", R.string.nav_preferences, Icons.Filled.Palette)
-    data object Notification : ChoresDestination("notification", R.string.nav_notification, Icons.Filled.Notifications)
 }
 
 /** Issue #12: builds the Chores route + query args for a Dashboard Due Now/Due Soon deep link. */
@@ -145,15 +143,12 @@ private fun userDetailRoute(personId: Int, username: String): String =
  * Issue #59/#60: matches web's `PAGES` list (`App.jsx` lines 30-35) — order Board → Chores →
  * Users(admin) → Log, with Settings and Preferences deliberately excluded from primary nav (they
  * live only in the avatar dropdown, see [ChoresAuthenticatedScaffold]'s `TopAppBar` actions).
- * [ChoresDestination.Notification] has no web equivalent to match order against, so it's kept
- * last.
  */
 private val drawerDestinations = listOf(
     ChoresDestination.Dashboard,
     ChoresDestination.Chores,
     ChoresDestination.Users,
-    ChoresDestination.ActivityLog,
-    ChoresDestination.Notification
+    ChoresDestination.ActivityLog
 )
 
 /**
@@ -166,13 +161,11 @@ private val drawerDestinations = listOf(
  */
 @Composable
 fun ChoresApp(
-    onSendTestNotification: () -> Unit,
     sessionViewModel: SessionViewModel = hiltViewModel()
 ) {
     val isAuthenticated by sessionViewModel.isAuthenticated.collectAsState()
     ChoresAppContent(
         isAuthenticated = isAuthenticated,
-        onSendTestNotification = onSendTestNotification,
         onLogout = sessionViewModel::logout
     )
 }
@@ -186,7 +179,6 @@ fun ChoresApp(
 @Composable
 fun ChoresAppContent(
     isAuthenticated: Boolean,
-    onSendTestNotification: () -> Unit,
     onLogout: () -> Unit = {},
     modifier: Modifier = Modifier,
     loginContent: @Composable () -> Unit = { AuthGateScreen() },
@@ -278,8 +270,7 @@ fun ChoresAppContent(
                 dataSettingsContent = dataSettingsContent,
                 pointsLogContent = pointsLogContent,
                 preferencesContent = preferencesContent,
-                themeAdminContent = themeAdminContent,
-                notificationContent = { NotificationScreen(onSendTestNotification = onSendTestNotification) }
+                themeAdminContent = themeAdminContent
             )
         }
     }
@@ -306,8 +297,7 @@ private fun ChoresAuthenticatedScaffold(
     dataSettingsContent: @Composable (DataSettingsNavActions) -> Unit,
     pointsLogContent: @Composable () -> Unit,
     preferencesContent: @Composable () -> Unit,
-    themeAdminContent: @Composable () -> Unit,
-    notificationContent: @Composable () -> Unit
+    themeAdminContent: @Composable () -> Unit
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
@@ -580,7 +570,6 @@ private fun ChoresAuthenticatedScaffold(
                     composable("settings/data/pointsLog") { pointsLogContent() }
                 }
                 composable(ChoresDestination.Preferences.route) { preferencesContent() }
-                composable(ChoresDestination.Notification.route) { notificationContent() }
             }
         }
     }

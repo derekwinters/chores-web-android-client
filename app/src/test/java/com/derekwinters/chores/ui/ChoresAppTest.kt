@@ -42,7 +42,6 @@ class ChoresAppTest {
         composeTestRule.setContent {
             ChoresAppContent(
                 isAuthenticated = isAuthenticated,
-                onSendTestNotification = {},
                 onLogout = onLogout,
                 loginContent = { Text("Fake Login") },
                 dashboardContent = { Text("Fake Dashboard") },
@@ -65,7 +64,6 @@ class ChoresAppTest {
         composeTestRule.setContent {
             ChoresAppContent(
                 isAuthenticated = false,
-                onSendTestNotification = {},
                 loginContent = { Text("Fake Login") },
                 // Issue #62: currentThemeProvider is now invoked before the auth check too (it
                 // wraps loginContent in ChoresTheme), so it needs a non-Hilt fake here same as the
@@ -100,7 +98,6 @@ class ChoresAppTest {
         composeTestRule.setContent {
             ChoresAppContent(
                 isAuthenticated = false,
-                onSendTestNotification = {},
                 loginContent = { observedPrimary = MaterialTheme.colorScheme.primary },
                 currentThemeProvider = { theme }
             )
