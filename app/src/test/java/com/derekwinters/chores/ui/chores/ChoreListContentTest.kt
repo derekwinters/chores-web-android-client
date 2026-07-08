@@ -8,7 +8,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.printToLog
+import androidx.compose.ui.test.printToString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.Chore
 import com.derekwinters.chores.ui.UiState
@@ -524,7 +524,7 @@ class ChoreListContentTest {
         // screen-space bounds to root-cause why this assertion started failing after switching
         // ChoreListContent's bottom inset from a container Modifier.padding to LazyColumn
         // contentPadding -- to be removed once the cause is confirmed.
-        composeTestRule.onRoot().printToLog("Issue177Debug")
+        println("===Issue177Debug===\n" + composeTestRule.onRoot().printToString() + "\n===Issue177DebugEnd===")
         composeTestRule.onNodeWithText("This also removes all points history for this chore and cannot be undone.").assertExists()
 
         // Issue #162: the row's own Delete action is now an icon (contentDescription "Delete",
