@@ -102,6 +102,35 @@ class ThemeAdminContentTest {
         assert(deletedId == "1")
     }
 
+    /**
+     * Issue #131: the row's "Copy" action opens the create dialog pre-named "<name> Copy" and
+     * creates the new theme from the tapped row's colors (not the list's first theme).
+     */
+    @Test
+    fun themeAdminContent_copyTheme_createsFromTappedRowsColors() {
+        val frog = theme.copy(id = "2", name = "Frog", primary = "#777777")
+        var createdName: String? = null
+        var createdSource: ThemeOption? = null
+        composeTestRule.setContent {
+            ThemeAdminContent(
+                uiState = UiState.Success(listOf(theme, frog)),
+                onSetDefault = {},
+                onCreate = { name, source -> createdName = name; createdSource = source },
+                onRename = { _, _ -> },
+                onUpdateColors = { _, _ -> },
+                onDelete = {}
+            )
+        }
+
+        // Rows render in list order, so the second "Copy" button belongs to the Frog row.
+        composeTestRule.onAllNodesWithText("Copy")[1].performClick()
+        composeTestRule.onNodeWithText("Frog Copy").assertExists() // pre-filled name field
+        composeTestRule.onNodeWithText("Create").performClick()
+
+        assert(createdName == "Frog Copy")
+        assert(createdSource == frog)
+    }
+
     /** Issue #130: editing a hex field and saving sends the full updated palette (no rename). */
     @Test
     fun themeAdminContent_editTheme_changedColorSavesUpdatedColors() {

@@ -46,7 +46,8 @@ import com.derekwinters.chores.ui.UiState
  * Issue #24: household default theme management — 6 built-in themes (protected server-side; the
  * real API exposes no `is_builtin` flag) plus custom themes (create via copy, rename, delete).
  * Issue #130: the edit dialog also exposes the full 9-color palette as hex inputs with live
- * swatch previews, saved via the update endpoint.
+ * swatch previews, saved via the update endpoint. Issue #131: each row has a "Copy" action that
+ * seeds the create dialog with that theme's colors and a "<name> Copy" default name.
  *
  * Thin Hilt-wired wrapper around [ThemeAdminContent].
  */
@@ -80,6 +81,7 @@ fun ThemeAdminContent(
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
     var editingTheme by remember { mutableStateOf<ThemeOption?>(null) }
+    var copySourceTheme by remember { mutableStateOf<ThemeOption?>(null) }
 
     Box(modifier = modifier.fillMaxSize()) {
         when (uiState) {
@@ -96,6 +98,7 @@ fun ThemeAdminContent(
                             theme = theme,
                             isActive = defaultThemeId == theme.id,
                             onSetDefault = { onSetDefault(theme.id) },
+                            onCopy = { copySourceTheme = theme },
                             onEdit = { editingTheme = theme }
                         )
                     }
@@ -116,6 +119,20 @@ fun ThemeAdminContent(
                 showCreateDialog = false
             },
             onDismiss = { showCreateDialog = false }
+        )
+    }
+
+    // Issue #131: "copy theme" — same create-via-copy flow as the FAB, but seeded from the tapped
+    // row's theme (the real backend has no server-side copy; createTheme resends its colors as the
+    // new theme's palette).
+    copySourceTheme?.let { source ->
+        CreateThemeDialog(
+            initialName = "${source.name} Copy",
+            onCreate = { name ->
+                onCreate(name, source)
+                copySourceTheme = null
+            },
+            onDismiss = { copySourceTheme = null }
         )
     }
 
@@ -143,6 +160,7 @@ private fun ThemeRow(
     theme: ThemeOption,
     isActive: Boolean = false,
     onSetDefault: () -> Unit,
+    onCopy: () -> Unit,
     onEdit: () -> Unit
 ) {
     Card(
@@ -175,14 +193,21 @@ private fun ThemeRow(
                 }
                 Text(theme.name, modifier = Modifier.padding(start = 8.dp))
             }
-            TextButton(onClick = onEdit) { Text("Edit") }
+            Row {
+                TextButton(onClick = onCopy) { Text("Copy") }
+                TextButton(onClick = onEdit) { Text("Edit") }
+            }
         }
     }
 }
 
 @Composable
-private fun CreateThemeDialog(onCreate: (String) -> Unit, onDismiss: () -> Unit) {
-    var name by remember { mutableStateOf("") }
+private fun CreateThemeDialog(
+    onCreate: (String) -> Unit,
+    onDismiss: () -> Unit,
+    initialName: String = ""
+) {
+    var name by remember { mutableStateOf(initialName) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("New Custom Theme") },
