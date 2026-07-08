@@ -48,8 +48,9 @@ class ChoreListContentTest {
     )
 
     @Test
-    fun choreListContent_addChoreFab_showsTextLabelAndInvokesCallback() {
-        // Issue #70: extended FAB with an "Add Chore" text label, not icon-only.
+    fun choreListContent_addChoreFab_isIconOnlyWithContentDescription() {
+        // Issue #177: reverted the issue #70 extended (icon+text) FAB back to icon-only; "Add
+        // Chore" is now the icon's contentDescription rather than a visible text label.
         var added = false
         composeTestRule.setContent {
             ChoreListContent(
@@ -60,19 +61,17 @@ class ChoreListContentTest {
             )
         }
 
-        // ExtendedFloatingActionButton's icon+text don't merge into a single semantics node by
-        // default, so the merged-tree finder can't locate the text node -- useUnmergedTree is
-        // required here.
-        composeTestRule.onNodeWithText("Add Chore", useUnmergedTree = true).performClick()
+        composeTestRule.onNodeWithContentDescription("Add Chore").performClick()
+        composeTestRule.onNodeWithText("Add Chore", useUnmergedTree = true).assertDoesNotExist()
 
         assert(added)
     }
 
     @Test
-    fun choreListContent_filterIconRow_showsOneIconPerGroupPlusOverflow() {
+    fun choreListContent_filterIconRow_showsSearchIconPlusOneIconPerGroupPlusOverflow() {
         // Issue #162: the "Filters" text button is replaced by a compact row of per-group filter
         // icons (Assignee, Status, Due-within) plus an overflow "More filters" icon that opens
-        // the full ChoreFiltersDialog.
+        // the full ChoreFiltersDialog. Issue #177: a collapsed search icon is now the first entry.
         composeTestRule.setContent {
             ChoreListContent(
                 uiState = UiState.Success(listOf(assignedChore)),
@@ -81,6 +80,7 @@ class ChoreListContentTest {
             )
         }
 
+        composeTestRule.onNodeWithContentDescription("Search chores").assertExists()
         composeTestRule.onNodeWithContentDescription("Filter by assignee").assertExists()
         composeTestRule.onNodeWithContentDescription("Filter by status").assertExists()
         composeTestRule.onNodeWithContentDescription("Filter by due date").assertExists()
@@ -277,6 +277,43 @@ class ChoreListContentTest {
     }
 
     @Test
+    fun choreListContent_search_collapsedByDefault_hidesTextFieldShowsIcon() {
+        // Issue #177: search starts collapsed (icon-only) when no query is active yet.
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Search chores").assertExists()
+        composeTestRule.onNodeWithText("Search chores").assertDoesNotExist()
+    }
+
+    @Test
+    fun choreListContent_search_tappingIconExpandsFieldAndHidesOtherFilterIcons() {
+        // Issue #177: tapping the search icon morphs the row into a full-width text field plus a
+        // back/collapse icon, hiding the Assignee/State/Due-within/Tune icons while expanded.
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Search chores").performClick()
+
+        composeTestRule.onNodeWithText("Search chores").assertExists()
+        composeTestRule.onNodeWithContentDescription("Close search").assertExists()
+        composeTestRule.onNodeWithContentDescription("Filter by assignee").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Filter by status").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Filter by due date").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("More filters").assertDoesNotExist()
+    }
+
+    @Test
     fun choreListContent_search_invokesOnQueryChange() {
         var query: String? = null
         composeTestRule.setContent {
@@ -288,6 +325,7 @@ class ChoreListContentTest {
             )
         }
 
+        composeTestRule.onNodeWithContentDescription("Search chores").performClick()
         composeTestRule.onNodeWithText("Search chores").performTextInput("dish")
 
         assert(query == "dish")
@@ -295,7 +333,7 @@ class ChoreListContentTest {
 
     @Test
     fun choreListContent_search_clearButtonHiddenWhenEmptyShownWhenNotEmpty() {
-        // Issue #69: leading search icon + trailing clear ("x") button on the search field.
+        // Issue #69: trailing clear ("x") button on the search field, shown only once expanded.
         composeTestRule.setContent {
             ChoreListContent(
                 uiState = UiState.Success(listOf(assignedChore)),
@@ -305,6 +343,8 @@ class ChoreListContentTest {
             )
         }
 
+        // Issue #177: a non-empty query means the row starts already expanded, since an active
+        // search must survive navigating away and back to this screen.
         composeTestRule.onNodeWithContentDescription("Clear search").assertExists()
     }
 
@@ -324,6 +364,51 @@ class ChoreListContentTest {
         composeTestRule.onNodeWithContentDescription("Clear search").performClick()
 
         assert(query == "")
+    }
+
+    @Test
+    fun choreListContent_search_initiallyExpandedWhenQueryAlreadyActive() {
+        // Issue #177: initial expanded/collapsed state derives from filters.query.isNotEmpty()
+        // on first composition, so an active search survives navigating away and back.
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                filters = ChoreFilters(query = "dish")
+            )
+        }
+
+        composeTestRule.onNodeWithText("Search chores").assertExists()
+        composeTestRule.onNodeWithContentDescription("Close search").assertExists()
+        composeTestRule.onNodeWithContentDescription("Filter by assignee").assertDoesNotExist()
+    }
+
+    @Test
+    fun choreListContent_search_collapsingPreservesQueryAndRestoresFilterIcons() {
+        // Issue #177: collapsing (tapping the back icon) hides the text field again but must NOT
+        // clear the query -- the filter stays active.
+        var query: String? = "irrelevant-should-not-be-cleared"
+        composeTestRule.setContent {
+            ChoreListContent(
+                uiState = UiState.Success(listOf(assignedChore)),
+                completingChoreId = null,
+                onComplete = { _, _ -> },
+                filters = ChoreFilters(query = "dish"),
+                onQueryChange = { query = it }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Close search").performClick()
+
+        // Collapsing never invokes onQueryChange -- the query is preserved untouched.
+        assert(query == "irrelevant-should-not-be-cleared")
+        composeTestRule.onNodeWithText("Search chores").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Filter by assignee").assertExists()
+        // Issue #177: the collapsed search icon carries a Badge (like the other filter groups)
+        // while its query is still active, matching the grilling contract's "existing filter
+        // Badge" as the collapsed-state indicator for an active search.
+        composeTestRule.onNodeWithContentDescription("Search chores").assertExists()
     }
 
     @Test

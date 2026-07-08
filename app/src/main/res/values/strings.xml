@@ -87,6 +87,9 @@
     <string name="search_chores_label">Search chores</string>
     <!-- Issue #69: content description for the search field's trailing clear button. -->
     <string name="clear_search">Clear search</string>
+    <!-- Issue #177: content description for the collapsible search's back/collapse icon, which
+         returns the filter icon row to its collapsed state without clearing the query. -->
+    <string name="close_search">Close search</string>
     <string name="filters_title">Filters</string>
     <string name="apply">Apply</string>
     <string name="clear_filters">Clear filters</string>

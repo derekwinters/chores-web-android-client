@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -83,9 +84,9 @@ class UserManagementContentTest {
             )
         }
 
-        // Issue #94: FAB is now an extended FAB labeled "Add User" (icon has no contentDescription
-        // of its own since the visible text label conveys purpose).
-        composeTestRule.onNodeWithText("Add User", useUnmergedTree = true).performClick()
+        // Issue #177: FAB reverted to icon-only; "Add User" is now the icon's contentDescription
+        // rather than a visible text label.
+        composeTestRule.onNodeWithContentDescription("Add User").performClick()
         composeTestRule.onNodeWithText("Display Name").performTextInput("Bob")
         composeTestRule.onNodeWithText("Password").performTextInput("secret123")
         composeTestRule.onNodeWithText("Create").performClick()
@@ -238,9 +239,9 @@ class UserManagementContentTest {
         composeTestRule.onNodeWithText("Members").assertDoesNotExist()
     }
 
-    /** Issue #94 behavior: Add-User FAB renders as an extended FAB with the "Add User" label (area: ui). */
+    /** Issue #177 behavior: Add-User FAB is icon-only, with "Add User" as its contentDescription (area: ui). */
     @Test
-    fun userManagementContent_addUserFab_showsTextLabel() {
+    fun userManagementContent_addUserFab_isIconOnlyWithContentDescription() {
         composeTestRule.setContent {
             UserManagementContent(
                 uiState = UiState.Success(listOf(admin)),
@@ -253,6 +254,7 @@ class UserManagementContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Add User", useUnmergedTree = true).assertExists()
+        composeTestRule.onNodeWithContentDescription("Add User").assertExists()
+        composeTestRule.onNodeWithText("Add User", useUnmergedTree = true).assertDoesNotExist()
     }
 }
