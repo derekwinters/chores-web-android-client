@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -157,7 +158,12 @@ private fun EditPointsLogDialog(
                 // matches that directly without needing a separate id lookup.
                 OutlinedTextField(value = person, onValueChange = { person = it }, label = { Text("Person (username)") })
                 OutlinedTextField(value = pointsText, onValueChange = { pointsText = it }, label = { Text("Points") })
-                TextButton(onClick = { showDeleteConfirm = true }) { Text("Delete Entry") }
+                // Issue #122: destructive Delete action styled in the error color, consistent
+                // with User Management's red-Delete treatment.
+                TextButton(
+                    onClick = { showDeleteConfirm = true },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Delete Entry") }
             }
         },
         confirmButton = {
@@ -173,7 +179,13 @@ private fun EditPointsLogDialog(
             // intended row, matching web's delete-confirmation copy.
             title = { Text("Delete entry #${entry.id}?") },
             text = { Text("This will reverse the points on the person, floored at 0, and cannot be undone.") },
-            confirmButton = { TextButton(onClick = onDelete) { Text("Delete") } },
+            // Issue #122: confirming the delete is the destructive step — same red treatment.
+            confirmButton = {
+                TextButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Delete") }
+            },
             dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } }
         )
     }
