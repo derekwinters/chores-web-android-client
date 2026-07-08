@@ -128,6 +128,19 @@ class ChoresAppTest {
     }
 
     @Test
+    fun choresApp_navPanel_hamburgerTogglesOpenAndClosedContentDescription() {
+        // Issue #145: tapping the hamburger a second time (without navigating anywhere) closes
+        // the panel again, and the content description reflects the open/closed state.
+        setContent()
+
+        composeTestRule.onNodeWithContentDescription("Open navigation menu").performClick()
+        composeTestRule.onNodeWithTag("navItem_chores").assertExists()
+
+        composeTestRule.onNodeWithContentDescription("Close navigation menu").performClick()
+        composeTestRule.onNodeWithTag("navItem_chores").assertDoesNotExist()
+    }
+
+    @Test
     fun choresApp_drawer_showsAllPrimaryDestinationsWithWebLabels() {
         // Issue #60: web's PAGES order is Board -> Chores -> Users(admin) -> Log; verifies the
         // renamed "Board"/"Log" labels are present (order itself is covered by drawerDestinations'

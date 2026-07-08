@@ -1,11 +1,17 @@
 package com.derekwinters.chores.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -24,20 +30,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,7 +90,6 @@ import com.derekwinters.chores.ui.settings.SettingsNavActions
 import com.derekwinters.chores.ui.settings.SettingsScreen
 import com.derekwinters.chores.ui.users.UserDetailScreen
 import com.derekwinters.chores.ui.users.UserManagementScreen
-import kotlinx.coroutines.launch
 
 /**
  * Top-level nav destinations (issue #10: "Add navigation destinations for: Dashboard, Chores,
@@ -300,9 +303,16 @@ private fun ChoresAuthenticatedScaffold(
     themeAdminContent: @Composable () -> Unit
 ) {
     val navController = rememberNavController()
-    val drawerState = rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
+    // Issue #145: the nav panel expands beneath the TopAppBar (rather than sliding in as a
+    // ModalNavigationDrawer overlay) to match chores-web's mobile layout. Survives rotation via
+    // rememberSaveable. Issue #146: back-press with the panel open closes it instead of popping
+    // the nav stack (see BackHandler below).
+    var navPanelExpanded by rememberSaveable { mutableStateOf(false) }
     var userMenuExpanded by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = navPanelExpanded) {
+        navPanelExpanded = false
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -327,74 +337,81 @@ private fun ChoresAuthenticatedScaffold(
             ?: stringResource(R.string.app_name)
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
-                visibleDestinations.forEach { destination ->
-                    val selected = isCurrent(destination)
-                    NavigationDrawerItem(
-                        label = { Text(stringResource(destination.labelRes)) },
-                        icon = { Icon(destination.icon, contentDescription = null) },
-                        selected = selected,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            navController.navigate(destination.route) {
-                                popUpTo(ChoresDestination.Dashboard.route) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        // Issue #61: web's `.nav-active` (App.css lines 115-127) keeps the same
-                        // background as an unselected item (`--surface`) — only the text/icon
-                        // color brightens (`--text-muted` -> `--text`). Material3's default
-                        // selected-item colors draw a secondaryContainer pill, a much stronger
-                        // highlight than web's; this overrides it to a transparent container with
-                        // only a text/icon color change.
-                        colors = NavigationDrawerItemDefaults.colors(
-                            selectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                            unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                            selectedIconColor = MaterialTheme.colorScheme.onSurface,
-                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        // Issue #60 test fix: disambiguates drawer items from the TopAppBar
-                        // subtitle, which can show the same label text (e.g. both "Board" when
-                        // Dashboard is current) since drawer labels now match web's PAGES copy.
-                        modifier = Modifier
-                            .padding(horizontal = 12.dp, vertical = 4.dp)
-                            .testTag("navItem_${destination.route}")
-                    )
-                }
+    // Issue #145: renders the primary nav items in the panel that expands beneath the TopAppBar.
+    // Extracted so it can be shared without needing a ModalNavigationDrawer/ModalDrawerSheet host.
+    val navPanelContent: @Composable () -> Unit = {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            visibleDestinations.forEach { destination ->
+                val selected = isCurrent(destination)
+                NavigationDrawerItem(
+                    label = { Text(stringResource(destination.labelRes)) },
+                    icon = { Icon(destination.icon, contentDescription = null) },
+                    selected = selected,
+                    onClick = {
+                        navPanelExpanded = false
+                        navController.navigate(destination.route) {
+                            popUpTo(ChoresDestination.Dashboard.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    // Issue #61: web's `.nav-active` (App.css lines 115-127) keeps the same
+                    // background as an unselected item (`--surface`) — only the text/icon
+                    // color brightens (`--text-muted` -> `--text`). Material3's default
+                    // selected-item colors draw a secondaryContainer pill, a much stronger
+                    // highlight than web's; this overrides it to a transparent container with
+                    // only a text/icon color change.
+                    colors = NavigationDrawerItemDefaults.colors(
+                        selectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                        selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    // Issue #60 test fix: disambiguates drawer items from the TopAppBar
+                    // subtitle, which can show the same label text (e.g. both "Board" when
+                    // Dashboard is current) since drawer labels now match web's PAGES copy.
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .testTag("navItem_${destination.route}")
+                )
             }
         }
-    ) {
-        Scaffold(
-            modifier = modifier,
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Column {
-                            // Issue #58: household/app title branding, matching web's
-                            // `.app-title`/`.topnav-title` (Playfair Display serif, 1.3rem/700/-0.5px).
-                            Text(
-                                text = appTitle ?: stringResource(R.string.app_name),
-                                fontFamily = FontFamily.Serif,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.8.sp,
-                                letterSpacing = (-0.5).sp,
-                                modifier = Modifier.testTag("appTitleBranding")
+    }
+
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        // Issue #58: household/app title branding, matching web's
+                        // `.app-title`/`.topnav-title` (Playfair Display serif, 1.3rem/700/-0.5px).
+                        Text(
+                            text = appTitle ?: stringResource(R.string.app_name),
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.8.sp,
+                            letterSpacing = (-0.5).sp,
+                            modifier = Modifier.testTag("appTitleBranding")
+                        )
+                        Text(currentLabel, style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                navigationIcon = {
+                    // Issue #145: the same hamburger icon toggles the panel open and closed;
+                    // only the content description changes to reflect the current state.
+                    IconButton(onClick = { navPanelExpanded = !navPanelExpanded }) {
+                        Icon(
+                            Icons.Filled.Menu,
+                            contentDescription = stringResource(
+                                if (navPanelExpanded) R.string.close_navigation_menu else R.string.open_navigation_menu
                             )
-                            Text(currentLabel, style = MaterialTheme.typography.bodySmall)
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.open_navigation_menu))
-                        }
-                    },
-                    actions = {
+                        )
+                    }
+                },
+                actions = {
                         // Issue #59: restores web's user identity treatment (`UserAvatarMenu.jsx`
                         // lines 45-51) — a colored circle with the user's initial plus their name —
                         // in place of the generic MoreVert icon.
@@ -458,11 +475,22 @@ private fun ChoresAuthenticatedScaffold(
                 )
             }
         ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = ChoresDestination.Dashboard.route,
-                modifier = Modifier.padding(innerPadding)
-            ) {
+            Column(modifier = Modifier.padding(innerPadding)) {
+                // Issue #145: expands beneath the TopAppBar instead of a ModalNavigationDrawer
+                // overlay, matching chores-web's mobile nav pattern.
+                AnimatedVisibility(
+                    visible = navPanelExpanded,
+                    enter = expandVertically(animationSpec = tween(250)),
+                    exit = shrinkVertically(animationSpec = tween(250))
+                ) {
+                    Surface(tonalElevation = 2.dp) {
+                        navPanelContent()
+                    }
+                }
+                NavHost(
+                    navController = navController,
+                    startDestination = ChoresDestination.Dashboard.route
+                ) {
                 composable(ChoresDestination.Dashboard.route) {
                     dashboardContent(
                         DashboardNavActions(
@@ -570,6 +598,7 @@ private fun ChoresAuthenticatedScaffold(
                     composable("settings/data/pointsLog") { pointsLogContent() }
                 }
                 composable(ChoresDestination.Preferences.route) { preferencesContent() }
+                }
             }
         }
     }

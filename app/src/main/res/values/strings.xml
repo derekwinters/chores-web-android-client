@@ -13,6 +13,9 @@
     <string name="nav_settings">Settings</string>
     <string name="nav_preferences">Preferences</string>
     <string name="open_navigation_menu">Open navigation menu</string>
+    <!-- Issue #145: the hamburger icon toggles an expandable panel; the content description
+         reflects whether tapping it will open or close that panel. -->
+    <string name="close_navigation_menu">Close navigation menu</string>
     <string name="user_menu">User menu</string>
     <string name="logout">Logout</string>
     <string name="coming_soon">Coming soon</string>
