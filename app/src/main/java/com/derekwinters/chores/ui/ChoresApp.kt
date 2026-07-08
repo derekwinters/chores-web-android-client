@@ -581,7 +581,6 @@ private fun ChoresAuthenticatedScaffold(
                         onNavigateToHistory = { choreName ->
                             navController.navigate(logRouteWithArgs(chore = choreName, person = null))
                         },
-                        onNavigateToCreateChore = { navController.navigate("chores/new") },
                         onNavigateToEditChore = { choreId -> navController.navigate("chores/$choreId/edit") }
                     )
                 )
