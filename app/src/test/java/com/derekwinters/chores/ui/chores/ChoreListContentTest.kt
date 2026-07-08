@@ -3,12 +3,12 @@ package com.derekwinters.chores.ui.chores
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.printToString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.derekwinters.chores.data.model.Chore
 import com.derekwinters.chores.ui.UiState
@@ -515,16 +515,16 @@ class ChoreListContentTest {
         }
 
         composeTestRule.onNodeWithText("Dishes").performClick()
-        // The row's Delete button can render underneath the fixed Add-Chore FAB depending on
-        // available viewport height; performScrollTo() uses the LazyColumn's contentPadding
-        // headroom (see ChoreListContent) to scroll it clear of the FAB's fixed overlap zone
-        // before clicking, so the FAB doesn't intercept the touch instead.
-        composeTestRule.onNodeWithContentDescription("Delete").performScrollTo().performClick()
-        // TEMP DIAGNOSTIC (issue #177 CI investigation): dump the full semantics tree with real
-        // screen-space bounds to root-cause why this assertion started failing after switching
-        // ChoreListContent's bottom inset from a container Modifier.padding to LazyColumn
-        // contentPadding -- to be removed once the cause is confirmed.
-        println("===Issue177Debug===\n" + composeTestRule.onRoot().printToString() + "\n===Issue177DebugEnd===")
+        // Issue #177: the row's Delete button can render exactly where the fixed Add-Chore FAB
+        // sits (confirmed via a semantics dump: on a 320x470px viewport, a due chore's 5th/last
+        // action icon lands at the same bottom-right coordinates as the FAB, which is drawn on
+        // top and intercepts the touch). The generic performScrollTo() only scrolls the minimum
+        // needed to bring a node's bounds inside the raw viewport, which doesn't account for the
+        // FAB overlay and can leave Delete in that exact worst-case spot. performScrollToIndex on
+        // the tagged LazyColumn instead pins the item to the top of the viewport (scrollOffset =
+        // 0), reliably clearing the FAB before the click.
+        composeTestRule.onNodeWithTag("choreLazyColumn").performScrollToIndex(0)
+        composeTestRule.onNodeWithContentDescription("Delete").performClick()
         composeTestRule.onNodeWithText("This also removes all points history for this chore and cannot be undone.").assertExists()
 
         // Issue #162: the row's own Delete action is now an icon (contentDescription "Delete",

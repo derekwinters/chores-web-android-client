@@ -53,6 +53,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -238,9 +239,12 @@ fun ChoreListContent(
                         // Issue #177: contentPadding (not a container Modifier.padding) reserves
                         // the FAB's footprint as trailing scrollable space, so content fills the
                         // full screen and scrolls behind the FAB instead of being laid out inside
-                        // a permanently shrunk region.
+                        // a permanently shrunk region. testTag lets a test scroll a specific item
+                        // to the top of the viewport (LazyListState.scrollToItem semantics) rather
+                        // than relying on the generic "bring minimally into view" scrollTo, which
+                        // can leave a short list's last row exactly where the FAB already sits.
                         LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize().testTag("choreLazyColumn"),
                             contentPadding = PaddingValues(bottom = 88.dp)
                         ) {
                             items(state.data, key = { it.id }) { chore ->
