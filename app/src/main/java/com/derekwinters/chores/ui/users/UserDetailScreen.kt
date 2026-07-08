@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.derekwinters.chores.data.model.CurrentUser
@@ -126,7 +127,16 @@ fun UserDetailContent(
                                     modifier = Modifier.fillMaxWidth().padding(12.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("${redemption.amount} pts", style = MaterialTheme.typography.bodyMedium)
+                                    // Issue #113: web bolds and accent-colors the redemption amount so it
+                                    // stands out from the row's other fields; mirrors that here with the
+                                    // same tertiary accent used by #101/#110 elsewhere on this screen.
+                                    Text(
+                                        text = "${redemption.amount} pts",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        modifier = Modifier.testTag("redemptionAmountEmphasis")
+                                    )
                                     Text("by ${redemption.redeemedBy}", style = MaterialTheme.typography.bodyMedium)
                                     Text(formatDate(redemption.timestamp), style = MaterialTheme.typography.bodySmall)
                                 }

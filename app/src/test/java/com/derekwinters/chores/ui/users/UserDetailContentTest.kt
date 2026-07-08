@@ -265,6 +265,36 @@ class UserDetailContentTest {
         assert(redeemed == null)
     }
 
+    /**
+     * Issue #113: the redemption amount in each history row is emphasized (bold, accent-colored)
+     * relative to the row's other fields ("by X", the date), matching web's treatment. Actual
+     * font weight/color aren't inspectable through Compose UI test semantics (see HeroStat and
+     * RedeemDialog's confirm-step tests for the same limitation), so this asserts on the
+     * dedicated tag the implementation renders for the amount node and confirms its content,
+     * while the sibling fields in the same row remain untagged/plain.
+     */
+    @Test
+    fun userDetailContent_redemptionHistoryRow_emphasizesAmount_distinctFromOtherRowFields() {
+        val redemption = Redemption(id = 1, amount = 10, redeemedBy = "alice", timestamp = "2026-07-02T22:40:54.326377Z")
+        val dataWithHistory = data.copy(redemptions = listOf(redemption))
+
+        composeTestRule.setContent {
+            UserDetailContent(
+                uiState = UiState.Success(dataWithHistory),
+                redeemState = UiState.Idle,
+                isAdmin = false,
+                onValidateAmount = { null },
+                onRedeem = {},
+                onDismissRedeemResult = {},
+                onHistoryClick = {}
+            )
+        }
+
+        scrollToText("10 pts")
+        composeTestRule.onNodeWithTag("redemptionAmountEmphasis").assertTextEquals("10 pts")
+        composeTestRule.onNodeWithText("by alice").assertExists()
+    }
+
     @Test
     fun userDetailContent_activityAndRedemptions_renderAsCardsWithSeparateFields() {
         val activityEntry = LogEntry(
