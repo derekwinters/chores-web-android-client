@@ -164,6 +164,38 @@ class PointsLogContentTest {
         composeTestRule.onNodeWithText("ID 1 · Chore #4 · 2026-07-01").assertExists()
     }
 
+    /** Issue #124: pagination text displays the current range and total, e.g. "Showing X–Y of Z" (area: ui). */
+    @Test
+    fun pointsLogContent_paginationText_showsCurrentRange() {
+        composeTestRule.setContent {
+            PointsLogContent(
+                uiState = UiState.Success(PointsLogPage(listOf(entry), total = 45, offset = 20, limit = 20)),
+                onUpdate = { _, _, _ -> },
+                onDelete = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Showing 21–40 of 45").assertExists()
+    }
+
+    /** Issue #124: the range end is clamped to the total on a short final page (area: ui). */
+    @Test
+    fun pointsLogContent_paginationText_clampsRangeEndToTotal() {
+        composeTestRule.setContent {
+            PointsLogContent(
+                uiState = UiState.Success(PointsLogPage(listOf(entry), total = 45, offset = 40, limit = 20)),
+                onUpdate = { _, _, _ -> },
+                onDelete = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Showing 41–45 of 45").assertExists()
+    }
+
     @Test
     fun pointsLogContent_rendersFormattedTimestamp() {
         val timestampedEntry = entry.copy(completedAt = "2026-07-02T22:40:54.326377Z")

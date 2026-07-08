@@ -93,9 +93,14 @@ fun PointsLogContent(
 
         if (uiState is UiState.Success) {
             val page = uiState.data
+            // Issue #124: show the currently displayed range ("Showing X–Y of Z", matching web)
+            // instead of only the total count. The range end is clamped to the total for a short
+            // final page; an empty log reads "Showing 0–0 of 0".
+            val rangeStart = if (page.total == 0) 0 else page.offset + 1
+            val rangeEnd = minOf(page.offset + page.limit, page.total)
             Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(onClick = onPreviousPage, enabled = page.offset > 0) { Text("Previous") }
-                Text("${page.total} total")
+                Text("Showing $rangeStart–$rangeEnd of ${page.total}")
                 TextButton(onClick = onNextPage, enabled = page.offset + page.limit < page.total) { Text("Next") }
             }
         }
