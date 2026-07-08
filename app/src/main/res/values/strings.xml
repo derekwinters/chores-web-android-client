@@ -78,6 +78,9 @@
     <string name="chore_detail_frequency_label">Frequency</string>
     <string name="chore_detail_points_label">Points</string>
     <string name="chore_detail_assignee_label">Assignee</string>
+    <!-- Issue #162: the expanded detail's Assignee cell fallback for chores with no fixed
+         current assignee — next-in-rotation for rotating chores, else this ("open" chores). -->
+    <string name="chore_assignee_anyone_label">Anyone</string>
 
     <!-- Chores screen: search, filters, sorting (issue #13) -->
     <string name="search_chores_label">Search chores</string>
@@ -87,6 +90,13 @@
     <string name="apply">Apply</string>
     <string name="clear_filters">Clear filters</string>
     <string name="showing_n_of_m_chores">Showing %1$d of %2$d chores</string>
+
+    <!-- Issue #162: top-of-list filter icon row, one icon per filter group plus an overflow icon
+         opening the full filters dialog (schedule type, assignment type, enabled status). -->
+    <string name="filter_assignee_label">Filter by assignee</string>
+    <string name="filter_state_label">Filter by status</string>
+    <string name="filter_due_within_label">Filter by due date</string>
+    <string name="filter_more_label">More filters</string>
     <string name="filter_assignee">Assignee</string>
     <string name="filter_state">State</string>
     <string name="filter_state_all">All</string>
