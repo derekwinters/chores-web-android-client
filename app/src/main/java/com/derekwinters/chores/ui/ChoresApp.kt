@@ -636,15 +636,18 @@ private fun ChoresAuthenticatedScaffold(
                 composable(ChoresDestination.Users.route) {
                     usersContent { username -> navController.navigate(logRouteWithArgs(chore = null, person = username)) }
                 }
-                navigation(
-                    startDestination = "settings/menu",
-                    route = ChoresDestination.Settings.route,
-                    enterTransition = sharedAxisEnter,
-                    exitTransition = sharedAxisExit,
-                    popEnterTransition = sharedAxisPopEnter,
-                    popExitTransition = sharedAxisPopExit
-                ) {
-                    composable("settings/menu") {
+                // Issue #146: navigation-compose 2.7.7's `navigation(...)` graph builder doesn't
+                // accept enter/exitTransition params (added in a later library version), so the
+                // shared-axis drill-in transition is set per-composable within this graph instead
+                // of once on the graph itself.
+                navigation(startDestination = "settings/menu", route = ChoresDestination.Settings.route) {
+                    composable(
+                        route = "settings/menu",
+                        enterTransition = sharedAxisEnter,
+                        exitTransition = sharedAxisExit,
+                        popEnterTransition = sharedAxisPopEnter,
+                        popExitTransition = sharedAxisPopExit
+                    ) {
                         SettingsMenuContent(
                             onNavigateToGeneral = { navController.navigate("settings/general") },
                             onNavigateToAuth = { navController.navigate("settings/auth") },
@@ -654,30 +657,78 @@ private fun ChoresAuthenticatedScaffold(
                             onNavigateToAbout = { navController.navigate("settings/about") }
                         )
                     }
-                    composable("settings/general") {
+                    composable(
+                        route = "settings/general",
+                        enterTransition = sharedAxisEnter,
+                        exitTransition = sharedAxisExit,
+                        popEnterTransition = sharedAxisPopEnter,
+                        popExitTransition = sharedAxisPopExit
+                    ) {
                         SettingsGeneralScreen(navController = navController)
                     }
-                    composable("settings/auth") {
+                    composable(
+                        route = "settings/auth",
+                        enterTransition = sharedAxisEnter,
+                        exitTransition = sharedAxisExit,
+                        popEnterTransition = sharedAxisPopEnter,
+                        popExitTransition = sharedAxisPopExit
+                    ) {
                         SettingsAuthScreen(
                             navController = navController,
                             onNavigateToAuthLog = { navController.navigate("settings/authLog") }
                         )
                     }
-                    composable("settings/chores") {
+                    composable(
+                        route = "settings/chores",
+                        enterTransition = sharedAxisEnter,
+                        exitTransition = sharedAxisExit,
+                        popEnterTransition = sharedAxisPopEnter,
+                        popExitTransition = sharedAxisPopExit
+                    ) {
                         SettingsChoresScreen(
                             navController = navController,
                             onNavigateToData = { navController.navigate("settings/data") }
                         )
                     }
-                    composable("settings/about") {
+                    composable(
+                        route = "settings/about",
+                        enterTransition = sharedAxisEnter,
+                        exitTransition = sharedAxisExit,
+                        popEnterTransition = sharedAxisPopEnter,
+                        popExitTransition = sharedAxisPopExit
+                    ) {
                         SettingsAboutScreen(navController = navController)
                     }
-                    composable("settings/authLog") { authLogContent() }
-                    composable("settings/theme") { themeAdminContent() }
-                    composable("settings/data") {
+                    composable(
+                        route = "settings/authLog",
+                        enterTransition = sharedAxisEnter,
+                        exitTransition = sharedAxisExit,
+                        popEnterTransition = sharedAxisPopEnter,
+                        popExitTransition = sharedAxisPopExit
+                    ) { authLogContent() }
+                    composable(
+                        route = "settings/theme",
+                        enterTransition = sharedAxisEnter,
+                        exitTransition = sharedAxisExit,
+                        popEnterTransition = sharedAxisPopEnter,
+                        popExitTransition = sharedAxisPopExit
+                    ) { themeAdminContent() }
+                    composable(
+                        route = "settings/data",
+                        enterTransition = sharedAxisEnter,
+                        exitTransition = sharedAxisExit,
+                        popEnterTransition = sharedAxisPopEnter,
+                        popExitTransition = sharedAxisPopExit
+                    ) {
                         dataSettingsContent(DataSettingsNavActions(onNavigateToPointsLog = { navController.navigate("settings/data/pointsLog") }))
                     }
-                    composable("settings/data/pointsLog") { pointsLogContent() }
+                    composable(
+                        route = "settings/data/pointsLog",
+                        enterTransition = sharedAxisEnter,
+                        exitTransition = sharedAxisExit,
+                        popEnterTransition = sharedAxisPopEnter,
+                        popExitTransition = sharedAxisPopExit
+                    ) { pointsLogContent() }
                 }
                 composable(ChoresDestination.Preferences.route) { preferencesContent() }
             }
