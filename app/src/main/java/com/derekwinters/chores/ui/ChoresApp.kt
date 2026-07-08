@@ -2,9 +2,15 @@ package com.derekwinters.chores.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -54,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -90,6 +97,44 @@ import com.derekwinters.chores.ui.settings.SettingsNavActions
 import com.derekwinters.chores.ui.settings.SettingsScreen
 import com.derekwinters.chores.ui.users.UserDetailScreen
 import com.derekwinters.chores.ui.users.UserManagementScreen
+
+/**
+ * Issue #146: Material-motion transitions replacing navigation-compose's built-in default
+ * cross-fade (no enter/exitTransition means the library's implicit fade, which read as an
+ * unintentional-looking flicker rather than deliberate motion).
+ *
+ * Top-level destination switches (Dashboard/Chores/Log/Users/Settings/Preferences) use
+ * fade-through: outgoing fades out, incoming fades in with a subtle scale-up. Set as the
+ * NavHost-level default.
+ */
+private val fadeThroughEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    fadeIn(animationSpec = tween(300)) + scaleIn(initialScale = 0.92f, animationSpec = tween(300))
+}
+private val fadeThroughExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    fadeOut(animationSpec = tween(300))
+}
+
+/**
+ * Issue #146: drill-in destinations (chore new/edit, user detail, settings sections) use
+ * shared-axis horizontal motion — slide in from the right + fade, reversed on pop — set per
+ * destination/graph so it overrides the NavHost-level fade-through default above.
+ */
+private val sharedAxisEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300)) +
+        fadeIn(animationSpec = tween(300))
+}
+private val sharedAxisExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300)) +
+        fadeOut(animationSpec = tween(300))
+}
+private val sharedAxisPopEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)) +
+        fadeIn(animationSpec = tween(300))
+}
+private val sharedAxisPopExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)) +
+        fadeOut(animationSpec = tween(300))
+}
 
 /**
  * Top-level nav destinations (issue #10: "Add navigation destinations for: Dashboard, Chores,
@@ -449,7 +494,15 @@ private fun ChoresAuthenticatedScaffold(
                                 leadingIcon = { Icon(Icons.Filled.Palette, contentDescription = null) },
                                 onClick = {
                                     userMenuExpanded = false
-                                    navController.navigate(ChoresDestination.Preferences.route)
+                                    // Issue #146: avatar-dropdown navigations now pop up to
+                                    // Dashboard like drawer navigations, so "back" from here
+                                    // eventually lands on the homepage instead of walking
+                                    // arbitrary history.
+                                    navController.navigate(ChoresDestination.Preferences.route) {
+                                        popUpTo(ChoresDestination.Dashboard.route) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
                             )
                             if (isAdmin) {
@@ -458,7 +511,11 @@ private fun ChoresAuthenticatedScaffold(
                                     leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                                     onClick = {
                                         userMenuExpanded = false
-                                        navController.navigate(ChoresDestination.Settings.route)
+                                        navController.navigate(ChoresDestination.Settings.route) {
+                                            popUpTo(ChoresDestination.Dashboard.route) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
                                 )
                             }
@@ -489,7 +546,11 @@ private fun ChoresAuthenticatedScaffold(
                 }
                 NavHost(
                     navController = navController,
-                    startDestination = ChoresDestination.Dashboard.route
+                    startDestination = ChoresDestination.Dashboard.route,
+                    enterTransition = fadeThroughEnter,
+                    exitTransition = fadeThroughExit,
+                    popEnterTransition = fadeThroughEnter,
+                    popExitTransition = fadeThroughExit
                 ) {
                 composable(ChoresDestination.Dashboard.route) {
                     dashboardContent(
@@ -530,12 +591,22 @@ private fun ChoresAuthenticatedScaffold(
                         )
                     )
                 }
-                composable("chores/new") {
+                composable(
+                    route = "chores/new",
+                    enterTransition = sharedAxisEnter,
+                    exitTransition = sharedAxisExit,
+                    popEnterTransition = sharedAxisPopEnter,
+                    popExitTransition = sharedAxisPopExit
+                ) {
                     choreFormContent { navController.popBackStack() }
                 }
                 composable(
                     route = "chores/{choreId}/edit",
-                    arguments = listOf(navArgument("choreId") { type = NavType.IntType })
+                    arguments = listOf(navArgument("choreId") { type = NavType.IntType }),
+                    enterTransition = sharedAxisEnter,
+                    exitTransition = sharedAxisExit,
+                    popEnterTransition = sharedAxisPopEnter,
+                    popExitTransition = sharedAxisPopExit
                 ) {
                     choreFormContent { navController.popBackStack() }
                 }
@@ -551,7 +622,11 @@ private fun ChoresAuthenticatedScaffold(
                     arguments = listOf(
                         navArgument("personId") { type = NavType.IntType },
                         navArgument("username") { type = NavType.StringType; nullable = true; defaultValue = null }
-                    )
+                    ),
+                    enterTransition = sharedAxisEnter,
+                    exitTransition = sharedAxisExit,
+                    popEnterTransition = sharedAxisPopEnter,
+                    popExitTransition = sharedAxisPopExit
                 ) { backStackEntry ->
                     val username = backStackEntry.arguments?.getString("username")
                     userDetailContent {
@@ -561,7 +636,14 @@ private fun ChoresAuthenticatedScaffold(
                 composable(ChoresDestination.Users.route) {
                     usersContent { username -> navController.navigate(logRouteWithArgs(chore = null, person = username)) }
                 }
-                navigation(startDestination = "settings/menu", route = ChoresDestination.Settings.route) {
+                navigation(
+                    startDestination = "settings/menu",
+                    route = ChoresDestination.Settings.route,
+                    enterTransition = sharedAxisEnter,
+                    exitTransition = sharedAxisExit,
+                    popEnterTransition = sharedAxisPopEnter,
+                    popExitTransition = sharedAxisPopExit
+                ) {
                     composable("settings/menu") {
                         SettingsMenuContent(
                             onNavigateToGeneral = { navController.navigate("settings/general") },
