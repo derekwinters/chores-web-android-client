@@ -127,7 +127,9 @@ private fun PointsLogRow(entry: PointsLogEntry, onClick: () -> Unit) {
         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
                 Text(entry.person, style = MaterialTheme.typography.titleSmall)
-                Text("Chore #${entry.choreId} · ${formatDateTime(entry.completedAt)}", style = MaterialTheme.typography.bodySmall)
+                // Issue #121: web's data-correction table shows each entry's ID so admins can
+                // correlate rows during data correction — mirror it in the row metadata line.
+                Text("ID ${entry.id} · Chore #${entry.choreId} · ${formatDateTime(entry.completedAt)}", style = MaterialTheme.typography.bodySmall)
             }
             Text("${entry.points} pts")
         }
@@ -167,7 +169,9 @@ private fun EditPointsLogDialog(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete this entry?") },
+            // Issue #121: include the entry ID so admins can confirm they are deleting the
+            // intended row, matching web's delete-confirmation copy.
+            title = { Text("Delete entry #${entry.id}?") },
             text = { Text("This will reverse the points on the person, floored at 0, and cannot be undone.") },
             confirmButton = { TextButton(onClick = onDelete) { Text("Delete") } },
             dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } }

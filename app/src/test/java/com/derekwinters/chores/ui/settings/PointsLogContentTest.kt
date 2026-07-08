@@ -83,6 +83,41 @@ class PointsLogContentTest {
         assert(deletedId == 1)
     }
 
+    /** Issue #121: delete-confirmation dialog displays the entry's ID (area: ui). */
+    @Test
+    fun pointsLogContent_deleteConfirmation_showsEntryId() {
+        composeTestRule.setContent {
+            PointsLogContent(
+                uiState = UiState.Success(PointsLogPage(listOf(entry), total = 1, offset = 0, limit = 20)),
+                onUpdate = { _, _, _ -> },
+                onDelete = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("alice").performClick()
+        composeTestRule.onNodeWithText("Delete Entry").performClick()
+
+        composeTestRule.onNodeWithText("Delete entry #1?").assertExists()
+    }
+
+    /** Issue #121: each Points Log row displays the entry's ID (area: ui). */
+    @Test
+    fun pointsLogContent_rowDisplaysEntryId() {
+        composeTestRule.setContent {
+            PointsLogContent(
+                uiState = UiState.Success(PointsLogPage(listOf(entry), total = 1, offset = 0, limit = 20)),
+                onUpdate = { _, _, _ -> },
+                onDelete = {},
+                onNextPage = {},
+                onPreviousPage = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("ID 1 · Chore #4 · 2026-07-01").assertExists()
+    }
+
     @Test
     fun pointsLogContent_rendersFormattedTimestamp() {
         val timestampedEntry = entry.copy(completedAt = "2026-07-02T22:40:54.326377Z")
@@ -96,7 +131,7 @@ class PointsLogContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Chore #4 · ${formatDateTime("2026-07-02T22:40:54.326377Z")}").assertExists()
+        composeTestRule.onNodeWithText("ID 1 · Chore #4 · ${formatDateTime("2026-07-02T22:40:54.326377Z")}").assertExists()
     }
 
     @Test
@@ -113,6 +148,6 @@ class PointsLogContentTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Chore #4 · 2026-07-01").assertExists()
+        composeTestRule.onNodeWithText("ID 1 · Chore #4 · 2026-07-01").assertExists()
     }
 }
