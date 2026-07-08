@@ -200,8 +200,8 @@ class ChoresAppTest {
         // Issue #167: numeric Badge on the Chores tab shows the signed-in user's own due-now count.
         setContent(dueNowCount = 3)
 
-        composeTestRule.onNodeWithTag("choresDueNowBadge").assertExists()
-        composeTestRule.onNodeWithTag("choresDueNowBadge").assertTextEquals("3")
+        composeTestRule.onNodeWithTag("choresDueNowBadge", useUnmergedTree = true).assertExists()
+        composeTestRule.onNodeWithTag("choresDueNowBadge", useUnmergedTree = true).assertTextEquals("3")
     }
 
     @Test
