@@ -680,7 +680,6 @@ private fun ChoresAuthenticatedScaffold(
                     composable("settings/data/pointsLog") { pointsLogContent() }
                 }
                 composable(ChoresDestination.Preferences.route) { preferencesContent() }
-                }
             }
         }
     }
