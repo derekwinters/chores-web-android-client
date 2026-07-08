@@ -482,7 +482,7 @@ private fun ChoresAuthenticatedScaffold(
                                         Badge(
                                             modifier = Modifier
                                                 .testTag("choresDueNowBadge")
-                                                .semantics(mergeDescendants = true) { contentDescription = badgeDescription }
+                                                .semantics { contentDescription = badgeDescription }
                                         ) {
                                             Text(dueNowCount.toString())
                                         }

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -201,7 +202,11 @@ class ChoresAppTest {
         setContent(dueNowCount = 3)
 
         composeTestRule.onNodeWithTag("choresDueNowBadge", useUnmergedTree = true).assertExists()
-        composeTestRule.onNodeWithTag("choresDueNowBadge", useUnmergedTree = true).assertTextEquals("3")
+        // useUnmergedTree disables all merging, so the Badge's own text lives on its Text child
+        // rather than on the tagged node itself.
+        composeTestRule.onNodeWithTag("choresDueNowBadge", useUnmergedTree = true)
+            .onChildren()[0]
+            .assertTextEquals("3")
     }
 
     @Test
